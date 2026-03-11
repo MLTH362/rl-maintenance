@@ -1,9 +1,11 @@
 {
-  "name": "RL Maintenance",
-  "short_name": "RL",
-  "description": "Application de maintenance",
-  "start_url": "/",
-  "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#000000"
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "mlth362.github",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "mlth362.github",
+  "start_url": "/",
+  "theme_color": "#ffffff"
 }
