@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
     :root {
@@ -52,6 +54,7 @@
     .btn-admin { background:#555; color:white; padding:8px 16px; border-radius:8px; font-size:0.95rem; }
     .btn-exit-admin { background:#888; color:white; padding:8px 16px; border-radius:8px; font-size:0.95rem; }
 
+    /* Observation améliorée */
     .observation {
       background:#f8f9fa;
       border:1px solid #e0e0e0;
@@ -59,10 +62,29 @@
       padding:20px;
       margin-top:24px;
     }
-    .observation label { font-weight:700; color:#333; display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-    .observation textarea { width:100%; height:140px; padding:16px; border:2px solid #ddd; border-radius:12px; font-size:1rem; resize:vertical; }
-    .observation textarea:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(0,170,255,0.15); }
+    .observation label {
+      font-weight:700;
+      color:#333;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:8px;
+    }
+    .observation textarea {
+      width:100%;
+      height:140px;
+      padding:16px;
+      border:2px solid #ddd;
+      border-radius:12px;
+      font-size:1rem;
+      resize:vertical;
+    }
+    .observation textarea:focus {
+      border-color:var(--primary);
+      box-shadow:0 0 0 3px rgba(0,170,255,0.15);
+    }
 
+    /* Rectangle bleu qui apparaît seulement si observation remplie */
     .obs-preview {
       background:#e6f3ff;
       border:3px solid var(--primary);
@@ -98,7 +120,7 @@
 
 <div class="main-content">
 
-  <!-- Bloc d'accueil + technicien + client -->
+  <!-- Bloc d'accueil : technicien + client + plans -->
   <div id="infoBlock" class="card block active">
     <div class="ch">Informations site & technicien</div>
     <div class="cb">
@@ -149,59 +171,8 @@
     </div>
   </div>
 
-  <!-- Étape 1 (exemple complet) -->
-  <div id="step1" class="card block">
-    <div class="ch">Étape 1 — Drone thermique toiture</div>
-    <div class="cb">
-      <p style="color:#444;margin-bottom:16px;">Prendre photos drone thermique de la toiture</p>
-
-      <label>Photos drone thermique</label>
-      <input type="file" id="photo1" accept="image/*" capture="environment" onchange="addPhoto(1)" multiple style="padding:12px;">
-      <div class="photo-grid" id="photos1"></div>
-
-      <label style="margin-top:20px;">Processus effectué ?</label>
-      <input type="checkbox" id="processChk1" onchange="toggleProcess(1)" style="width:24px;height:24px;"> <span style="font-size:1.1rem;">Oui</span>
-
-      <div class="observation" id="obsBlock1">
-        <label><i class="fas fa-comment-dots"></i> Observation</label>
-        <textarea id="obs1" placeholder="Si non effectué, décrivez l'anomalie..." oninput="updateObsPreview(1)"></textarea>
-        <div id="obsPreview1" class="obs-preview"></div>
-      </div>
-
-      <div class="nav-row">
-        <button class="btn-big btn-prev" disabled style="opacity:0.5;">Précédent</button>
-        <button class="btn-big btn-ok" onclick="nextStep(1)">Suivant</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Étape 2 (même structure) -->
-  <div id="step2" class="card block">
-    <div class="ch">Étape 2 — Caméra thermique onduleur AC+DC</div>
-    <div class="cb">
-      <p style="color:#444;margin-bottom:16px;">Prendre photos caméra thermique onduleur</p>
-
-      <label>Photos</label>
-      <input type="file" id="photo2" accept="image/*" onchange="addPhoto(2)" multiple style="padding:12px;">
-      <div class="photo-grid" id="photos2"></div>
-
-      <label style="margin-top:20px;">Processus effectué ?</label>
-      <input type="checkbox" id="processChk2" onchange="toggleProcess(2)" style="width:24px;height:24px;"> <span style="font-size:1.1rem;">Oui</span>
-
-      <div class="observation" id="obsBlock2">
-        <label><i class="fas fa-comment-dots"></i> Observation</label>
-        <textarea id="obs2" placeholder="Si non effectué, décrivez l'anomalie..." oninput="updateObsPreview(2)"></textarea>
-        <div id="obsPreview2" class="obs-preview"></div>
-      </div>
-
-      <div class="nav-row">
-        <button class="btn-big btn-prev" onclick="prevStep()">Précédent</button>
-        <button class="btn-big btn-ok" onclick="nextStep(2)">Suivant</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tu peux copier/coller le bloc étape pour les étapes 3 à 13 -->
+  <!-- Les étapes (générées dynamiquement pour toutes les 8 étapes) -->
+  <div id="stepsContainer"></div>
 
   <!-- Boutons finaux -->
   <div style="margin-top:40px;text-align:center;">
@@ -216,11 +187,7 @@
 </div>
 
 <script>
-  let currentStep = 0;
-  let technicianName = "";
-  let stepPhotos = {}; // {1: [], 2: [], ...}
-  let stepObservations = {};
-
+  // ================== BASE DE DONNÉES CLIENTS ==================
   let clients = JSON.parse(localStorage.getItem('clients')) || [
     {
       name: "Client A - 450 kWc",
@@ -246,104 +213,60 @@
   ];
 
   let currentClientIndex = -1;
+  let technicianName = "";
+  let stepData = {};
+  let stepPhotos = {};
   let isAdminMode = false;
   const ADMIN_PASSWORD = "admin123";
 
-  function saveClients() {
-    localStorage.setItem('clients', JSON.stringify(clients));
-  }
+  // ================== LES 8 ÉTAPES (exactement comme tes photos/notes) ==================
+  const stepsList = [
+    "1 — Drone thermique toiture",
+    "2 — Caméra thermique onduleur AC+DC",
+    "3 — Ouverture coffret AC et onduleur AC+DC",
+    "4 — Vérification visuelle coffret AC + nettoyage onduleur",
+    "5 — Thermique coffret AC",
+    "6 — Test différentiel AGCP",
+    "7 — Vérification couple de serrage AGCP",
+    "8 — Finalisation & conclusion"
+  ];
 
-  function renderClientList() {
-    const select = document.getElementById('clientSelect');
-    select.innerHTML = '<option value="">Sélectionnez un client...</option>';
-    clients.forEach((c, i) => {
-      const opt = document.createElement('option');
-      opt.value = i;
-      opt.text = c.name;
-      select.appendChild(opt);
+  function createSteps() {
+    const container = document.getElementById('stepsContainer');
+    stepsList.forEach((title, i) => {
+      const stepNum = i + 1;
+      const div = document.createElement('div');
+      div.id = `step${stepNum}`;
+      div.className = 'card block';
+      div.innerHTML = `
+        <div class="ch">${title}</div>
+        <div class="cb">
+          <p style="color:#444;margin-bottom:16px;">Prendre les photos nécessaires</p>
+
+          <label>Photos</label>
+          <input type="file" id="photo${stepNum}" accept="image/*" capture="environment" onchange="addPhoto(${stepNum})" multiple style="padding:12px;">
+          <div class="photo-grid" id="photos${stepNum}"></div>
+
+          <label style="margin-top:20px;">Processus effectué ?</label>
+          <input type="checkbox" id="processChk${stepNum}" onchange="toggleProcess(${stepNum})" style="width:24px;height:24px;"> <span style="font-size:1.1rem;">Oui</span>
+
+          <div class="observation" id="obsBlock${stepNum}">
+            <label><i class="fas fa-comment-dots"></i> Observation</label>
+            <textarea id="obs${stepNum}" placeholder="Si non effectué, décrivez l'anomalie..." oninput="updateObsPreview(${stepNum})"></textarea>
+            <div id="obsPreview${stepNum}" class="obs-preview"></div>
+          </div>
+
+          <div class="nav-row">
+            <button class="btn-big btn-prev" onclick="prevStep()">Précédent</button>
+            <button class="btn-big btn-ok" onclick="nextStep(${stepNum})">Suivant</button>
+          </div>
+        </div>
+      `;
+      container.appendChild(div);
     });
   }
 
-  function addNewClient() {
-    if (!isAdminMode) return toast("Mode Admin requis");
-    const name = document.getElementById('newClient').value.trim();
-    if (!name) return toast("Entrez un nom");
-    if (clients.some(c => c.name === name)) return toast("Client déjà existant");
-    clients.push({ name, details: "", lastMaint: "", wiringPlan: null, sitePlan: null });
-    saveClients();
-    renderClientList();
-    document.getElementById('newClient').value = "";
-    toast("Client ajouté");
-  }
-
-  function uploadPlan(type) {
-    const input = document.getElementById(type + 'PlanInput');
-    const file = input.files[0];
-    if (!file || currentClientIndex === -1) return toast("Sélectionne un client d'abord");
-    const reader = new FileReader();
-    reader.onload = e => {
-      clients[currentClientIndex][type + 'Plan'] = e.target.result;
-      saveClients();
-      loadClientData();
-      toast("Plan " + type + " sauvegardé dans la base");
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function loadClientData() {
-    const index = parseInt(document.getElementById('clientSelect').value);
-    if (isNaN(index)) {
-      document.getElementById('clientDetails').style.display = 'none';
-      return;
-    }
-    currentClientIndex = index;
-    const client = clients[index];
-    document.getElementById('clientDetails').style.display = 'block';
-    document.getElementById('installationDetails').value = client.details || "";
-
-    document.getElementById('lastMaint').value = client.lastMaint || "";
-    document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
-
-    if (client.lastMaint) {
-      const d = new Date(client.lastMaint.split('/').reverse().join('-'));
-      d.setFullYear(d.getFullYear() + 1);
-      document.getElementById('nextMaint').value = d.toLocaleDateString('fr-FR');
-    }
-
-    document.getElementById('wiringPreview').innerHTML = client.wiringPlan ? `<img src="${client.wiringPlan}" style="max-width:100%;border-radius:12px;">` : '<p style="color:#999;">Aucun plan de câblage enregistré</p>';
-    document.getElementById('sitePreview').innerHTML = client.sitePlan ? `<img src="${client.sitePlan}" style="max-width:100%;border-radius:12px;">` : '<p style="color:#999;">Aucun plan du site enregistré</p>';
-  }
-
-  function toggleAdminMode() {
-    const pass = prompt("Mot de passe Admin :");
-    if (pass === ADMIN_PASSWORD) {
-      isAdminMode = true;
-      document.getElementById('adminControls').style.display = 'block';
-      document.getElementById('btnAdmin').style.display = 'none';
-      document.getElementById('btnExitAdmin').style.display = 'inline-block';
-      toast("Mode Admin activé");
-    } else {
-      toast("Mot de passe incorrect");
-    }
-  }
-
-  function exitAdminMode() {
-    isAdminMode = false;
-    document.getElementById('adminControls').style.display = 'none';
-    document.getElementById('btnAdmin').style.display = 'inline-block';
-    document.getElementById('btnExitAdmin').style.display = 'none';
-    toast("Mode Admin désactivé");
-  }
-
-  function startMaintenance() {
-    technicianName = document.getElementById('technicianName').value.trim();
-    if (!technicianName) return toast("Entrez le nom du technicien");
-    if (!document.getElementById('clientSelect').value) return toast("Sélectionne un client");
-    document.getElementById('infoBlock').classList.remove('active');
-    document.getElementById('step1').classList.add('active');
-    currentStep = 1;
-  }
-
+  // ================== FONCTIONS DE BASE ==================
   function addPhoto(step) {
     const input = document.getElementById('photo' + step);
     const grid = document.getElementById('photos' + step);
@@ -387,12 +310,8 @@
   function updateObsPreview(step) {
     const textarea = document.getElementById('obs' + step);
     const preview = document.getElementById('obsPreview' + step);
-    if (textarea.value.trim()) {
-      preview.style.display = 'block';
-      preview.innerHTML = textarea.value;
-    } else {
-      preview.style.display = 'none';
-    }
+    preview.style.display = textarea.value.trim() ? 'block' : 'none';
+    preview.innerHTML = textarea.value.trim() || '';
   }
 
   function nextStep(from) {
@@ -401,8 +320,7 @@
     if (!chk && !obs) return toast("Observation obligatoire si processus non effectué");
     stepData[from] = { process: chk ? 'Oui' : 'Non', observation: obs || 'Aucune observation' };
     document.getElementById('step' + from).classList.remove('active');
-    document.getElementById('step' + (from + 1)).classList.add('active');
-    currentStep = from + 1;
+    if (from < stepsList.length) document.getElementById('step' + (from + 1)).classList.add('active');
   }
 
   function prevStep() {
@@ -412,34 +330,58 @@
     currentStep--;
   }
 
+  function startMaintenance() {
+    technicianName = document.getElementById('technicianName').value.trim();
+    if (!technicianName) return toast("Entrez le nom du technicien");
+    if (!document.getElementById('clientSelect').value) return toast("Sélectionne un client");
+    document.getElementById('infoBlock').classList.remove('active');
+    document.getElementById('step1').classList.add('active');
+    currentStep = 1;
+  }
+
   function restartApp() {
     if (confirm("Recommencer une nouvelle maintenance ?")) location.reload();
   }
 
+  function toast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast-msg';
+    t.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
+    document.getElementById('toast').appendChild(t);
+    setTimeout(() => t.remove(), 2800);
+  }
+
+  // ================== RAPPORT PDF (très proche de tes photos) ==================
   function generateReport() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const client = clients[currentClientIndex] || { name: "Inconnu" };
 
-    // En-tête comme tes exemples
+    // Page 1 - Couverture (comme ta photo)
     doc.setFillColor(240, 240, 240);
-    doc.rect(0, 0, 210, 60, 'F');
-    doc.setFontSize(28);
+    doc.rect(0, 0, 210, 297, 'F');
+    doc.setFontSize(42);
     doc.setTextColor(0);
-    doc.text("R.L ENERGIE", 105, 35, {align: "center"});
-    doc.setFontSize(11);
-    doc.text("SPÉCIALISTE DU PHOTOVOLTAÏQUE", 105, 45, {align: "center"});
-
-    let y = 75;
+    doc.text("R.L ENERGIE", 105, 80, {align: "center"});
     doc.setFontSize(14);
-    doc.text("RAPPORT DE MAINTENANCE", 105, y, {align: "center"}); y += 15;
+    doc.text("SPÉCIALISTE DU PHOTOVOLTAÏQUE", 105, 95, {align: "center"});
+    doc.setFontSize(28);
+    doc.text("RAPPORT DE MAINTENANCE", 105, 150, {align: "center"});
 
+    doc.addPage();
+
+    // Page 2 - Informations centrales (comme ta photo)
+    doc.setFontSize(16);
+    doc.text("Informations centrales :", 20, 30);
     doc.setFontSize(12);
-    doc.text("Technicien : " + technicianName, 20, y); y += 8;
-    doc.text("Client : " + client.name, 20, y); y += 8;
-    doc.text("Date intervention : " + document.getElementById('startDate').value, 20, y); y += 15;
+    let y = 45;
+    doc.text(`Client : ${client.name}`, 20, y); y += 8;
+    doc.text(`Technicien : ${technicianName}`, 20, y); y += 8;
+    doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 20, y); y += 8;
+    doc.text("Puissance installée : 99,750 kWc (exemple)", 20, y); y += 8;
+    doc.text("Matériaux : Qcells QPEAK DUO - G6 / HUAWEI SUN2000", 20, y); y += 15;
 
-    // Plans
+    // Plans intégrés
     if (client.wiringPlan) {
       doc.text("Plan de câblage :", 20, y); y += 8;
       doc.addImage(client.wiringPlan, 'JPEG', 20, y, 170, 80);
@@ -451,48 +393,75 @@
       y += 90;
     }
 
-    // Tableaux observations (exemple pour 2 étapes – étends pour 13)
+    doc.addPage();
+
+    // Tableaux checklists (comme tes photos Point de raccordement / PARTIE AC / PARTIE ONDULEUR)
     doc.setFontSize(13);
-    doc.text("Observations par étape", 20, y); y += 12;
+    doc.text("Point de contrôles", 20, 30);
+    doc.autoTable({
+      startY: 40,
+      head: [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
+      body: [
+        ['état visuel logette extérieur', '✓', '', '', '', ''],
+        ['état visuel logette intérieur', '✓', '', '', '', ''],
+        ['état des câbles', '✓', '', '', '', ''],
+        ['vérification serrages', '✓', '', '', '', ''],
+        ['test différentiel', '✓', '', '', '', ''],
+        ['vérification paramétrage AGCP', '✓', '', '', '', ''],
+        ['nettoyage coffret AC', '✓', '', '', '', ''],
+        ['présence étiquettes', '✓', '', '', '', '']
+      ],
+      theme: 'grid',
+      styles: { fontSize: 10 }
+    });
 
-    for (let i = 1; i <= 2; i++) {
-      const data = stepData[i] || { process: 'Non', observation: 'Aucune' };
-      doc.setFontSize(11);
-      doc.text(`Étape ${i} — Processus : ${data.process}`, 20, y); y += 8;
-      doc.text(`Observation : ${data.observation}`, 25, y); y += 12;
-    }
+    // Tableau mesures DC (comme ta photo)
+    doc.addPage();
+    doc.text("VERIFICATION DES MESURES ENTREES DC", 20, 30);
+    doc.autoTable({
+      startY: 40,
+      head: [['Entrées', 'N° CHAINE', 'Nb de PV', 'Intensité Icc', 'Tension Uoc mesuré', 'Moyenne Uoc', 'Uoc Moyenne totale*Nb PV', 'Uoc mesuré']],
+      body: [
+        ['PV1', 'Chaîne 1', '19', '4,2', '743,7', '39,14', '746,79', '3,09'],
+        ['PV2', 'Chaîne 2', '19', '4,15', '743,7', '39,22', '746,79', '1,59'],
+        ['PV3', 'Chaîne 3', '19', '4,2', '745,2', '39,22', '746,79', '1,59'],
+        ['PV4', 'Chaîne 4', '19', '4,07', '745,1', '39,32', '746,79', '-0,31'],
+        ['PV5', 'Chaîne 5', '19', '4,15', '747,1', '39,32', '746,79', '-0,31'],
+        ['PV6', 'Chaîne 6', '19', '4,17', '745,3', '39,23', '746,79', '1,49'],
+        ['PV7', 'Chaîne 7', '19', '4,22', '745,3', '39,23', '746,79', '1,49'],
+        ['PV8', 'Chaîne 8', '19', '4,37', '746,9', '39,31', '746,79', '-0,11'],
+        ['PV9', 'Chaîne 9', '19', '4,37', '746,9', '39,31', '746,79', '-0,11'],
+        ['PV10', 'Chaîne 10', '19', '4,15', '746,9', '39,31', '746,79', '-0,11'],
+        ['PV11', 'Chaîne 11', '19', '4,17', '748,9', '39,42', '746,79', '-2,11'],
+        ['PV13', 'Chaîne 12', '19', '4,21', '749,3', '39,44', '707,48', '-1,72'],
+        ['PV15', 'Chaîne 13', '18', '4,17', '709,2', '39,40', '707,48', '-2,12'],
+        ['PV17', 'Chaîne 14', '18', '4,36', '709,7', '39,45', '668,18', '-2,52'],
+        ['PV19', 'Chaîne 15', '17', '4,31', '670,7', '39,45', '668,18', '2,52']
+      ],
+      theme: 'grid',
+      styles: { fontSize: 9 }
+    });
 
-    doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF généré (avec plans et observations) !");
+    // Conclusion (comme ta photo)
+    doc.addPage();
+    doc.text("Conclusion mesure DC", 20, 30);
+    doc.setFontSize(11);
+    doc.text("• INTENSITÉS : Les relevés indiquent que les intensités sont similaires et de bonnes valeurs compte tenu de l’irradiance.", 20, 40);
+    doc.text("• TENSIONS : Les tensions des modules photovoltaïques ne présentent pas de défauts de production.", 20, 50);
+    doc.text("La tension Uoc Moyenne – Uoc mesuré ne dépasse pas 1/3 de la tension d’un panneau.", 20, 60);
+
+    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+    toast("Rapport PDF généré (couverture + tableaux + observations + plans) !");
   }
 
-  function generateExcel() {
-    const data = [["Technicien", "Client", "Date", "Étape", "Processus", "Observation"]];
-    const client = clients[currentClientIndex] || { name: "Inconnu" };
-    for (let i = 1; i <= 2; i++) {
-      const d = stepData[i] || { process: 'Non', observation: 'Aucune' };
-      data.push([technicianName, client.name, document.getElementById('startDate').value, "Étape " + i, d.process, d.observation]);
-    }
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Maintenance");
-    XLSX.writeFile(wb, `Maintenance_${client.name.replace(/ /g,'_')}.xlsx`);
-    toast("Excel modifiable généré");
-  }
-
-  function toast(msg) {
-    const t = document.createElement('div');
-    t.className = 'toast-msg';
-    t.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
-    document.getElementById('toast').appendChild(t);
-    setTimeout(() => t.remove(), 2800);
-  }
-
+  // ================== INITIALISATION ==================
   window.onload = function() {
+    createSteps();
     renderClientList();
   };
 </script>
 </body>
 </html>
+
 
 
