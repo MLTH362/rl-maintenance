@@ -77,7 +77,7 @@
   <div class="logo">R.L ENERGIE</div>
   <div>
     <button class="btn-admin" onclick="toggleAdminMode()" id="btnAdmin">Mode Admin</button>
-    <button class="btn-exit-admin" onclick="exitAdminMode()" id="btnExitAdmin" style="display:none;">Quitter Admin</button>
+    <button class="btn-exit-admin" onclick="exitAdminMode()" id="btnExitAdmin" style="display:none;">Quitter mode Admin</button>
   </div>
 </header>
 
@@ -123,17 +123,54 @@
     </div>
   </div>
 
-  <!-- Les étapes (tu peux ajouter les étapes 1 à 13 comme dans tes notes) -->
-  <!-- Pour l'exemple, je laisse juste le bloc de départ – ajoute les étapes comme avant -->
+  <!-- Étape 1 (exemple – tu peux ajouter les autres étapes de la même façon) -->
+  <div id="step1" class="card block">
+    <div class="ch">Étape 1 — Drone thermique toiture</div>
+    <div class="cb">
+      <p style="color:#444;margin-bottom:16px;">Prendre photos drone thermique de la toiture → Rapport : Partie toiture</p>
+
+      <label>Photos drone thermique</label>
+      <input type="file" id="photo1" accept="image/*" onchange="addPhoto(1)" multiple style="padding:12px;">
+      <div class="photo-grid" id="photos1"></div>
+
+      <div class="process-row">
+        <label>Processus effectué ?</label>
+        <div class="yes-no">
+          <input type="radio" name="process1" value="oui" checked> Oui
+          <input type="radio" name="process1" value="non"> Non
+        </div>
+      </div>
+
+      <div class="observation">
+        <label><i class="fas fa-comment-dots"></i> Observation (obligatoire si non effectué)</label>
+        <textarea id="obs1" placeholder="Exemple : Aucune anomalie détectée..."></textarea>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-big btn-prev" disabled style="opacity:0.5;">Précédent</button>
+        <button class="btn-big btn-ok" onclick="nextStep(1)">Suivant</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ajoute ici les étapes 2 à 13 avec le même pattern que l'étape 1 -->
+
+  <!-- Bouton final -->
+  <div style="margin-top:40px;text-align:center;">
+    <button class="btn-big btn-ok" onclick="generateReport()">
+      <i class="fas fa-file-pdf"></i> Générer le rapport PDF
+    </button>
+  </div>
 
 </div>
 
 <script>
-  // ===================== BASE DE DONNÉES =====================
+  let currentStep = 0;
+  let stepData = {};
   let clients = JSON.parse(localStorage.getItem('clients')) || [
     { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA\nType panneaux : Monocristallin 550W\nRemarques : Suivi annuel obligatoire", lastMaint: "15/03/2025" },
-    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France\nType panneaux : Polycristallin 400W\nRemarques : Problème de surchauffe signalé", lastMaint: "08/01/2026" },
-    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie\nType panneaux : Bifacial 600W\nRemarques : Installation récente 2024", lastMaint: "22/11/2025" }
+    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France\nType panneaux : Polycristallin 400W\nRemarques : Problème de surchauffe signalé en été 2025", lastMaint: "08/01/2026" },
+    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie\nType panneaux : Bifacial 600W\nRemarques : Installation récente (2024), garantie 25 ans", lastMaint: "22/11/2025" }
   ];
 
   let currentClientIndex = -1;
@@ -159,10 +196,10 @@
   function addNewClient() {
     if (!isAdminMode) return toast("Mode Admin requis");
     const name = document.getElementById('newClient').value.trim();
-    if (!name) return toast("Entrez un nom");
-    if (clients.some(c => c.name === name)) return toast("Client déjà existant");
+    if (!name) return toast("Entrez un nom de client");
+    if (clients.some(c => c.name === name)) return toast("Ce client existe déjà");
 
-    clients.push({ name, details: "", lastMaint: "" });
+    clients.push({ name: name, details: "", lastMaint: "" });
     saveClients();
     renderClientList();
     document.getElementById('newClient').value = "";
@@ -189,6 +226,8 @@
       const d = new Date(client.lastMaint.split('/').reverse().join('-'));
       d.setFullYear(d.getFullYear() + 1);
       document.getElementById('nextMaint').value = d.toLocaleDateString('fr-FR');
+    } else {
+      document.getElementById('nextMaint').value = "";
     }
   }
 
@@ -211,6 +250,13 @@
     document.getElementById('btnAdmin').style.display = 'inline-block';
     document.getElementById('btnExitAdmin').style.display = 'none';
     toast("Mode Admin désactivé");
+  }
+
+  function startMaintenance() {
+    if (!document.getElementById('clientSelect').value) return toast("Sélectionne un client");
+    document.getElementById('infoBlock').classList.remove('active');
+    document.getElementById('step1').classList.add('active');
+    currentStep = 1;
   }
 
   function restartApp() {
