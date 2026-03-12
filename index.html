@@ -23,15 +23,17 @@
       --card: #ffffff;
       --radius: 20px;
       --shadow: 0 10px 30px rgba(0,0,0,0.08);
+      --text: #2d3436;
+      --gray: #555;
     }
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
-    body { background:var(--bg); color:#2d3436; line-height:1.6; min-height:100vh; }
+    body { background:var(--bg); color:var(--text); line-height:1.6; min-height:100vh; }
 
     /* HEADER */
     header {
       background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white;
-      padding: 20px 30px;
+      padding: 18px 30px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -44,7 +46,7 @@
     .progress-bar { background:rgba(255,255,255,0.3); height:6px; border-radius:10px; flex:1; margin:0 30px; }
     .progress-fill { background:white; height:100%; border-radius:10px; width:25%; transition:width 0.4s; }
 
-    /* SIDEBAR (PC) */
+    /* SIDEBAR (PC uniquement) */
     .sidebar {
       width: 280px;
       background: white;
@@ -69,10 +71,12 @@
       align-items: center;
       gap: 12px;
       font-weight: 500;
+      color: var(--gray);
     }
+    .step-item:hover { background: #f0f8ff; }
     .step-item.active { background: var(--primary); color: white; }
 
-    /* CONTENU */
+    /* CONTENU PRINCIPAL */
     .main-content { padding: 30px; max-width: 1200px; margin: 0 auto; }
     .card {
       background: var(--card);
