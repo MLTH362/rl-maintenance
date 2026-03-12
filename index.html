@@ -2,60 +2,202 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>R.L ENERGIE — Maintenance Étapes</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
-    :root{
-      --primary:#00aaff;--primary-dark:#0088cc;--success:#00d46a;--danger:#ff3b5c;
-      --pdf-red:#e63946;--excel-green:#1e7e34;
-      --bg-light:linear-gradient(135deg,#f8fbff,#e8f4ff);
-      --card-light:#ffffff;--radius-lg:24px;--shadow-md:0 16px 48px rgba(0,0,0,0.12);
+    :root {
+      --primary: #00aaff;
+      --primary-dark: #0088cc;
+      --success: #00d46a;
+      --danger: #ff3b5c;
+      --pdf-red: #e63946;
+      --excel-green: #1e7e34;
+      --bg: #f8fbff;
+      --card: #ffffff;
+      --radius: 20px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
-    *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
-    body{background:var(--bg-light);color:#2d3436;min-height:100vh;padding:22px 12px;}
-    header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:32px 20px;text-align:center;border-radius:var(--radius-lg);box-shadow:var(--shadow-md);margin-bottom:32px;position:relative;}
-    .logo-top{position:absolute;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;padding:8px 16px;border-radius:14px;font-weight:900;font-size:1.1rem;}
-    h1{font-size:2.6rem;font-weight:900;margin:0;}
-    .card{background:var(--card-light);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);margin:20px auto;overflow:hidden;}
-    .ch{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:20px 26px;font-weight:800;font-size:1.3rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
-    .ch select{max-width:140px;padding:8px 12px;border-radius:12px;border:2px solid rgba(255,255,255,0.6);font-size:0.95rem;background:rgba(255,255,255,0.9);color:#000;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
-    .cb{padding:28px;}
-    .block{display:none;min-height:90vh;}
-    .block.active{display:block;}
-    .btn-big{padding:18px 24px;border:none;border-radius:16px;font-size:1.25rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);transition:all .3s;width:100%;margin:16px 0;}
-    .btn-ok{background:var(--success);color:#000;}
-    .btn-prev{background:#555;color:#fff;font-size:1.1rem;padding:14px 20px;width:auto;}
-    .btn-pdf{background:var(--pdf-red);color:#fff;}
-    .btn-excel{background:var(--excel-green);color:#fff;}
-    .fab{position:fixed;bottom:32px;right:32px;display:flex;flex-direction:column;gap:16px;z-index:9999;}
-    .fab button{border-radius:50%;width:72px;height:72px;border:none;font-size:1.9rem;box-shadow:var(--shadow-md);color:#fff;}
-    .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-top:16px;}
-    .photo-preview{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;border:3px solid #f0f0f0;position:relative;}
-    .delete-btn{position:absolute;top:8px;right:8px;background:#ff3b5c;color:white;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
-    .attachment-item{position:relative;background:#f8f9fa;border-radius:12px;padding:8px;margin-bottom:12px;display:flex;gap:12px;align-items:center;}
-    .nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:24px;}
-    #toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:10001;}
-    .toast-msg{background:var(--success);color:#000;padding:16px 32px;border-radius:50px;margin:8px;box-shadow:var(--shadow-md);animation:toast 3s forwards;}
-    @keyframes toast{0%{opacity:0;transform:translateY(40px)} 10%{opacity:1;transform:translateY(0)} 90%{opacity:1} 100%{opacity:0}}
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+    body { background:var(--bg); color:#2d3436; line-height:1.6; min-height:100vh; }
+
+    /* HEADER */
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 20px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: var(--shadow);
+    }
+    .logo { font-weight:900; font-size:1.4rem; }
+    .progress-bar { background:rgba(255,255,255,0.3); height:6px; border-radius:10px; flex:1; margin:0 30px; }
+    .progress-fill { background:white; height:100%; border-radius:10px; width:25%; transition:width 0.4s; }
+
+    /* SIDEBAR (PC) */
+    .sidebar {
+      width: 280px;
+      background: white;
+      box-shadow: var(--shadow);
+      padding: 30px 20px;
+      height: calc(100vh - 76px);
+      position: fixed;
+      overflow-y: auto;
+      display: none;
+    }
+    @media (min-width: 1024px) {
+      .sidebar { display: block; }
+      .main-content { margin-left: 280px; }
+    }
+    .step-item {
+      padding: 14px 20px;
+      border-radius: 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 500;
+    }
+    .step-item.active { background: var(--primary); color: white; }
+
+    /* CONTENU */
+    .main-content { padding: 30px; max-width: 1200px; margin: 0 auto; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+    .ch {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 22px 28px;
+      font-size: 1.35rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cb { padding: 32px; }
+
+    /* Mobile/tablette - blocs plein écran */
+    .block { display: none; min-height: 88vh; }
+    .block.active { display: block; }
+    @media (min-width: 1024px) { .block { min-height: auto; display: block; } }
+
+    .btn-big {
+      padding: 16px 24px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      transition: all .3s;
+      width: 100%;
+    }
+    .btn-ok { background: var(--success); color: #000; }
+    .btn-prev { background: #555; color: white; }
+
+    /* Pièces jointes */
+    .attachment-item {
+      background: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .delete-btn {
+      background: var(--danger);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 16px;
+      margin: 16px 0;
+    }
+    .photo-preview {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 2px solid #eee;
+      position: relative;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+    }
+    .toast-msg {
+      background: var(--success);
+      color: #000;
+      padding: 14px 28px;
+      border-radius: 50px;
+      box-shadow: var(--shadow);
+      animation: toast 3s forwards;
+    }
+    @keyframes toast {
+      0% { opacity:0; transform:translate(-50%,40px) }
+      15% { opacity:1; transform:translate(-50%,0) }
+      85% { opacity:1 }
+      100% { opacity:0 }
+    }
   </style>
 </head>
 <body>
 
-  <div id="toast"></div>
+<header>
+  <div class="logo">R.L ENERGIE</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div style="font-weight:600;">Maintenance Étapes</div>
+</header>
 
-  <header>
-    <div class="logo-top">&lt; R.L ENERGIE &gt;</div>
-    <h1>Maintenance Étapes</h1>
-  </header>
+<div class="sidebar" id="sidebar">
+  <h3 style="margin-bottom:20px;color:#555;">Étapes</h3>
+  <div class="step-item active" onclick="goToStep(1)" id="sidebarStep1"><i class="fas fa-drone"></i> 1 — Drone</div>
+  <div class="step-item" onclick="goToStep(2)" id="sidebarStep2"><i class="fas fa-thermometer-half"></i> 2 — Relevé thermique</div>
+  <div class="step-item" onclick="goToStep(3)" id="sidebarStep3"><i class="fas fa-toolbox"></i> 3 — Coffret AC</div>
+  <div class="step-item" onclick="goToStep(4)" id="sidebarStep4"><i class="fas fa-flag-checkered"></i> 4 — Finalisation</div>
+</div>
 
-  <!-- Bloc Infos client & dates -->
+<div class="main-content" id="mainContent">
+
+  <!-- Bloc client -->
   <div id="infoBlock" class="card block active">
     <div class="ch">Informations client & dates</div>
     <div class="cb">
@@ -81,24 +223,85 @@
     </div>
   </div>
 
-  <!-- Navigation étapes -->
-  <div class="card" id="navBlock" style="display:none;">
+  <!-- Étape 1 -->
+  <div id="step1" class="card block">
+    <div class="ch">
+      Étape 1 — Drone
+      <select id="stepSelector1" onchange="goToStep(this.value)">
+      </select>
+    </div>
     <div class="cb">
-      <div class="step-nav">
-        <select id="stepSelector" onchange="goToStep(this.value)" style="flex:1;max-width:160px;padding:10px 12px;border-radius:12px;border:2px solid #e6eef8;font-size:0.95rem;background:#fff;color:#000;">
-        </select>
+      <label>Photos drone</label>
+      <input type="file" id="photo1" accept="image/*" onchange="addPhoto(1)" multiple style="padding:12px;">
+      <div class="photo-grid" id="photos1"></div>
+      <div class="annotation">
+        <label>Annotation / Anomalie <span style="color:red">*</span></label>
+        <textarea id="note1" placeholder="Décrivez ici..."></textarea>
+      </div>
+      <div class="nav-row">
         <button onclick="prevStep()" class="btn-big btn-prev">
           <i class="fas fa-arrow-left"></i> Précédent
+        </button>
+        <button class="btn-big btn-ok" onclick="nextStep(1)">
+          <i class="fas fa-arrow-right"></i> Suivant
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Les 4 étapes (blocs plein écran) -->
-  <div id="step1" class="card block"> ... (code identique aux versions précédentes) ... </div>
-  <!-- Étape 2, 3 identiques -->
+  <!-- Étape 2 -->
+  <div id="step2" class="card block">
+    <div class="ch">
+      Étape 2 — Relevé thermique
+      <select id="stepSelector2" onchange="goToStep(this.value)">
+      </select>
+    </div>
+    <div class="cb">
+      <label>Photos thermique</label>
+      <input type="file" id="photo2" accept="image/*" onchange="addPhoto(2)" multiple style="padding:12px;">
+      <div class="photo-grid" id="photos2"></div>
+      <div class="annotation">
+        <label>Annotation / Anomalie <span style="color:red">*</span></label>
+        <textarea id="note2" placeholder="Décrivez ici..."></textarea>
+      </div>
+      <div class="nav-row">
+        <button onclick="prevStep()" class="btn-big btn-prev">
+          <i class="fas fa-arrow-left"></i> Précédent
+        </button>
+        <button class="btn-big btn-ok" onclick="nextStep(2)">
+          <i class="fas fa-arrow-right"></i> Suivant
+        </button>
+      </div>
+    </div>
+  </div>
 
-  <!-- Étape 4 avec Pièces jointes -->
+  <!-- Étape 3 -->
+  <div id="step3" class="card block">
+    <div class="ch">
+      Étape 3 — Coffret AC + Triphasé
+      <select id="stepSelector3" onchange="goToStep(this.value)">
+      </select>
+    </div>
+    <div class="cb">
+      <label>Photos coffret</label>
+      <input type="file" id="photo3" accept="image/*" onchange="addPhoto(3)" multiple style="padding:12px;">
+      <div class="photo-grid" id="photos3"></div>
+      <div class="annotation">
+        <label>Annotation / Anomalie <span style="color:red">*</span></label>
+        <textarea id="note3" placeholder="Décrivez ici..."></textarea>
+      </div>
+      <div class="nav-row">
+        <button onclick="prevStep()" class="btn-big btn-prev">
+          <i class="fas fa-arrow-left"></i> Précédent
+        </button>
+        <button class="btn-big btn-ok" onclick="nextStep(3)">
+          <i class="fas fa-arrow-right"></i> Suivant
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Étape 4 - Finalisation + Pièces jointes -->
   <div id="step4" class="card block">
     <div class="ch">
       Étape 4 — Finalisation
@@ -113,17 +316,17 @@
       </button>
       <div class="photo-grid" id="photos4"></div>
 
-      <!-- NOUVELLE SECTION PIÈCES JOINTES -->
-      <label style="margin-top:32px;">Pièces jointes supplémentaires</label>
-      <input type="file" id="pieceJointe" accept="image/*,application/pdf" multiple onchange="addPieceJointe()" style="padding:12px;">
+      <!-- Pièces jointes -->
+      <label style="margin-top:32px;font-weight:600;">Pièces jointes supplémentaires</label>
+      <input type="file" id="pieceJointe" accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple onchange="addPieceJointe()" style="padding:12px;display:block;margin:12px 0;">
       <div id="piecesContainer" style="margin-top:16px;"></div>
 
-      <div class="annotation">
+      <div class="annotation" style="margin-top:32px;">
         <label>Observations finales <span style="color:red">*</span></label>
         <textarea id="note4" placeholder="Conclusion globale..."></textarea>
       </div>
 
-      <div class="nav-row">
+      <div class="nav-row" style="margin-top:40px;">
         <button onclick="prevStep()" class="btn-big btn-prev">
           <i class="fas fa-arrow-left"></i> Précédent
         </button>
@@ -132,247 +335,263 @@
         </button>
       </div>
 
-      <button class="btn-big btn-excel" onclick="generateExcel()">
+      <button class="btn-big btn-excel" onclick="generateExcel()" style="margin-top:16px;">
         <i class="fas fa-file-excel"></i> Exporter Excel modifiable
       </button>
-      <button class="btn-big" style="background:#555;color:#fff;" onclick="restartApp()">
+      <button class="btn-big" style="background:#555;color:#fff;margin-top:16px;" onclick="restartApp()">
         <i class="fas fa-redo"></i> Recommencer une nouvelle maintenance
       </button>
     </div>
   </div>
 
-  <div class="fab">
-    <button class="pdf" onclick="generateReport()"><i class="fas fa-file-pdf"></i></button>
-    <button class="excel" onclick="generateExcel()"><i class="fas fa-file-excel"></i></button>
-  </div>
+</div>
 
-  <script>
-    let currentStep = 0;
-    let allPhotos = [];
-    let piecesJointes = []; // Nouvelle variable pour les pièces jointes
-    let stepData = {};
+<script>
+  let currentStep = 0;
+  let allPhotos = [];
+  let piecesJointes = [];
+  let stepData = {};
 
-    // === Dates auto ===
-    const today = new Date();
-    document.getElementById('startDate').value = today.toLocaleDateString('fr-FR');
+  // Dates auto
+  const today = new Date();
+  document.getElementById('startDate').value = today.toLocaleDateString('fr-FR');
 
-    document.getElementById('clientSelect').addEventListener('change', function() {
-      const dates = {
-        "Client A - 450 kWc": "15 mars 2025",
-        "Client B - 120 kWc": "8 janvier 2026",
-        "Client C - 800 kWc": "22 novembre 2025"
+  document.getElementById('clientSelect').addEventListener('change', function() {
+    const dates = {
+      "Client A - 450 kWc": "15 mars 2025",
+      "Client B - 120 kWc": "8 janvier 2026",
+      "Client C - 800 kWc": "22 novembre 2025"
+    };
+    const last = dates[this.value] || today.toLocaleDateString('fr-FR');
+    document.getElementById('lastMaint').value = last;
+
+    const next = new Date(last.split(' ').reverse().join('-'));
+    next.setFullYear(next.getFullYear() + 1);
+    document.getElementById('nextMaint').value = next.toLocaleDateString('fr-FR');
+  });
+
+  function startMaintenance() {
+    if (!document.getElementById('clientSelect').value) return toast("Choisis un client");
+    document.getElementById('infoBlock').classList.remove('active');
+    document.getElementById('step1').classList.add('active');
+    currentStep = 1;
+    updateProgress();
+    updateSidebar();
+  }
+
+  function updateProgress() {
+    document.getElementById('progressFill').style.width = (currentStep * 25) + '%';
+  }
+
+  function updateSidebar() {
+    for (let i = 1; i <= 4; i++) {
+      const el = document.getElementById('sidebarStep' + i);
+      if (el) el.classList.toggle('active', i === currentStep);
+    }
+  }
+
+  // Navigation
+  function goToStep(n) {
+    n = parseInt(n);
+    if (n > currentStep) return toast("Termine l'étape actuelle avant de sauter");
+    document.querySelectorAll('.block').forEach(b => b.classList.remove('active'));
+    document.getElementById('step'+n).classList.add('active');
+    currentStep = n;
+    updateProgress();
+    updateSidebar();
+    if (stepData[n]) document.getElementById('note'+n).value = stepData[n];
+  }
+
+  function nextStep(from) {
+    if (!document.getElementById('note'+from).value.trim()) return toast("Ajoute une annotation");
+    stepData[from] = document.getElementById('note'+from).value;
+    document.getElementById('step'+from).classList.remove('active');
+    document.getElementById('step'+(from+1)).classList.add('active');
+    currentStep = from + 1;
+    updateProgress();
+    updateSidebar();
+  }
+
+  function prevStep() {
+    if (currentStep <= 1) return toast("Retour impossible");
+    stepData[currentStep] = document.getElementById('note'+currentStep).value;
+    document.getElementById('step'+currentStep).classList.remove('active');
+    document.getElementById('step'+(currentStep-1)).classList.add('active');
+    currentStep--;
+    updateProgress();
+    updateSidebar();
+    if (stepData[currentStep]) document.getElementById('note'+currentStep).value = stepData[currentStep];
+  }
+
+  // Photos
+  function addPhoto(step) {
+    const input = document.getElementById('photo'+step);
+    if (!input.files.length) return;
+    Array.from(input.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        allPhotos.push({step: step, data: e.target.result});
+        renderPhotos(step);
       };
-      const last = dates[this.value] || today.toLocaleDateString('fr-FR');
-      document.getElementById('lastMaint').value = last;
-
-      const next = new Date(last.split(' ').reverse().join('-'));
-      next.setFullYear(next.getFullYear() + 1);
-      document.getElementById('nextMaint').value = next.toLocaleDateString('fr-FR');
+      reader.readAsDataURL(file);
     });
+  }
 
-    function startMaintenance() {
-      if (!document.getElementById('clientSelect').value) return toast("Choisis un client");
-      document.getElementById('infoBlock').classList.remove('active');
-      document.getElementById('navBlock').style.display = 'block';
-      document.getElementById('step1').classList.add('active');
-      currentStep = 1;
-      updateStepSelectors();
-    }
+  function renderPhotos(step) {
+    const grid = document.getElementById('photos'+step);
+    grid.innerHTML = '';
+    allPhotos.filter(p => p.step === step).forEach(p => {
+      const div = document.createElement('div');
+      div.style.position = 'relative';
+      div.innerHTML = `
+        <img src="${p.data}" class="photo-preview">
+        <button class="delete-btn" onclick="deletePhoto('${p.data}')">×</button>
+      `;
+      grid.appendChild(div);
+    });
+  }
 
-    // === Navigation ===
-    function updateStepSelectors() {
-      for (let i = 1; i <= 4; i++) {
-        const sel = document.getElementById('stepSelector' + i);
-        if (!sel) continue;
-        sel.innerHTML = '';
-        for (let j = 1; j <= 4; j++) {
-          const opt = document.createElement('option');
-          opt.value = j;
-          opt.text = `Étape ${j}`;
-          if (j === currentStep) opt.selected = true;
-          sel.appendChild(opt);
-        }
-      }
-    }
+  function deletePhoto(data) {
+    allPhotos = allPhotos.filter(p => p.data !== data);
+    renderPhotos(currentStep);
+  }
 
-    function goToStep(n) {
-      n = parseInt(n);
-      if (n > currentStep) return toast("Termine l'étape actuelle avant de sauter");
-      document.querySelectorAll('.block').forEach(b => b.classList.remove('active'));
-      document.getElementById('step'+n).classList.add('active');
-      currentStep = n;
-      updateStepSelectors();
-      if (stepData[n]) document.getElementById('note'+n).value = stepData[n];
-    }
+  // Pièces jointes
+  function addPieceJointe() {
+    const input = document.getElementById('pieceJointe');
+    if (!input.files.length) return;
+    Array.from(input.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        piecesJointes.push({name: file.name, type: file.type, data: e.target.result});
+        renderPiecesJointes();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 
-    function nextStep(from) {
-      if (!document.getElementById('note'+from).value.trim()) return toast("Ajoute une annotation");
-      stepData[from] = document.getElementById('note'+from).value;
-      document.getElementById('step'+from).classList.remove('active');
-      document.getElementById('step'+(from+1)).classList.add('active');
-      currentStep = from + 1;
-      updateStepSelectors();
-    }
+  function renderPiecesJointes() {
+    const container = document.getElementById('piecesContainer');
+    container.innerHTML = '';
+    piecesJointes.forEach((piece, index) => {
+      const div = document.createElement('div');
+      div.className = 'attachment-item';
+      div.innerHTML = `
+        <div style="flex:1;">
+          <strong>${piece.name}</strong>
+          <small style="color:#666;">(${piece.type.startsWith('image') ? 'Image' : 'Document'})</small>
+        </div>
+        <button class="delete-btn" onclick="deletePiece(${index})">×</button>
+      `;
+      container.appendChild(div);
+    });
+  }
 
-    function prevStep() {
-      if (currentStep <= 1) return toast("Retour impossible");
-      stepData[currentStep] = document.getElementById('note'+currentStep).value;
-      document.getElementById('step'+currentStep).classList.remove('active');
-      document.getElementById('step'+(currentStep-1)).classList.add('active');
-      currentStep--;
-      updateStepSelectors();
-      if (stepData[currentStep]) document.getElementById('note'+currentStep).value = stepData[currentStep];
-    }
+  function deletePiece(index) {
+    piecesJointes.splice(index, 1);
+    renderPiecesJointes();
+  }
 
-    // === Photos ===
-    function addPhoto(step) {
-      const input = document.getElementById('photo'+step);
-      if (!input.files.length) return;
-      Array.from(input.files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const base64 = e.target.result;
-          allPhotos.push({step: step, data: base64});
-          renderPhotos(step);
-        };
-        reader.readAsDataURL(file);
-      });
-    }
+  // Rapport PDF
+  function generateReport() {
+    const client = document.getElementById('clientSelect').value || 'Inconnu';
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    let y = 20;
 
-    function renderPhotos(step) {
-      const grid = document.getElementById('photos'+step);
-      grid.innerHTML = '';
-      allPhotos.filter(p => p.step === step).forEach(p => {
-        const img = document.createElement('img');
-        img.src = p.data;
-        img.className = 'photo-preview';
-        grid.appendChild(img);
-      });
-    }
+    doc.setFillColor(0, 170, 255);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setFontSize(18);
+    doc.setTextColor(255);
+    doc.text("RAPPORT DE MAINTENANCE", 105, 20, {align: "center"});
+    doc.setFontSize(11);
+    doc.text("R.L ENERGIE", 105, 30, {align: "center"});
 
-    // === NOUVELLE FONCTIONNALITÉ : Pièces jointes ===
-    function addPieceJointe() {
-      const input = document.getElementById('pieceJointe');
-      if (!input.files.length) return;
-      Array.from(input.files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          piecesJointes.push({
-            name: file.name,
-            type: file.type,
-            data: e.target.result
-          });
-          renderPiecesJointes();
-        };
-        reader.readAsDataURL(file);
-      });
-    }
+    y = 55;
+    doc.setTextColor(0);
+    doc.setFontSize(12);
+    doc.text(`Client : ${client}`, 20, y); y += 10;
+    doc.text(`Date début : ${document.getElementById('startDate').value}`, 20, y); y += 8;
+    doc.text(`Dernière maintenance : ${document.getElementById('lastMaint').value}`, 20, y); y += 8;
+    doc.text(`Prochaine : ${document.getElementById('nextMaint').value}`, 20, y); y += 15;
 
-    function renderPiecesJointes() {
-      const container = document.getElementById('piecesContainer');
-      container.innerHTML = '';
-      piecesJointes.forEach((piece, index) => {
-        const div = document.createElement('div');
-        div.className = 'attachment-item';
-        div.innerHTML = `
-          <div style="flex:1;">
-            <strong>${piece.name}</strong>
-          </div>
-          <button onclick="deletePiece(${index})" class="delete-btn">×</button>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    function deletePiece(index) {
-      piecesJointes.splice(index, 1);
-      renderPiecesJointes();
-    }
-
-    // === Rapport PDF (avec photos + pièces jointes) ===
-    function generateReport() {
-      const client = document.getElementById('clientSelect').value || 'Inconnu';
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      let y = 20;
-
-      // En-tête
-      doc.setFillColor(0, 170, 255);
-      doc.rect(0, 0, 210, 40, 'F');
-      doc.setFontSize(18);
-      doc.setTextColor(255);
-      doc.text("RAPPORT DE MAINTENANCE", 105, 20, {align: "center"});
+    for (let i = 1; i <= 4; i++) {
+      const note = document.getElementById('note'+i).value || "RAS";
+      doc.setFontSize(13);
+      doc.text(`Étape ${i}`, 20, y); y += 8;
       doc.setFontSize(11);
-      doc.text("R.L ENERGIE", 105, 30, {align: "center"});
+      const lines = doc.splitTextToSize(note, 170);
+      doc.text(lines, 25, y);
+      y += lines.length * 7 + 8;
+    }
 
-      y = 55;
-      doc.setTextColor(0);
-      doc.setFontSize(12);
-      doc.text(`Client : ${client}`, 20, y); y += 10;
-      doc.text(`Date début : ${document.getElementById('startDate').value}`, 20, y); y += 8;
-      doc.text(`Dernière maintenance : ${document.getElementById('lastMaint').value}`, 20, y); y += 8;
-      doc.text(`Prochaine : ${document.getElementById('nextMaint').value}`, 20, y); y += 15;
+    if (allPhotos.length > 0 || piecesJointes.length > 0) {
+      if (y > 220) { doc.addPage(); y = 20; }
+      doc.setFontSize(14);
+      doc.text("Photos et pièces jointes", 20, y); y += 12;
 
-      // Annotations
-      for (let i = 1; i <= 4; i++) {
-        const note = document.getElementById('note'+i).value || "RAS";
-        doc.setFontSize(13);
-        doc.text(`Étape ${i}`, 20, y); y += 8;
+      allPhotos.forEach((photo, i) => {
+        if (y > 240) { doc.addPage(); y = 20; }
         doc.setFontSize(11);
-        const lines = doc.splitTextToSize(note, 170);
-        doc.text(lines, 25, y);
-        y += lines.length * 7 + 8;
-      }
+        doc.text(`Étape ${photo.step} - Photo ${i+1}`, 20, y); y += 8;
+        doc.addImage(photo.data, 'JPEG', 20, y, 90, 50);
+        y += 58;
+      });
 
-      // Photos + Pièces jointes
-      if (allPhotos.length > 0 || piecesJointes.length > 0) {
-        if (y > 220) { doc.addPage(); y = 20; }
-        doc.setFontSize(14);
-        doc.text("Photos et pièces jointes", 20, y); y += 15;
-
-        // Photos normales
-        allPhotos.forEach((photo, i) => {
-          if (y > 240) { doc.addPage(); y = 20; }
-          doc.setFontSize(11);
-          doc.text(`Étape ${photo.step} - Photo ${i+1}`, 20, y); y += 8;
-          doc.addImage(photo.data, 'JPEG', 20, y, 90, 50);
+      piecesJointes.forEach((piece, i) => {
+        if (y > 240) { doc.addPage(); y = 20; }
+        doc.setFontSize(11);
+        doc.text(`Pièce jointe ${i+1} : ${piece.name}`, 20, y); y += 8;
+        if (piece.type.startsWith('image')) {
+          doc.addImage(piece.data, 'JPEG', 20, y, 90, 50);
           y += 58;
-        });
-
-        // Pièces jointes
-        piecesJointes.forEach((piece, i) => {
-          if (y > 240) { doc.addPage(); y = 20; }
-          doc.setFontSize(11);
-          doc.text(`Pièce jointe ${i+1} : ${piece.name}`, 20, y); y += 8;
-          if (piece.type.startsWith('image')) {
-            doc.addImage(piece.data, 'JPEG', 20, y, 90, 50);
-            y += 58;
-          } else {
-            doc.text("(Document joint)", 25, y); y += 8;
-          }
-        });
-      }
-
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text(`Généré le ${new Date().toLocaleString('fr-FR')} par R.L ENERGIE`, 105, 290, {align: "center"});
-
-      doc.save(`Maintenance_${client}_${new Date().toISOString().slice(0,10)}.pdf`);
-      toast("Rapport professionnel généré avec photos et pièces jointes !");
-      showRestartButton();
+        } else {
+          doc.text("(Document joint)", 25, y); y += 8;
+        }
+      });
     }
 
-    // === Fonctions restantes (toast, Excel, restart, etc.) ===
-    function generateExcel() { /* même code que avant */ toast("Excel modifiable généré !"); }
-    function restartApp() { location.reload(); }
-    function showRestartButton() { /* même code que avant */ }
-    function toast(msg) {
-      const t = document.createElement('div');
-      t.className = 'toast-msg';
-      t.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
-      document.getElementById('toast').appendChild(t);
-      setTimeout(() => t.remove(), 2800);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Généré le ${new Date().toLocaleString('fr-FR')} par R.L ENERGIE`, 105, 290, {align: "center"});
+
+    doc.save(`Maintenance_${client}_${new Date().toISOString().slice(0,10)}.pdf`);
+    toast("Rapport généré avec photos et pièces jointes !");
+  }
+
+  // Excel (inchangé)
+  function generateExcel() {
+    const client = document.getElementById('clientSelect').value || 'Inconnu';
+    const rows = [
+      ["RAPPORT MAINTENANCE - R.L ENERGIE"],
+      ["Client", client],
+      ["Date début", document.getElementById('startDate').value],
+      ["Dernière maintenance", document.getElementById('lastMaint').value],
+      ["Prochaine maintenance", document.getElementById('nextMaint').value],
+      [],
+      ["Étape", "Annotation"]
+    ];
+    for (let i = 1; i <= 4; i++) {
+      rows.push([`Étape ${i}`, document.getElementById('note'+i).value || "RAS"]);
     }
-  </script>
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rapport");
+    XLSX.writeFile(wb, `Maintenance_${client}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    toast("Excel généré !");
+  }
+
+  function restartApp() {
+    if (confirm("Recommencer toute la maintenance ?")) location.reload();
+  }
+
+  function toast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast-msg';
+    t.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
+    document.getElementById('toast').appendChild(t);
+    setTimeout(() => t.remove(), 2800);
+  }
+</script>
 </body>
 </html>
