@@ -21,15 +21,17 @@
       --card: #ffffff;
       --radius: 16px;
       --shadow: 0 8px 24px rgba(0,0,0,0.08);
+      --text: #2d3436;
+      --gray: #555;
     }
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
-    body { background:var(--bg); color:#2d3436; min-height:100vh; }
+    body { background:var(--bg); color:var(--text); min-height:100vh; }
 
     /* HEADER */
     header {
       background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white;
-      padding: 16px 30px;
+      padding: 18px 30px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -42,41 +44,41 @@
     .progress-bar { background:rgba(255,255,255,0.3); height:6px; border-radius:10px; flex:1; margin:0 30px; }
     .progress-fill { background:white; height:100%; border-radius:10px; width:25%; transition:width 0.4s; }
 
-    /* SIDEBAR (PC) */
-    .sidebar {
-      width: 260px;
+    /* MENU ÉTAPES (horizontal sur PC, boutons en bas sur mobile) */
+    .step-nav {
       background: white;
       box-shadow: var(--shadow);
-      padding: 20px;
-      height: calc(100vh - 76px);
-      position: fixed;
-      left: 0;
+      padding: 12px 30px;
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      position: sticky;
       top: 76px;
-      overflow-y: auto;
-      display: none;
       z-index: 999;
     }
-    @media (min-width: 1024px) {
-      .sidebar { display: block; }
-      .main-content { margin-left: 260px; padding-left: 30px; }
-    }
-    .step-item {
-      padding: 12px 16px;
+    .step-btn {
+      padding: 10px 20px;
       border-radius: 12px;
-      margin-bottom: 6px;
+      background: #f0f8ff;
+      color: var(--primary);
+      border: 2px solid var(--primary);
       cursor: pointer;
+      font-weight: 600;
+      white-space: nowrap;
       transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 500;
-      color: #444;
     }
-    .step-item:hover { background: #f0f8ff; }
-    .step-item.active { background: var(--primary); color: white; }
+    .step-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    @media (max-width: 768px) {
+      .step-nav { padding: 10px 15px; gap: 8px; }
+      .step-btn { padding: 8px 14px; font-size: 0.9rem; }
+    }
 
     /* CONTENU PRINCIPAL */
-    .main-content { padding: 30px; max-width: 1100px; margin: 0 auto; }
+    .main-content { padding: 30px; max-width: 1200px; margin: 0 auto; }
     .card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:30px; overflow:hidden; }
     .ch { background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:white; padding:20px 24px; font-size:1.3rem; font-weight:700; display:flex; justify-content:space-between; align-items:center; }
     .cb { padding:28px; }
@@ -109,12 +111,11 @@
   <div style="font-weight:600;">Maintenance Étapes</div>
 </header>
 
-<div class="sidebar" id="sidebar">
-  <h3 style="margin-bottom:20px;color:#555;">Étapes</h3>
-  <div class="step-item active" onclick="goToStep(1)" id="sidebarStep1"><i class="fas fa-drone"></i> 1 — Drone</div>
-  <div class="step-item" onclick="goToStep(2)" id="sidebarStep2"><i class="fas fa-thermometer-half"></i> 2 — Relevé thermique</div>
-  <div class="step-item" onclick="goToStep(3)" id="sidebarStep3"><i class="fas fa-toolbox"></i> 3 — Coffret AC</div>
-  <div class="step-item" onclick="goToStep(4)" id="sidebarStep4"><i class="fas fa-flag-checkered"></i> 4 — Finalisation</div>
+<div class="step-nav" id="stepNav">
+  <button class="step-btn active" onclick="goToStep(1)">1 — Drone</button>
+  <button class="step-btn" onclick="goToStep(2)">2 — Relevé thermique</button>
+  <button class="step-btn" onclick="goToStep(3)">3 — Coffret AC</button>
+  <button class="step-btn" onclick="goToStep(4)">4 — Finalisation</button>
 </div>
 
 <div class="main-content" id="mainContent">
@@ -297,18 +298,18 @@
     document.getElementById('step1').classList.add('active');
     currentStep = 1;
     updateProgress();
-    updateSidebar();
+    updateStepNav();
   }
 
   function updateProgress() {
     document.getElementById('progressFill').style.width = (currentStep * 25) + '%';
   }
 
-  function updateSidebar() {
-    for (let i = 1; i <= 4; i++) {
-      const el = document.getElementById('sidebarStep' + i);
-      if (el) el.classList.toggle('active', i === currentStep);
-    }
+  function updateStepNav() {
+    const buttons = document.querySelectorAll('.step-btn');
+    buttons.forEach((btn, i) => {
+      btn.classList.toggle('active', (i+1) === currentStep);
+    });
   }
 
   // Navigation
@@ -319,7 +320,7 @@
     document.getElementById('step'+n).classList.add('active');
     currentStep = n;
     updateProgress();
-    updateSidebar();
+    updateStepNav();
     if (stepData[n]) document.getElementById('note'+n).value = stepData[n];
   }
 
@@ -330,7 +331,7 @@
     document.getElementById('step'+(from+1)).classList.add('active');
     currentStep = from + 1;
     updateProgress();
-    updateSidebar();
+    updateStepNav();
   }
 
   function prevStep() {
@@ -340,7 +341,7 @@
     document.getElementById('step'+(currentStep-1)).classList.add('active');
     currentStep--;
     updateProgress();
-    updateSidebar();
+    updateStepNav();
     if (stepData[currentStep]) document.getElementById('note'+currentStep).value = stepData[currentStep];
   }
 
