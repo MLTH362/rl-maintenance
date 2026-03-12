@@ -151,7 +151,7 @@
     </div>
   </div>
 
-  <!-- Conteneur des étapes -->
+  <!-- Conteneur étapes -->
   <div id="stepsContainer"></div>
 
   <!-- Boutons finaux -->
@@ -167,14 +167,7 @@
 </div>
 
 <script>
-  let currentStep = 0;
-  let technicianName = "";
-  let stepData = {};
-  let stepPhotos = {};
-  let isAdminMode = false;
-  const ADMIN_PASSWORD = "admin123";
-
-  // Clients avec dates et placeholders plans
+  // ================== BASE DE DONNÉES CLIENTS ==================
   let clients = JSON.parse(localStorage.getItem('clients')) || [
     {
       name: "Client A - 450 kWc",
@@ -200,8 +193,13 @@
   ];
 
   let currentClientIndex = -1;
+  let technicianName = "";
+  let stepData = {};
+  let stepPhotos = {};
+  let isAdminMode = false;
+  const ADMIN_PASSWORD = "admin123";
 
-  // Liste des étapes (correspond à tes notes)
+  // ================== LES ÉTAPES ==================
   const stepsList = [
     "1 — Drone thermique toiture",
     "2 — Caméra thermique onduleur AC+DC",
@@ -338,7 +336,7 @@
     const doc = new jsPDF();
     const client = clients[currentClientIndex] || { name: "Inconnu" };
 
-    // Couverture (comme ta photo)
+    // Page 1 - Couverture
     doc.setFillColor(240, 240, 240);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setFontSize(42);
@@ -351,7 +349,7 @@
 
     doc.addPage();
 
-    // Informations centrales (comme ta photo)
+    // Page 2 - Informations centrales
     doc.setFontSize(16);
     doc.text("Informations centrales :", 20, 30);
     doc.setFontSize(12);
@@ -376,7 +374,7 @@
 
     doc.addPage();
 
-    // Tableaux checklists (comme tes photos)
+    // Tableaux checklists
     doc.setFontSize(13);
     doc.text("Point de contrôles", 20, 30);
     doc.autoTable({
@@ -398,7 +396,7 @@
 
     doc.addPage();
 
-    // Tableau mesures DC (valeurs de ta photo)
+    // Tableau mesures DC
     doc.text("VERIFICATION DES MESURES ENTREES DC", 20, 30);
     doc.autoTable({
       startY: 40,
@@ -450,6 +448,7 @@
     setTimeout(() => t.remove(), 2800);
   }
 
+  // ================== INITIALISATION ==================
   window.onload = function() {
     createSteps();
     renderClientList();
