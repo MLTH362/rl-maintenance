@@ -115,7 +115,7 @@
       <label>Nom du technicien (obligatoire)</label>
       <input type="text" id="technicianName" placeholder="Ex: Jean Dupont" style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;margin-bottom:20px;">
 
-      <label>Client / Installation (base de données)</label>
+      <label>Client / Installation</label>
       <select id="clientSelect" onchange="loadClientData()" style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;font-size:1.1rem;">
         <option value="">Sélectionnez un client...</option>
       </select>
@@ -134,11 +134,11 @@
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0;">
-        <div><label>Date dernière maintenance (base)</label><input type="text" id="lastMaint" readonly style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;"></div>
+        <div><label>Date dernière maintenance</label><input type="text" id="lastMaint" readonly style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;"></div>
         <div><label>Date début intervention</label><input type="text" id="startDate" readonly style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;"></div>
       </div>
 
-      <label>Date prochaine maintenance (auto)</label>
+      <label>Date prochaine maintenance</label>
       <input type="text" id="nextMaint" readonly style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;background:#f0f8ff;">
 
       <button class="btn-big btn-ok" onclick="startMaintenance()" style="margin-top:20px;">
@@ -151,7 +151,7 @@
     </div>
   </div>
 
-  <!-- Conteneur étapes -->
+  <!-- Conteneur des étapes -->
   <div id="stepsContainer"></div>
 
   <!-- Boutons finaux -->
@@ -168,7 +168,7 @@
 
 <script>
   // ================== BASE DE DONNÉES CLIENTS ==================
-  let clients = JSON.parse(localStorage.getItem('clients')) || [
+  let clients = [
     {
       name: "Client A - 450 kWc",
       details: "Puissance : 450 kWc\nLocalisation : Région PACA\nType panneaux : Monocristallin 550W\nRemarques : Suivi annuel obligatoire",
@@ -213,6 +213,7 @@
 
   function createSteps() {
     const container = document.getElementById('stepsContainer');
+    container.innerHTML = '';
     stepsList.forEach((title, i) => {
       const stepNum = i + 1;
       const div = document.createElement('div');
@@ -246,67 +247,87 @@
     });
   }
 
-  function addPhoto(step) {
-    const input = document.getElementById('photo' + step);
-    const grid = document.getElementById('photos' + step);
-    Array.from(input.files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        if (!stepPhotos[step]) stepPhotos[step] = [];
-        stepPhotos[step].push(e.target.result);
-        renderPhotos(step);
-      };
-      reader.readAsDataURL(file);
+  function renderClientList() {
+    console.log("Rendu liste clients - nombre:", clients.length);
+    const select = document.getElementById('clientSelect');
+    select.innerHTML = '<option value="">Sélectionnez un client...</option>';
+
+    clients.forEach((client, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.text = client.name;
+      select.appendChild(opt);
     });
-  }
 
-  function renderPhotos(step) {
-    const grid = document.getElementById('photos' + step);
-    grid.innerHTML = '';
-    (stepPhotos[step] || []).forEach((src, i) => {
-      const div = document.createElement('div');
-      div.className = 'photo-preview';
-      div.innerHTML = `<img src="${src}"><button class="delete-btn" onclick="deletePhoto(${step},${i})">×</button>`;
-      grid.appendChild(div);
-    });
-  }
-
-  function deletePhoto(step, index) {
-    stepPhotos[step].splice(index, 1);
-    renderPhotos(step);
-  }
-
-  function toggleProcess(step) {
-    const chk = document.getElementById('processChk' + step);
-    const obs = document.getElementById('obs' + step);
-    if (chk.checked) {
-      obs.placeholder = "Aucune observation";
-    } else {
-      obs.placeholder = "Décrivez l'anomalie ou le problème...";
+    // Sélection automatique du premier pour tester
+    if (clients.length > 0) {
+      select.value = "0";
+      loadClientData();
     }
   }
 
-  function updateObsPreview(step) {
-    const ta = document.getElementById('obs' + step);
-    const prev = document.getElementById('obsPreview' + step);
-    prev.style.display = ta.value.trim() ? 'block' : 'none';
-    prev.innerHTML = ta.value.trim() || '';
+  function addNewClient() {
+    if (!isAdminMode) return toast("Mode Admin requis");
+    const name = document.getElementById('newClient').value.trim();
+    if (!name) return toast("Entrez un nom");
+    if (clients.some(c => c.name === name)) return toast("Client déjà existant");
+
+    clients.push({ name, details: "", lastMaint: "", wiringPlan: null, sitePlan: null });
+    saveClients();
+    renderClientList();
+    document.getElementById('newClient').value = "";
+    toast("Client ajouté");
   }
 
-  function nextStep(from) {
-    const obs = document.getElementById('obs' + from).value.trim();
-    const chk = document.getElementById('processChk' + from).checked;
-    if (!chk && !obs) return toast("Observation obligatoire si processus non effectué");
-    stepData[from] = { process: chk ? 'Oui' : 'Non', observation: obs || 'Aucune observation' };
-    document.getElementById('step' + from).classList.remove('active');
-    if (from < stepsList.length) document.getElementById('step' + (from + 1)).classList.add('active');
+  function saveClients() {
+    localStorage.setItem('clients', JSON.stringify(clients));
   }
 
-  function prevStep() {
-    if (currentStep <= 1) return;
-    document.getElementById('step' + currentStep).classList.remove('active');
-    document.getElementById('step' + (currentStep - 1)).classList.add('active');
-    currentStep--;
+  function loadClientData() {
+    const index = parseInt(document.getElementById('clientSelect').value);
+    if (isNaN(index)) {
+      document.getElementById('clientDetails').style.display = 'none';
+      return;
+    }
+    currentClientIndex = index;
+    const client = clients[index];
+    document.getElementById('clientDetails').style.display = 'block';
+    document.getElementById('installationDetails').value = client.details || "";
+
+    document.getElementById('lastMaint').value = client.lastMaint || "";
+    document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
+
+    if (client.lastMaint) {
+      const d = new Date(client.lastMaint.split('/').reverse().join('-'));
+      d.setFullYear(d.getFullYear() + 1);
+      document.getElementById('nextMaint').value = d.toLocaleDateString('fr-FR');
+    } else {
+      document.getElementById('nextMaint').value = "";
+    }
+
+    document.getElementById('wiringPreview').innerHTML = client.wiringPlan ? `<img src="${client.wiringPlan}" style="max-width:100%;border-radius:12px;">` : '<p style="color:#999;">Aucun plan de câblage</p>';
+    document.getElementById('sitePreview').innerHTML = client.sitePlan ? `<img src="${client.sitePlan}" style="max-width:100%;border-radius:12px;">` : '<p style="color:#999;">Aucun plan du site</p>';
+  }
+
+  function toggleAdminMode() {
+    const pass = prompt("Mot de passe Admin :");
+    if (pass === ADMIN_PASSWORD) {
+      isAdminMode = true;
+      document.getElementById('adminControls').style.display = 'block';
+      document.getElementById('btnAdmin').style.display = 'none';
+      document.getElementById('btnExitAdmin').style.display = 'inline-block';
+      toast("Mode Admin activé");
+    } else {
+      toast("Mot de passe incorrect");
+    }
+  }
+
+  function exitAdminMode() {
+    isAdminMode = false;
+    document.getElementById('adminControls').style.display = 'none';
+    document.getElementById('btnAdmin').style.display = 'inline-block';
+    document.getElementById('btnExitAdmin').style.display = 'none';
+    toast("Mode Admin désactivé");
   }
 
   function startMaintenance() {
@@ -330,132 +351,12 @@
     setTimeout(() => t.remove(), 2800);
   }
 
-  // ================== RAPPORT PDF (style très proche de tes photos) ==================
-  function generateReport() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const client = clients[currentClientIndex] || { name: "Inconnu" };
-
-    // Page 1 - Couverture
-    doc.setFillColor(240, 240, 240);
-    doc.rect(0, 0, 210, 297, 'F');
-    doc.setFontSize(42);
-    doc.setTextColor(0);
-    doc.text("R.L ENERGIE", 105, 80, {align: "center"});
-    doc.setFontSize(14);
-    doc.text("SPÉCIALISTE DU PHOTOVOLTAÏQUE", 105, 95, {align: "center"});
-    doc.setFontSize(28);
-    doc.text("RAPPORT DE MAINTENANCE", 105, 150, {align: "center"});
-
-    doc.addPage();
-
-    // Page 2 - Informations centrales
-    doc.setFontSize(16);
-    doc.text("Informations centrales :", 20, 30);
-    doc.setFontSize(12);
-    let y = 45;
-    doc.text(`Client : ${client.name}`, 20, y); y += 8;
-    doc.text(`Technicien : ${technicianName}`, 20, y); y += 8;
-    doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 20, y); y += 8;
-    doc.text("Puissance installée : 99,750 kWc (exemple)", 20, y); y += 8;
-    doc.text("Matériaux : Qcells QPEAK DUO - G6 / HUAWEI SUN2000 (exemple)", 20, y); y += 15;
-
-    // Plans
-    if (client.wiringPlan) {
-      doc.text("Plan de câblage :", 20, y); y += 8;
-      doc.addImage(client.wiringPlan, 'JPEG', 20, y, 170, 80);
-      y += 90;
-    }
-    if (client.sitePlan) {
-      doc.text("Plan du site :", 20, y); y += 8;
-      doc.addImage(client.sitePlan, 'JPEG', 20, y, 170, 80);
-      y += 90;
-    }
-
-    doc.addPage();
-
-    // Tableaux checklists
-    doc.setFontSize(13);
-    doc.text("Point de contrôles", 20, 30);
-    doc.autoTable({
-      startY: 40,
-      head: [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
-      body: [
-        ['état visuel logette extérieur', '✓', '', '', '', ''],
-        ['état visuel logette intérieur', '✓', '', '', '', ''],
-        ['état des câbles', '✓', '', '', '', ''],
-        ['vérification serrages', '✓', '', '', '', ''],
-        ['test différentiel', '✓', '', '', '', ''],
-        ['vérification paramétrage AGCP', '✓', '', '', '', ''],
-        ['nettoyage coffret AC', '✓', '', '', '', ''],
-        ['présence étiquettes', '✓', '', '', '', '']
-      ],
-      theme: 'grid',
-      styles: { fontSize: 10 }
-    });
-
-    doc.addPage();
-
-    // Tableau mesures DC
-    doc.text("VERIFICATION DES MESURES ENTREES DC", 20, 30);
-    doc.autoTable({
-      startY: 40,
-      head: [['Entrées', 'N° CHAINE', 'Nb de PV', 'Intensité Icc', 'Tension Uoc mesuré', 'Moyenne Uoc', 'Uoc Moyenne totale*Nb PV', 'Uoc mesuré']],
-      body: [
-        ['PV1', 'Chaîne 1', '19', '4,2', '743,7', '39,14', '746,79', '3,09'],
-        ['PV2', 'Chaîne 2', '19', '4,15', '743,7', '39,22', '746,79', '1,59'],
-        ['PV3', 'Chaîne 3', '19', '4,2', '745,2', '39,22', '746,79', '1,59'],
-        ['PV4', 'Chaîne 4', '19', '4,07', '745,1', '39,32', '746,79', '-0,31'],
-        ['PV5', 'Chaîne 5', '19', '4,15', '747,1', '39,32', '746,79', '-0,31'],
-        ['PV6', 'Chaîne 6', '19', '4,17', '745,3', '39,23', '746,79', '1,49'],
-        ['PV7', 'Chaîne 7', '19', '4,22', '745,3', '39,23', '746,79', '1,49'],
-        ['PV8', 'Chaîne 8', '19', '4,37', '746,9', '39,31', '746,79', '-0,11'],
-        ['PV9', 'Chaîne 9', '19', '4,37', '746,9', '39,31', '746,79', '-0,11'],
-        ['PV10', 'Chaîne 10', '19', '4,15', '746,9', '39,31', '746,79', '-0,11'],
-        ['PV11', 'Chaîne 11', '19', '4,17', '748,9', '39,42', '746,79', '-2,11'],
-        ['PV13', 'Chaîne 12', '19', '4,21', '749,3', '39,44', '707,48', '-1,72'],
-        ['PV15', 'Chaîne 13', '18', '4,17', '709,2', '39,40', '707,48', '-2,12'],
-        ['PV17', 'Chaîne 14', '18', '4,36', '709,7', '39,45', '668,18', '-2,52'],
-        ['PV19', 'Chaîne 15', '17', '4,31', '670,7', '39,45', '668,18', '2,52']
-      ],
-      theme: 'grid',
-      styles: { fontSize: 9 }
-    });
-
-    doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF généré (couverture + tableaux + observations + plans)");
-  }
-
-  function generateExcel() {
-    const data = [["Technicien", "Client", "Date", "Étape", "Processus", "Observation"]];
-    const client = clients[currentClientIndex] || { name: "Inconnu" };
-    for (let i = 1; i <= stepsList.length; i++) {
-      const d = stepData[i] || { process: 'Non', observation: 'Aucune' };
-      data.push([technicianName, client.name, document.getElementById('startDate').value, "Étape " + i, d.process, d.observation]);
-    }
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Maintenance");
-    XLSX.writeFile(wb, `Maintenance_${client.name.replace(/ /g,'_')}.xlsx`);
-    toast("Excel modifiable généré");
-  }
-
-  function toast(msg) {
-    const t = document.createElement('div');
-    t.className = 'toast-msg';
-    t.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
-    document.getElementById('toast').appendChild(t);
-    setTimeout(() => t.remove(), 2800);
-  }
-
   // ================== INITIALISATION ==================
   window.onload = function() {
-    createSteps();
+    console.log("Démarrage application - clients chargés :", clients);
     renderClientList();
+    createSteps();
   };
 </script>
 </body>
 </html>
-
-
-
