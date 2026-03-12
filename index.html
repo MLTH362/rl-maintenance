@@ -19,17 +19,17 @@
       --danger: #ff3b5c;
       --bg: #f8fbff;
       --card: #ffffff;
-      --radius: 20px;
-      --shadow: 0 10px 30px rgba(0,0,0,0.08);
+      --radius: 16px;
+      --shadow: 0 8px 24px rgba(0,0,0,0.08);
     }
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
-    body { background:var(--bg); color:#2d3436; line-height:1.6; min-height:100vh; }
+    body { background:var(--bg); color:#2d3436; min-height:100vh; }
 
     /* HEADER */
     header {
       background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white;
-      padding: 18px 30px;
+      padding: 16px 30px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -38,66 +38,62 @@
       z-index: 1000;
       box-shadow: var(--shadow);
     }
-    .logo { font-weight:900; font-size:1.4rem; }
+    .logo { font-weight:800; font-size:1.4rem; }
     .progress-bar { background:rgba(255,255,255,0.3); height:6px; border-radius:10px; flex:1; margin:0 30px; }
     .progress-fill { background:white; height:100%; border-radius:10px; width:25%; transition:width 0.4s; }
-    .hamburger { font-size:1.8rem; cursor:pointer; display:none; }
-    @media (max-width: 1023px) { .hamburger { display:block; } }
 
-    /* SIDEBAR */
+    /* SIDEBAR (PC) */
     .sidebar {
-      width: 280px;
+      width: 260px;
       background: white;
       box-shadow: var(--shadow);
-      padding: 30px 20px;
+      padding: 20px;
       height: calc(100vh - 76px);
       position: fixed;
-      left: -280px;
+      left: 0;
       top: 76px;
-      transition: left 0.3s ease;
-      z-index: 999;
       overflow-y: auto;
+      display: none;
+      z-index: 999;
     }
-    .sidebar.open { left: 0; }
     @media (min-width: 1024px) {
-      .sidebar { left: 0; position: fixed; }
-      .main-content { margin-left: 280px; }
-      .hamburger { display:none; }
+      .sidebar { display: block; }
+      .main-content { margin-left: 260px; padding-left: 30px; }
     }
     .step-item {
-      padding: 14px 20px;
-      border-radius: 14px;
-      margin-bottom: 8px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 6px;
       cursor: pointer;
       transition: all 0.3s;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       font-weight: 500;
-      color: #555;
+      color: #444;
     }
     .step-item:hover { background: #f0f8ff; }
     .step-item.active { background: var(--primary); color: white; }
 
-    /* CONTENU */
-    .main-content { padding: 30px; max-width: 1200px; margin: 0 auto; transition: margin-left 0.3s; }
+    /* CONTENU PRINCIPAL */
+    .main-content { padding: 30px; max-width: 1100px; margin: 0 auto; }
     .card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:30px; overflow:hidden; }
-    .ch { background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:white; padding:22px 28px; font-size:1.35rem; font-weight:700; display:flex; justify-content:space-between; align-items:center; }
-    .cb { padding:32px; }
+    .ch { background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:white; padding:20px 24px; font-size:1.3rem; font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+    .cb { padding:28px; }
 
-    /* Mobile/tablette */
+    /* Mobile/tablette - blocs plein écran */
     .block { display:none; min-height:88vh; }
     .block.active { display:block; }
     @media (min-width:1024px) { .block { min-height:auto; display:block; } }
 
-    .btn-big { padding:16px 24px; border:none; border-radius:14px; font-size:1.15rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 8px 20px rgba(0,0,0,0.12); transition:all .3s; width:100%; }
+    .btn-big { padding:16px 24px; border:none; border-radius:14px; font-size:1.1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 6px 16px rgba(0,0,0,0.1); transition:all .3s; width:100%; }
     .btn-ok { background:var(--success); color:#000; }
     .btn-prev { background:#555; color:white; }
 
     .attachment-item { background:#f8f9fa; border:1px solid #e0e0e0; border-radius:12px; padding:12px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
-    .delete-btn { background:var(--danger); color:white; width:32px; height:32px; border-radius:50%; border:none; font-size:1.4rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .delete-btn { background:var(--danger); color:white; width:28px; height:28px; border-radius:50%; border:none; font-size:1.3rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 
-    .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:16px; margin:16px 0; }
+    .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px; margin:16px 0; }
     .photo-preview { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:12px; border:2px solid #eee; position:relative; }
 
     #toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); z-index:9999; }
@@ -108,7 +104,6 @@
 <body>
 
 <header>
-  <i class="fas fa-bars hamburger" onclick="toggleSidebar()"></i>
   <div class="logo">R.L ENERGIE</div>
   <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
   <div style="font-weight:600;">Maintenance Étapes</div>
@@ -176,7 +171,57 @@
     </div>
   </div>
 
-  <!-- Étape 2, 3 identiques à la version précédente -->
+  <!-- Étape 2 -->
+  <div id="step2" class="card block">
+    <div class="ch">
+      Étape 2 — Relevé thermique
+      <select id="stepSelector2" onchange="goToStep(this.value)">
+      </select>
+    </div>
+    <div class="cb">
+      <label>Photos thermique</label>
+      <input type="file" id="photo2" accept="image/*" onchange="addPhoto(2)" multiple style="padding:12px;">
+      <div class="photo-grid" id="photos2"></div>
+      <div class="annotation">
+        <label>Annotation / Anomalie <span style="color:red">*</span></label>
+        <textarea id="note2" placeholder="Décrivez ici..."></textarea>
+      </div>
+      <div class="nav-row">
+        <button onclick="prevStep()" class="btn-big btn-prev">
+          <i class="fas fa-arrow-left"></i> Précédent
+        </button>
+        <button class="btn-big btn-ok" onclick="nextStep(2)">
+          <i class="fas fa-arrow-right"></i> Suivant
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Étape 3 -->
+  <div id="step3" class="card block">
+    <div class="ch">
+      Étape 3 — Coffret AC + Triphasé
+      <select id="stepSelector3" onchange="goToStep(this.value)">
+      </select>
+    </div>
+    <div class="cb">
+      <label>Photos coffret</label>
+      <input type="file" id="photo3" accept="image/*" onchange="addPhoto(3)" multiple style="padding:12px;">
+      <div class="photo-grid" id="photos3"></div>
+      <div class="annotation">
+        <label>Annotation / Anomalie <span style="color:red">*</span></label>
+        <textarea id="note3" placeholder="Décrivez ici..."></textarea>
+      </div>
+      <div class="nav-row">
+        <button onclick="prevStep()" class="btn-big btn-prev">
+          <i class="fas fa-arrow-left"></i> Précédent
+        </button>
+        <button class="btn-big btn-ok" onclick="nextStep(3)">
+          <i class="fas fa-arrow-right"></i> Suivant
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Étape 4 -->
   <div id="step4" class="card block">
@@ -228,7 +273,7 @@
   let piecesJointes = [];
   let stepData = {};
 
-  // Dates auto (inchangé)
+  // Dates auto
   const today = new Date();
   document.getElementById('startDate').value = today.toLocaleDateString('fr-FR');
 
@@ -266,12 +311,7 @@
     }
   }
 
-  // Hamburger pour ouvrir/fermer sidebar sur mobile
-  function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-  }
-
-  // Navigation (inchangée)
+  // Navigation
   function goToStep(n) {
     n = parseInt(n);
     if (n > currentStep) return toast("Termine l'étape actuelle avant de sauter");
@@ -306,7 +346,6 @@
 
   // Photos, pièces jointes, generateReport, etc. (inchangés, copie les fonctions de la version précédente)
 
-  // Toast (inchangé)
   function toast(msg) {
     const t = document.createElement('div');
     t.className = 'toast-msg';
