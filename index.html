@@ -167,7 +167,7 @@
 </div>
 
 <script>
-  // ================== BASE DE DONNÉES CLIENTS ==================
+  // ================== BASE DE DONNÉES CLIENTS (FORCÉE AU CHARGEMENT) ==================
   let clients = [
     {
       name: "Client A - 450 kWc",
@@ -248,8 +248,12 @@
   }
 
   function renderClientList() {
-    console.log("Rendu liste clients - nombre:", clients.length);
+    console.log("Rendu liste clients - nombre clients trouvés :", clients.length);
     const select = document.getElementById('clientSelect');
+    if (!select) {
+      console.error("Element #clientSelect non trouvé !");
+      return;
+    }
     select.innerHTML = '<option value="">Sélectionnez un client...</option>';
 
     clients.forEach((client, i) => {
@@ -257,9 +261,10 @@
       opt.value = i;
       opt.text = client.name;
       select.appendChild(opt);
+      console.log("Ajout client :", client.name);
     });
 
-    // Sélection automatique du premier pour tester
+    // Sélection auto du premier client pour tester
     if (clients.length > 0) {
       select.value = "0";
       loadClientData();
@@ -269,8 +274,8 @@
   function addNewClient() {
     if (!isAdminMode) return toast("Mode Admin requis");
     const name = document.getElementById('newClient').value.trim();
-    if (!name) return toast("Entrez un nom");
-    if (clients.some(c => c.name === name)) return toast("Client déjà existant");
+    if (!name) return toast("Entrez un nom de client");
+    if (clients.some(c => c.name === name)) return toast("Ce client existe déjà");
 
     clients.push({ name, details: "", lastMaint: "", wiringPlan: null, sitePlan: null });
     saveClients();
@@ -281,10 +286,12 @@
 
   function saveClients() {
     localStorage.setItem('clients', JSON.stringify(clients));
+    console.log("Clients sauvegardés dans localStorage :", clients);
   }
 
   function loadClientData() {
     const index = parseInt(document.getElementById('clientSelect').value);
+    console.log("Chargement client index :", index);
     if (isNaN(index)) {
       document.getElementById('clientDetails').style.display = 'none';
       return;
@@ -353,10 +360,12 @@
 
   // ================== INITIALISATION ==================
   window.onload = function() {
-    console.log("Démarrage application - clients chargés :", clients);
+    console.log("=== APPLICATION CHARGÉE ===");
+    console.log("Clients disponibles :", clients);
     renderClientList();
     createSteps();
   };
 </script>
 </body>
 </html>
+
