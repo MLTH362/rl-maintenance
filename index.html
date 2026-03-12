@@ -86,6 +86,8 @@
     #toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); z-index:9999; }
     .toast-msg { background:var(--success); color:#000; padding:14px 28px; border-radius:50px; box-shadow:var(--shadow); animation:toast 3s forwards; }
     @keyframes toast { 0% { opacity:0; transform:translate(-50%,40px) } 15% { opacity:1; transform:translate(-50%,0) } 85% { opacity:1 } 100% { opacity:0 } }
+
+    select, input, textarea { box-sizing:border-box; }
   </style>
 </head>
 <body>
@@ -121,14 +123,19 @@
       </select>
 
       <div id="clientDetails" style="margin-top:24px;display:none;">
-        <label>Détails de l’installation</label>
-        <textarea id="installationDetails" style="width:100%;height:110px;padding:16px;border-radius:12px;border:2px solid #e6eef8;"></textarea>
+        <label>Détails de l’installation <span id="editDetailsBtn" style="display:none;color:var(--primary);cursor:pointer;" onclick="enableEditDetails()">✏️ Modifier</span></label>
+        <textarea id="installationDetails" readonly style="width:100%;height:110px;padding:16px;border-radius:12px;border:2px solid #e6eef8;"></textarea>
 
-        <label style="margin-top:20px;">Plan de câblage (upload une fois, reste dans la base)</label>
+        <label style="margin-top:20px;">Anciennes dates de maintenance</label>
+        <select id="oldDatesSelect" style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;font-size:1.1rem;">
+          <option value="">Choisir une ancienne date...</option>
+        </select>
+
+        <label style="margin-top:20px;">Plan de câblage</label>
         <input type="file" id="wiringPlanInput" accept="image/*" onchange="uploadPlan('wiring')" style="padding:12px;">
         <div id="wiringPreview" class="plan-preview"></div>
 
-        <label style="margin-top:20px;">Plan du site (upload une fois, reste dans la base)</label>
+        <label style="margin-top:20px;">Plan du site</label>
         <input type="file" id="sitePlanInput" accept="image/*" onchange="uploadPlan('site')" style="padding:12px;">
         <div id="sitePreview" class="plan-preview"></div>
       </div>
@@ -167,12 +174,13 @@
 </div>
 
 <script>
-  // ================== BASE DE DONNÉES CLIENTS (FORCÉE AU CHARGEMENT) ==================
+  // ================== BASE DE DONNÉES CLIENTS ==================
   let clients = [
     {
       name: "Client A - 450 kWc",
       details: "Puissance : 450 kWc\nLocalisation : Région PACA\nType panneaux : Monocristallin 550W\nRemarques : Suivi annuel obligatoire",
       lastMaint: "15/03/2025",
+      oldDates: ["15/03/2025", "10/09/2024", "05/04/2024"],
       wiringPlan: null,
       sitePlan: null
     },
@@ -180,6 +188,7 @@
       name: "Client B - 120 kWc",
       details: "Puissance : 120 kWc\nLocalisation : Île-de-France\nType panneaux : Polycristallin 400W\nRemarques : Problème de surchauffe signalé",
       lastMaint: "08/01/2026",
+      oldDates: ["08/01/2026", "12/06/2025", "20/11/2024"],
       wiringPlan: null,
       sitePlan: null
     },
@@ -187,6 +196,7 @@
       name: "Client C - 800 kWc",
       details: "Puissance : 800 kWc\nLocalisation : Occitanie\nType panneaux : Bifacial 600W\nRemarques : Installation récente 2024",
       lastMaint: "22/11/2025",
+      oldDates: ["22/11/2025", "15/05/2025", "03/10/2024"],
       wiringPlan: null,
       sitePlan: null
     }
@@ -248,12 +258,7 @@
   }
 
   function renderClientList() {
-    console.log("Rendu liste clients - nombre clients trouvés :", clients.length);
     const select = document.getElementById('clientSelect');
-    if (!select) {
-      console.error("Element #clientSelect non trouvé !");
-      return;
-    }
     select.innerHTML = '<option value="">Sélectionnez un client...</option>';
 
     clients.forEach((client, i) => {
@@ -261,14 +266,7 @@
       opt.value = i;
       opt.text = client.name;
       select.appendChild(opt);
-      console.log("Ajout client :", client.name);
     });
-
-    // Sélection auto du premier client pour tester
-    if (clients.length > 0) {
-      select.value = "0";
-      loadClientData();
-    }
   }
 
   function addNewClient() {
@@ -277,7 +275,14 @@
     if (!name) return toast("Entrez un nom de client");
     if (clients.some(c => c.name === name)) return toast("Ce client existe déjà");
 
-    clients.push({ name, details: "", lastMaint: "", wiringPlan: null, sitePlan: null });
+    clients.push({
+      name,
+      details: "",
+      lastMaint: "",
+      oldDates: [],
+      wiringPlan: null,
+      sitePlan: null
+    });
     saveClients();
     renderClientList();
     document.getElementById('newClient').value = "";
@@ -286,20 +291,41 @@
 
   function saveClients() {
     localStorage.setItem('clients', JSON.stringify(clients));
-    console.log("Clients sauvegardés dans localStorage :", clients);
   }
 
   function loadClientData() {
     const index = parseInt(document.getElementById('clientSelect').value);
-    console.log("Chargement client index :", index);
     if (isNaN(index)) {
       document.getElementById('clientDetails').style.display = 'none';
+      document.getElementById('editDetailsBtn').style.display = 'none';
+      document.getElementById('installationDetails').setAttribute('readonly', true);
       return;
     }
+
     currentClientIndex = index;
     const client = clients[index];
     document.getElementById('clientDetails').style.display = 'block';
-    document.getElementById('installationDetails').value = client.details || "";
+
+    // Détails en lecture seule ou modifiable selon mode admin
+    const detailsTextarea = document.getElementById('installationDetails');
+    detailsTextarea.value = client.details || "";
+    if (isAdminMode) {
+      detailsTextarea.removeAttribute('readonly');
+      document.getElementById('editDetailsBtn').style.display = 'inline';
+    } else {
+      detailsTextarea.setAttribute('readonly', true);
+      document.getElementById('editDetailsBtn').style.display = 'none';
+    }
+
+    // Anciennes dates dans menu déroulant
+    const oldDatesSelect = document.getElementById('oldDatesSelect');
+    oldDatesSelect.innerHTML = '<option value="">Choisir une ancienne date...</option>';
+    (client.oldDates || []).forEach(date => {
+      const opt = document.createElement('option');
+      opt.value = date;
+      opt.text = date;
+      oldDatesSelect.appendChild(opt);
+    });
 
     document.getElementById('lastMaint').value = client.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
@@ -316,6 +342,26 @@
     document.getElementById('sitePreview').innerHTML = client.sitePlan ? `<img src="${client.sitePlan}" style="max-width:100%;border-radius:12px;">` : '<p style="color:#999;">Aucun plan du site</p>';
   }
 
+  function enableEditDetails() {
+    if (!isAdminMode) return toast("Mode Admin requis pour modifier");
+    document.getElementById('installationDetails').removeAttribute('readonly');
+    toast("Édition activée");
+  }
+
+  function uploadPlan(type) {
+    const input = document.getElementById(type + 'PlanInput');
+    const file = input.files[0];
+    if (!file || currentClientIndex === -1) return toast("Sélectionne un client d'abord");
+    const reader = new FileReader();
+    reader.onload = e => {
+      clients[currentClientIndex][type + 'Plan'] = e.target.result;
+      saveClients();
+      loadClientData();
+      toast("Plan " + type + " sauvegardé");
+    };
+    reader.readAsDataURL(file);
+  }
+
   function toggleAdminMode() {
     const pass = prompt("Mot de passe Admin :");
     if (pass === ADMIN_PASSWORD) {
@@ -323,6 +369,7 @@
       document.getElementById('adminControls').style.display = 'block';
       document.getElementById('btnAdmin').style.display = 'none';
       document.getElementById('btnExitAdmin').style.display = 'inline-block';
+      loadClientData(); // refresh editability
       toast("Mode Admin activé");
     } else {
       toast("Mot de passe incorrect");
@@ -334,6 +381,7 @@
     document.getElementById('adminControls').style.display = 'none';
     document.getElementById('btnAdmin').style.display = 'inline-block';
     document.getElementById('btnExitAdmin').style.display = 'none';
+    loadClientData(); // refresh readonly
     toast("Mode Admin désactivé");
   }
 
@@ -360,8 +408,6 @@
 
   // ================== INITIALISATION ==================
   window.onload = function() {
-    console.log("=== APPLICATION CHARGÉE ===");
-    console.log("Clients disponibles :", clients);
     renderClientList();
     createSteps();
   };
