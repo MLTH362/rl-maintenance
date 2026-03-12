@@ -53,7 +53,18 @@
     .btn-admin { background:#555; color:white; padding:8px 16px; border-radius:8px; font-size:0.95rem; }
     .btn-exit-admin { background:#888; color:white; padding:8px 16px; border-radius:8px; font-size:0.95rem; }
 
-    /* Observation améliorée */
+    /* Observation rectangle qui apparaît seulement si rempli */
+    .obs-preview {
+      background:#f0f8ff;
+      border:3px solid var(--primary);
+      border-radius:12px;
+      padding:18px;
+      margin-top:16px;
+      display:none;
+      font-style:italic;
+      color:#0066aa;
+    }
+
     .observation {
       background:#f8f9fa;
       border:1px solid #e0e0e0;
@@ -61,39 +72,16 @@
       padding:20px;
       margin-top:24px;
     }
-    .observation label {
-      font-weight:700;
-      color:#333;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      margin-bottom:8px;
-    }
-    .observation textarea {
-      width:100%;
-      height:140px;
-      padding:16px;
-      border:2px solid #ddd;
-      border-radius:12px;
-      font-size:1rem;
-      resize:vertical;
-    }
-    .observation textarea:focus {
-      border-color:var(--primary);
-      box-shadow:0 0 0 3px rgba(0,170,255,0.15);
-    }
-    .char-count { text-align:right; font-size:0.85rem; color:#777; margin-top:6px; }
+    .observation label { font-weight:700; color:#333; display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .observation textarea { width:100%; height:140px; padding:16px; border:2px solid #ddd; border-radius:12px; font-size:1rem; resize:vertical; }
+    .observation textarea:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(0,170,255,0.15); }
 
-    .client-list { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
-    .client-tag { background:#e6eef8; padding:8px 16px; border-radius:30px; display:flex; align-items:center; gap:8px; }
-    .client-tag button { background:none; border:none; color:var(--danger); font-size:1.2rem; cursor:pointer; }
-
-    .attachment-item { background:#f8f9fa; border:1px solid #e0e0e0; border-radius:12px; padding:14px; margin-bottom:12px; display:flex; align-items:center; gap:12px; }
-    .attachment-item i { font-size:1.6rem; color:var(--primary); }
-    .delete-btn { background:var(--danger); color:white; width:32px; height:32px; border-radius:50%; border:none; font-size:1.4rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .plan-preview { margin:12px 0; }
+    .plan-preview img { max-width:100%; border-radius:12px; border:2px solid #ddd; }
 
     .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px; margin:16px 0; }
     .photo-preview { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:12px; border:2px solid #eee; position:relative; }
+    .photo-preview .delete-btn { position:absolute; top:8px; right:8px; background:var(--danger); color:white; width:28px; height:28px; border-radius:50%; border:none; cursor:pointer; }
 
     .nav-row { display:flex; justify-content:space-between; align-items:center; margin-top:40px; }
 
@@ -114,9 +102,9 @@
 
 <div class="main-content">
 
-  <!-- Bloc client -->
+  <!-- Bloc client + technicien + plans (base de données clients) -->
   <div id="infoBlock" class="card block active">
-    <div class="ch">Informations client & dates</div>
+    <div class="ch">Informations du site + technicien</div>
     <div class="cb">
       <div id="adminControls" style="display:none;">
         <label>Ajouter un nouveau client</label>
@@ -126,7 +114,10 @@
         </div>
       </div>
 
-      <label>Client sélectionné</label>
+      <label>Nom du technicien</label>
+      <input type="text" id="technicianName" placeholder="Ex: Jean Dupont" style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;margin-bottom:20px;">
+
+      <label>Client sélectionné (menu déroulant)</label>
       <select id="clientSelect" onchange="loadClientData()" style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;font-size:1.1rem;">
         <option value="">Sélectionnez un client...</option>
       </select>
@@ -134,10 +125,19 @@
       <div id="clientDetails" style="margin-top:24px;display:none;">
         <label>Détails de l’installation</label>
         <textarea id="installationDetails" style="width:100%;height:110px;padding:16px;border-radius:12px;border:2px solid #e6eef8;"></textarea>
+
+        <!-- Plans du site (sauvegardés dans la base de données) -->
+        <label style="margin-top:20px;">Plan de câblage (upload une fois, reste dans la base)</label>
+        <input type="file" id="wiringPlanInput" accept="image/*" onchange="uploadPlan('wiring')" style="padding:12px;">
+        <div id="wiringPreview" class="plan-preview"></div>
+
+        <label style="margin-top:20px;">Plan du site (upload une fois, reste dans la base)</label>
+        <input type="file" id="sitePlanInput" accept="image/*" onchange="uploadPlan('site')" style="padding:12px;">
+        <div id="sitePreview" class="plan-preview"></div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0;">
-        <div><label>Date dernière maintenance</label><input type="text" id="lastMaint" readonly style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;"></div>
+        <div><label>Date dernière maintenance (base de données)</label><input type="text" id="lastMaint" readonly style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;"></div>
         <div><label>Date début intervention</label><input type="text" id="startDate" readonly style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;"></div>
       </div>
 
@@ -154,27 +154,24 @@
     </div>
   </div>
 
-  <!-- Étape 1 -->
+  <!-- Étape 1 (exemple complet) -->
   <div id="step1" class="card block">
     <div class="ch">Étape 1 — Drone thermique toiture</div>
     <div class="cb">
-      <p style="color:#444;margin-bottom:16px;">Prendre photos drone thermique de la toiture → Rapport : Partie toiture</p>
+      <p style="color:#444;margin-bottom:16px;">Prendre photos drone thermique de la toiture</p>
 
-      <label>Photos drone thermique</label>
+      <label>Photos</label>
       <input type="file" id="photo1" accept="image/*" onchange="addPhoto(1)" multiple style="padding:12px;">
       <div class="photo-grid" id="photos1"></div>
 
-      <div class="process-row">
-        <label>Processus effectué ?</label>
-        <div class="yes-no">
-          <input type="radio" name="process1" value="oui" checked onchange="updateObservation(1)"> Oui
-          <input type="radio" name="process1" value="non" onchange="updateObservation(1)"> Non
-        </div>
-      </div>
+      <label style="margin-top:20px;">Processus effectué ?</label>
+      <input type="checkbox" id="processChk1" onchange="toggleProcess(1)" style="width:24px;height:24px;"> <span style="font-size:1.1rem;">Oui</span>
 
-      <div class="observation">
+      <div class="observation" id="obsBlock1">
         <label><i class="fas fa-comment-dots"></i> Observation</label>
-        <textarea id="obs1" placeholder="Exemple : Aucune anomalie détectée..."></textarea>
+        <textarea id="obs1" placeholder="Si non effectué, décrivez l'anomalie..." oninput="updateObsPreview(1)"></textarea>
+        <!-- Rectangle qui apparaît seulement si observation remplie -->
+        <div id="obsPreview1" class="obs-preview"></div>
       </div>
 
       <div class="nav-row">
@@ -184,15 +181,38 @@
     </div>
   </div>
 
-  <!-- Étape 2, 3, 4 (identiques, copie le pattern) -->
-  <!-- Pour gagner de la place, je mets seulement l'étape 1 ici. Tu peux copier le bloc pour les autres étapes. -->
+  <!-- Étape 2 (même structure) -->
+  <div id="step2" class="card block">
+    <div class="ch">Étape 2 — Caméra thermique onduleur</div>
+    <div class="cb">
+      <p style="color:#444;margin-bottom:16px;">Prendre photos caméra thermique onduleur</p>
 
-  <!-- Bouton final -->
+      <label>Photos</label>
+      <input type="file" id="photo2" accept="image/*" onchange="addPhoto(2)" multiple style="padding:12px;">
+      <div class="photo-grid" id="photos2"></div>
+
+      <label style="margin-top:20px;">Processus effectué ?</label>
+      <input type="checkbox" id="processChk2" onchange="toggleProcess(2)" style="width:24px;height:24px;"> <span style="font-size:1.1rem;">Oui</span>
+
+      <div class="observation" id="obsBlock2">
+        <label><i class="fas fa-comment-dots"></i> Observation</label>
+        <textarea id="obs2" placeholder="Si non effectué, décrivez l'anomalie..." oninput="updateObsPreview(2)"></textarea>
+        <div id="obsPreview2" class="obs-preview"></div>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-big btn-prev" onclick="prevStep()">Précédent</button>
+        <button class="btn-big btn-ok" onclick="nextStep(2)">Suivant</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boutons finaux -->
   <div style="margin-top:40px;text-align:center;">
     <button class="btn-big btn-ok" onclick="generateReport()">
       <i class="fas fa-file-pdf"></i> Générer le rapport PDF
     </button>
-    <button class="btn-big btn-excel" onclick="generateExcel()" style="margin-left:20px;">
+    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:20px;" onclick="generateExcel()">
       <i class="fas fa-file-excel"></i> Exporter Excel modifiable
     </button>
   </div>
@@ -201,11 +221,30 @@
 
 <script>
   let currentStep = 0;
-  let stepData = {};
+  let technicianName = "";
+  let stepPhotos = {1:[], 2:[]}; // photos par étape
   let clients = JSON.parse(localStorage.getItem('clients')) || [
-    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA\nType panneaux : Monocristallin 550W", lastMaint: "15/03/2025" },
-    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France\nType panneaux : Polycristallin 400W", lastMaint: "08/01/2026" },
-    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie\nType panneaux : Bifacial 600W", lastMaint: "22/11/2025" }
+    { 
+      name: "Client A - 450 kWc", 
+      details: "Puissance : 450 kWc\nLocalisation : Région PACA\nType panneaux : Monocristallin 550W", 
+      lastMaint: "15/03/2025",
+      wiringPlan: null,
+      sitePlan: null
+    },
+    { 
+      name: "Client B - 120 kWc", 
+      details: "Puissance : 120 kWc\nLocalisation : Île-de-France\nType panneaux : Polycristallin 400W", 
+      lastMaint: "08/01/2026",
+      wiringPlan: null,
+      sitePlan: null
+    },
+    { 
+      name: "Client C - 800 kWc", 
+      details: "Puissance : 800 kWc\nLocalisation : Occitanie\nType panneaux : Bifacial 600W", 
+      lastMaint: "22/11/2025",
+      wiringPlan: null,
+      sitePlan: null
+    }
   ];
 
   let currentClientIndex = -1;
@@ -213,9 +252,71 @@
   const ADMIN_PASSWORD = "admin123";
 
   function saveClients() { localStorage.setItem('clients', JSON.stringify(clients)); }
-  function renderClientList() { /* même code */ }
-  function addNewClient() { /* même code */ }
-  function loadClientData() { /* même code avec dates auto */ }
+
+  function renderClientList() {
+    const select = document.getElementById('clientSelect');
+    select.innerHTML = '<option value="">Sélectionnez un client...</option>';
+    clients.forEach((c, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.text = c.name;
+      select.appendChild(opt);
+    });
+  }
+
+  function addNewClient() {
+    if (!isAdminMode) return toast("Mode Admin requis");
+    const name = document.getElementById('newClient').value.trim();
+    if (!name) return toast("Entrez un nom");
+    if (clients.some(c => c.name === name)) return toast("Client déjà existant");
+    clients.push({ name, details: "", lastMaint: "", wiringPlan: null, sitePlan: null });
+    saveClients();
+    renderClientList();
+    document.getElementById('newClient').value = "";
+    toast("Client ajouté");
+  }
+
+  function uploadPlan(type) {
+    const input = document.getElementById(type + 'PlanInput');
+    const file = input.files[0];
+    if (!file || currentClientIndex === -1) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      clients[currentClientIndex][type + 'Plan'] = e.target.result;
+      saveClients();
+      loadClientData(); // refresh previews
+      toast("Plan " + type + " sauvegardé dans la base");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function loadClientData() {
+    const index = parseInt(document.getElementById('clientSelect').value);
+    if (isNaN(index)) {
+      document.getElementById('clientDetails').style.display = 'none';
+      return;
+    }
+    currentClientIndex = index;
+    const client = clients[index];
+    document.getElementById('clientDetails').style.display = 'block';
+    document.getElementById('installationDetails').value = client.details || "";
+
+    document.getElementById('lastMaint').value = client.lastMaint || "";
+    document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
+
+    if (client.lastMaint) {
+      const d = new Date(client.lastMaint.split('/').reverse().join('-'));
+      d.setFullYear(d.getFullYear() + 1);
+      document.getElementById('nextMaint').value = d.toLocaleDateString('fr-FR');
+    }
+
+    // Prévisualisation des plans
+    const wiringDiv = document.getElementById('wiringPreview');
+    wiringDiv.innerHTML = client.wiringPlan ? `<img src="${client.wiringPlan}" style="max-width:100%;">` : '<p style="color:#999;">Aucun plan de câblage enregistré</p>';
+
+    const siteDiv = document.getElementById('sitePreview');
+    siteDiv.innerHTML = client.sitePlan ? `<img src="${client.sitePlan}" style="max-width:100%;">` : '<p style="color:#999;">Aucun plan du site enregistré</p>';
+  }
 
   function toggleAdminMode() {
     const pass = prompt("Mot de passe Admin :");
@@ -239,40 +340,139 @@
   }
 
   function startMaintenance() {
+    technicianName = document.getElementById('technicianName').value.trim();
+    if (!technicianName) return toast("Entrez le nom du technicien");
     if (!document.getElementById('clientSelect').value) return toast("Sélectionne un client");
     document.getElementById('infoBlock').classList.remove('active');
     document.getElementById('step1').classList.add('active');
     currentStep = 1;
   }
 
+  function addPhoto(step) {
+    const input = document.getElementById('photo' + step);
+    const grid = document.getElementById('photos' + step);
+    Array.from(input.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        stepPhotos[step].push(e.target.result);
+        renderPhotos(step);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderPhotos(step) {
+    const grid = document.getElementById('photos' + step);
+    grid.innerHTML = '';
+    stepPhotos[step].forEach((src, i) => {
+      const div = document.createElement('div');
+      div.className = 'photo-preview';
+      div.innerHTML = `<img src="${src}"><button class="delete-btn" onclick="deletePhoto(${step},${i})">×</button>`;
+      grid.appendChild(div);
+    });
+  }
+
+  function deletePhoto(step, index) {
+    stepPhotos[step].splice(index, 1);
+    renderPhotos(step);
+  }
+
+  function toggleProcess(step) {
+    const chk = document.getElementById('processChk' + step);
+    const obsBlock = document.getElementById('obsBlock' + step);
+    if (chk.checked) {
+      obsBlock.style.opacity = "0.6";
+    } else {
+      obsBlock.style.opacity = "1";
+    }
+  }
+
+  function updateObsPreview(step) {
+    const textarea = document.getElementById('obs' + step);
+    const preview = document.getElementById('obsPreview' + step);
+    if (textarea.value.trim()) {
+      preview.style.display = 'block';
+      preview.innerHTML = `<strong>Observation enregistrée :</strong><br>${textarea.value}`;
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
   function nextStep(from) {
-    const obs = document.getElementById('obs'+from);
-    if (!obs.value.trim()) return toast("Remplis l'observation");
-    stepData[from] = obs.value;
-    document.getElementById('step'+from).classList.remove('active');
-    document.getElementById('step'+(from+1)).classList.add('active');
+    const obs = document.getElementById('obs' + from).value.trim();
+    if (!obs && !document.getElementById('processChk' + from).checked) {
+      return toast("Observation obligatoire si processus non effectué");
+    }
+    document.getElementById('step' + from).classList.remove('active');
+    document.getElementById('step' + (from + 1)).classList.add('active');
     currentStep = from + 1;
   }
 
   function prevStep() {
-    if (currentStep <= 1) return toast("Retour impossible");
-    document.getElementById('step'+currentStep).classList.remove('active');
-    document.getElementById('step'+(currentStep-1)).classList.add('active');
+    if (currentStep <= 1) return;
+    document.getElementById('step' + currentStep).classList.remove('active');
+    document.getElementById('step' + (currentStep - 1)).classList.add('active');
     currentStep--;
-  }
-
-  function updateObservation(step) {
-    const radioOui = document.querySelector(`input[name="process${step}"]:checked`);
-    const obs = document.getElementById('obs'+step);
-    if (radioOui && radioOui.value === "oui") {
-      obs.placeholder = "Aucune observation";
-    } else {
-      obs.placeholder = "Décrivez l'anomalie...";
-    }
   }
 
   function restartApp() {
     if (confirm("Recommencer une nouvelle maintenance ?")) location.reload();
+  }
+
+  function generateReport() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const client = clients[currentClientIndex] || { name: "Inconnu" };
+
+    doc.setFillColor(0, 170, 255);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setFontSize(24);
+    doc.setTextColor(255, 255, 255);
+    doc.text("R.L ENERGIE", 105, 25, {align: "center"});
+    doc.setFontSize(11);
+    doc.text("SPÉCIALISTE DU PHOTOVOLTAÏQUE", 105, 35, {align: "center"});
+
+    let y = 55;
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text("Rapport de maintenance", 20, y); y += 10;
+    doc.text("Technicien : " + technicianName, 20, y); y += 8;
+    doc.text("Client : " + client.name, 20, y); y += 8;
+    doc.text("Date intervention : " + document.getElementById('startDate').value, 20, y); y += 15;
+
+    // Plans dans le rapport
+    if (client.wiringPlan) {
+      doc.text("Plan de câblage :", 20, y); y += 8;
+      doc.addImage(client.wiringPlan, 'JPEG', 20, y, 170, 80);
+      y += 90;
+    }
+    if (client.sitePlan) {
+      doc.text("Plan du site :", 20, y); y += 8;
+      doc.addImage(client.sitePlan, 'JPEG', 20, y, 170, 80);
+      y += 90;
+    }
+
+    // Observations
+    doc.text("Observations :", 20, y); y += 10;
+    for (let i = 1; i <= 2; i++) {
+      const obs = document.getElementById('obs' + i).value || "Aucune";
+      doc.text(`Étape ${i} : ${obs}`, 20, y);
+      y += 10;
+    }
+
+    doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+    toast("Rapport PDF généré avec plans et observations");
+  }
+
+  function generateExcel() {
+    const data = [["Client", "Technicien", "Date", "Observation Étape 1", "Observation Étape 2"]];
+    const client = clients[currentClientIndex] || { name: "Inconnu" };
+    data.push([client.name, technicianName, document.getElementById('startDate').value, document.getElementById('obs1').value || "", document.getElementById('obs2').value || ""]);
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Maintenance");
+    XLSX.writeFile(wb, `Maintenance_${client.name.replace(/ /g,'_')}.xlsx`);
+    toast("Excel modifiable généré");
   }
 
   function toast(msg) {
@@ -283,7 +483,6 @@
     setTimeout(() => t.remove(), 2800);
   }
 
-  // Initialisation
   window.onload = function() {
     renderClientList();
   };
