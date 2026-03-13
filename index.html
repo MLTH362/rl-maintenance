@@ -2,8 +2,8 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>R.L ENERGIE — Maintenance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>R.L ENERGIE — Maintenance Étapes</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -24,7 +24,6 @@
       --border: #dee2e6;
       --radius: 12px;
     }
-
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
     body { background:var(--bg); color:var(--dark); min-height:100vh; line-height:1.6; }
 
@@ -233,22 +232,20 @@
     <button class="btn-big btn-ok" onclick="generateReport()">
       <i class="fas fa-file-pdf"></i> Générer le rapport PDF
     </button>
-    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:1.5rem;" onclick="generateExcel()">
-      <i class="fas fa-file-excel"></i> Exporter Excel
-    </button>
   </div>
 
 </div>
 
 <script>
   const clients = [
-    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024","05/04/2024"], wiringPlan: null, sitePlan: null },
-    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025","20/11/2024"], wiringPlan: null, sitePlan: null },
-    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025","03/10/2024"], wiringPlan: null, sitePlan: null }
+    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"], wiringPlan: null, sitePlan: null },
+    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"], wiringPlan: null, sitePlan: null },
+    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"], wiringPlan: null, sitePlan: null }
   ];
 
   let currentClientIndex = -1;
   let technicianName = "";
+  let currentStep = 0;
   let isAdminMode = false;
   const ADMIN_PASSWORD = "admin123";
 
@@ -269,7 +266,7 @@
     stepsList.forEach((title, i) => {
       const n = i + 1;
       container.innerHTML += `
-        <div id="step${n}" class="card block">
+        <div id="step${n}" class="card block" style="display:none;">
           <div class="ch">${title}</div>
           <div class="cb">
             <p style="color:#555;margin-bottom:1rem;">Prendre les photos nécessaires</p>
@@ -392,6 +389,22 @@
     document.getElementById('step1').style.display = 'block';
   }
 
+  function nextStep(n) {
+    if (currentStep === 0) currentStep = 1;
+    document.getElementById(`step${currentStep}`).style.display = 'none';
+    currentStep = n + 1;
+    if (currentStep <= stepsList.length) {
+      document.getElementById(`step${currentStep}`).style.display = 'block';
+    }
+  }
+
+  function prevStep() {
+    if (currentStep <= 1) return;
+    document.getElementById(`step${currentStep}`).style.display = 'none';
+    currentStep--;
+    document.getElementById(`step${currentStep}`).style.display = 'block';
+  }
+
   function restartApp() {
     if (confirm("Recommencer ?")) location.reload();
   }
@@ -461,7 +474,12 @@
       headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold' },
       styles: { fontSize: 9, cellPadding: 3, lineColor: [44, 62, 80], lineWidth: 0.1 },
       columnStyles: {
-        7: { fontStyle: 'bold', textColor: [220, 53, 69] } // Δ Uoc en rouge
+        7: { fontStyle: 'bold', textColor: function(data) {
+          const val = parseFloat(data.cell.text[0]);
+          if (val > 2) return [220, 53, 69];      // rouge si écart > 2
+          if (val > 0.5 || val < -0.5) return [253, 126, 20]; // orange si écart moyen
+          return [40, 167, 69];                   // vert sinon
+        }}
       },
       margin: { top: y + 10 }
     });
@@ -476,3 +494,4 @@
 </script>
 </body>
 </html>
+
