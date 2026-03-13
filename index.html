@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>R.L ENERGIE — Maintenance</title>
+  <title>R.L ENERGIE — Maintenance Étapes</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -17,7 +17,7 @@
       --primary-dark: #003366;
       --success: #28a745;
       --light: #f8f9fa;
-      --dark: #343a40;
+      --dark: #1f2d3d;
       --bg: #f6f9fc;
       --border: #ced4da;
       --radius: 10px;
@@ -159,13 +159,14 @@
 
 <div class="main-content">
 
+  <!-- Bloc accueil (disposition revue comme tes fiches papier) -->
   <div id="infoBlock" class="card block active">
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
     <div class="cb">
       <div id="adminControls" style="display:none;margin-bottom:1.8rem;">
         <label>Ajouter un nouveau client</label>
         <div style="display:flex;gap:12px;">
-          <input type="text" id="newClient" placeholder="Ex: Client D - 300 kWc" style="flex:1;padding:0.95rem;"/>
+          <input type="text" id="newClient" placeholder="Ex: Client D - 300 kWc" style="flex:1;"/>
           <button class="btn-big btn-ok" style="width:auto;padding:0 2rem;" onclick="addNewClient()">Ajouter</button>
         </div>
       </div>
@@ -384,8 +385,6 @@
     currentStep = n + 1;
     if (currentStep <= stepsList.length) {
       document.getElementById(`step${currentStep}`).style.display = 'block';
-    } else {
-      toast("Fin des étapes !");
     }
   }
 
@@ -408,13 +407,13 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  // RAPPORT PDF FINAL (très proche de tes fiches papier)
+  // ================== RAPPORT PDF FINAL (comme tes photos) ==================
   function generateReport() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const client = clients[currentClientIndex] || { name: "—" };
 
-    // Page 1 - Couverture (comme ta photo)
+    // Page 1 - Couverture
     doc.setFillColor(240, 240, 240);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setFontSize(42);
@@ -427,7 +426,7 @@
 
     doc.addPage();
 
-    // Page 2 - Informations centrales (comme ta photo)
+    // Page 2 - Informations centrales
     doc.setFontSize(16);
     doc.text("Informations centrales :", 20, 30);
     let y = 45;
@@ -436,7 +435,7 @@
     doc.text(`Technicien : ${technicianName}`, 20, y); y += 8;
     doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 20, y); y += 15;
 
-    // Tableau mesures DC (exactement comme ta photo)
+    // Tableau mesures DC (structure vide pour que le technicien remplisse)
     doc.setFontSize(14);
     doc.text("VÉRIFICATION DES MESURES ENTREES DC", 20, y); y += 12;
 
@@ -444,32 +443,93 @@
       startY: y,
       head: [['Entrées', 'N° CHAINE', 'Nb PV', 'Intensité Icc', 'Tension Uoc mesuré', 'Moyenne Uoc', 'Uoc Moyenne totale*Nb PV', 'Uoc mesuré']],
       body: [
-        ['PV1', 'Chaîne 1', '19', '4,2', '743,7', '39,14', '746,79', '3,09'],
-        ['PV2', 'Chaîne 2', '19', '4,15', '743,7', '39,22', '746,79', '1,59'],
-        ['PV3', 'Chaîne 3', '19', '4,2', '745,2', '39,22', '746,79', '1,59'],
-        ['PV4', 'Chaîne 4', '19', '4,07', '745,1', '39,32', '746,79', '-0,31'],
-        ['PV5', 'Chaîne 5', '19', '4,15', '747,1', '39,32', '746,79', '-0,31'],
-        ['PV6', 'Chaîne 6', '19', '4,17', '745,3', '39,23', '746,79', '1,49'],
-        ['PV7', 'Chaîne 7', '19', '4,22', '745,3', '39,23', '746,79', '1,49'],
-        ['PV8', 'Chaîne 8', '19', '4,37', '746,9', '39,31', '746,79', '-0,11'],
-        ['PV9', 'Chaîne 9', '19', '4,37', '746,9', '39,31', '746,79', '-0,11'],
-        ['PV10', 'Chaîne 10', '19', '4,15', '746,9', '39,31', '746,79', '-0,11'],
-        ['PV11', 'Chaîne 11', '19', '4,17', '748,9', '39,42', '746,79', '-2,11'],
-        ['PV13', 'Chaîne 12', '19', '4,21', '749,3', '39,44', '707,48', '-1,72'],
-        ['PV15', 'Chaîne 13', '18', '4,17', '709,2', '39,40', '707,48', '-2,12'],
-        ['PV17', 'Chaîne 14', '18', '4,36', '709,7', '39,45', '668,18', '-2,52'],
-        ['PV19', 'Chaîne 15', '17', '4,31', '670,7', '39,45', '668,18', '2,52']
+        ['PV1', 'Chaîne 1', '', '', '', '', '', ''],
+        ['PV2', 'Chaîne 2', '', '', '', '', '', ''],
+        ['PV3', 'Chaîne 3', '', '', '', '', '', ''],
+        ['PV4', 'Chaîne 4', '', '', '', '', '', ''],
+        ['PV5', 'Chaîne 5', '', '', '', '', '', ''],
+        ['PV6', 'Chaîne 6', '', '', '', '', '', ''],
+        ['PV7', 'Chaîne 7', '', '', '', '', '', ''],
+        ['PV8', 'Chaîne 8', '', '', '', '', '', ''],
+        ['PV9', 'Chaîne 9', '', '', '', '', '', ''],
+        ['PV10', 'Chaîne 10', '', '', '', '', '', ''],
+        ['PV11', 'Chaîne 11', '', '', '', '', '', ''],
+        ['PV13', 'Chaîne 12', '', '', '', '', '', ''],
+        ['PV15', 'Chaîne 13', '', '', '', '', '', ''],
+        ['PV17', 'Chaîne 14', '', '', '', '', '', ''],
+        ['PV19', 'Chaîne 15', '', '', '', '', '', '']
       ],
       theme: 'grid',
       headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold' },
-      styles: { fontSize: 9, cellPadding: 3, lineColor: [44, 62, 80], lineWidth: 0.1 },
-      columnStyles: {
-        7: { fontStyle: 'bold', textColor: [220, 53, 69] }
-      },
+      styles: { fontSize: 9, cellPadding: 3 },
       margin: { top: y + 10 }
     });
 
+    doc.addPage();
+
+    // Tableaux checklists (comme tes photos)
+    doc.setFontSize(13);
+    doc.text("Point de raccordement", 20, 30);
+    doc.autoTable({
+      startY: 40,
+      head: [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
+      body: [
+        ['état visuel logette extérieur', '', '', '', '', ''],
+        ['état visuel logette intérieur', '', '', '', '', ''],
+        ['état des câbles', '', '', '', '', ''],
+        ['vérification paramétrage AGCP', '', '', '', '', ''],
+        ['vérification test différentiel', '', '', '', '', ''],
+        ['vérification des serrages', '', '', '', '', '']
+      ],
+      theme: 'grid',
+      styles: { fontSize: 10 }
+    });
+
+    doc.addPage();
+
+    doc.setFontSize(13);
+    doc.text("PARTIE AC - Coffret de protection électrique local onduleur", 20, 30);
+    doc.autoTable({
+      startY: 40,
+      head: [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
+      body: [
+        ['état visuel des câbles onduleur coffret AC', '', '', '', '', ''],
+        ['état visuel du câble AC', '', '', '', '', ''],
+        ['Test de continuité de terre', '', '', '', '', ''],
+        ['Test réseau', '', '', '', '', ''],
+        ['vérification disjoncteur / fusibles / parafoudre', '', '', '', '', ''],
+        ['vérification des serrages', '', '', '', '', ''],
+        ['Nettoyage coffret AC', '', '', '', '', ''],
+        ['Présence des étiquettes', '', '', '', '', '']
+      ],
+      theme: 'grid',
+      styles: { fontSize: 10 }
+    });
+
+    doc.addPage();
+
+    doc.setFontSize(13);
+    doc.text("PARTIE ONDULEUR", 20, 30);
+    doc.autoTable({
+      startY: 40,
+      head: [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
+      body: [
+        ['état visuel de(s) onduleur(s)', '', '', '', '', ''],
+        ['Fonctionnement onduleur(s)', '', '', '', '', ''],
+        ['Test de découplage', '', '', '', '', ''],
+        ['Environnement local onduleur', '', '', '', '', ''],
+        ['vérification connectiques DC', '', '', '', '', ''],
+        ['vérification serrage AC', '', '', '', '', ''],
+        ['Nettoyage onduleur', '', '', '', '', ''],
+        ['Nettoyage ventilateur', '', '', '', '', ''],
+        ['Présence étiquettes', '', '', '', '', '']
+      ],
+      theme: 'grid',
+      styles: { fontSize: 10 }
+    });
+
     doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+    toast("Rapport PDF généré (structure identique à tes fiches papier)");
   }
 
   window.onload = function() {
@@ -479,3 +539,4 @@
 </script>
 </body>
 </html>
+
