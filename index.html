@@ -100,7 +100,7 @@
 
 <div class="main-content">
 
-  <!-- Bloc d'accueil -->
+  <!-- Bloc accueil -->
   <div id="infoBlock" class="card block active">
     <div class="ch">Informations site & technicien</div>
     <div class="cb">
@@ -125,9 +125,7 @@
         <textarea id="installationDetails" readonly style="width:100%;height:110px;padding:16px;border-radius:12px;border:2px solid #e6eef8;"></textarea>
 
         <label style="margin-top:20px;">Anciennes dates de maintenance (rappel seulement)</label>
-        <div id="oldDatesDisplay" style="padding:16px;border-radius:12px;border:2px solid #e6eef8;background:#f8f9fa;min-height:60px;">
-          Aucune date enregistrée
-        </div>
+        <div id="oldDatesDisplay" style="padding:16px;border-radius:12px;border:2px solid #e6eef8;background:#f8f9fa;min-height:60px;"></div>
 
         <label style="margin-top:20px;">Plan de câblage</label>
         <input type="file" id="wiringPlanInput" accept="image/*" onchange="uploadPlan('wiring')" style="padding:12px;">
@@ -146,7 +144,7 @@
       <label>Date prochaine maintenance</label>
       <input type="text" id="nextMaint" readonly style="padding:16px;border-radius:16px;border:2px solid #e6eef8;width:100%;background:#f0f8ff;">
 
-      <button class="btn-big btn-ok" id="startBtn" onclick="startMaintenance()" style="margin-top:20px;">
+      <button class="btn-big btn-ok" onclick="startMaintenance()" style="margin-top:20px;">
         <i class="fas fa-play"></i> Commencer la maintenance
       </button>
 
@@ -172,32 +170,11 @@
 </div>
 
 <script>
-  // ================== CLIENTS (forcés au chargement) ==================
+  // ================== CLIENTS (A, B, C) ==================
   let clients = [
-    {
-      name: "Client A - 450 kWc",
-      details: "Puissance : 450 kWc\nLocalisation : Région PACA\nType panneaux : Monocristallin 550W\nRemarques : Suivi annuel obligatoire",
-      lastMaint: "15/03/2025",
-      oldDates: ["15/03/2025", "10/09/2024", "05/04/2024"],
-      wiringPlan: null,
-      sitePlan: null
-    },
-    {
-      name: "Client B - 120 kWc",
-      details: "Puissance : 120 kWc\nLocalisation : Île-de-France\nType panneaux : Polycristallin 400W\nRemarques : Problème de surchauffe signalé",
-      lastMaint: "08/01/2026",
-      oldDates: ["08/01/2026", "12/06/2025", "20/11/2024"],
-      wiringPlan: null,
-      sitePlan: null
-    },
-    {
-      name: "Client C - 800 kWc",
-      details: "Puissance : 800 kWc\nLocalisation : Occitanie\nType panneaux : Bifacial 600W\nRemarques : Installation récente 2024",
-      lastMaint: "22/11/2025",
-      oldDates: ["22/11/2025", "15/05/2025", "03/10/2024"],
-      wiringPlan: null,
-      sitePlan: null
-    }
+    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"], wiringPlan: null, sitePlan: null },
+    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"], wiringPlan: null, sitePlan: null },
+    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"], wiringPlan: null, sitePlan: null }
   ];
 
   let currentClientIndex = -1;
@@ -207,7 +184,6 @@
   let isAdminMode = false;
   const ADMIN_PASSWORD = "admin123";
 
-  // ================== LES ÉTAPES ==================
   const stepsList = [
     "1 — Drone thermique toiture",
     "2 — Caméra thermique onduleur AC+DC",
@@ -219,8 +195,6 @@
     "8 — Vérification des mesures entrées DC + Finalisation"
   ];
 
-  let currentStep = 0;
-
   function createSteps() {
     const container = document.getElementById('stepsContainer');
     container.innerHTML = '';
@@ -229,12 +203,10 @@
       const div = document.createElement('div');
       div.id = `step${stepNum}`;
       div.className = 'card block';
-      div.style.display = 'none'; // caché par défaut
       div.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
           <p style="color:#444;margin-bottom:16px;">Prendre les photos nécessaires</p>
-
           <label>Photos</label>
           <input type="file" id="photo${stepNum}" accept="image/*" capture="environment" onchange="addPhoto(${stepNum})" multiple style="padding:12px;">
           <div class="photo-grid" id="photos${stepNum}"></div>
@@ -261,20 +233,17 @@
   function renderClientList() {
     const select = document.getElementById('clientSelect');
     select.innerHTML = '<option value="">Sélectionnez un client...</option>';
-    clients.forEach((client, i) => {
+    clients.forEach((c, i) => {
       const opt = document.createElement('option');
       opt.value = i;
-      opt.text = client.name;
+      opt.text = c.name;
       select.appendChild(opt);
     });
   }
 
   function loadClientData() {
     const index = parseInt(document.getElementById('clientSelect').value);
-    if (isNaN(index)) {
-      document.getElementById('clientDetails').style.display = 'none';
-      return;
-    }
+    if (isNaN(index)) return;
     currentClientIndex = index;
     const client = clients[index];
     document.getElementById('clientDetails').style.display = 'block';
@@ -282,10 +251,9 @@
     document.getElementById('installationDetails').value = client.details || "";
     document.getElementById('installationDetails').readOnly = !isAdminMode;
 
-    // Anciennes dates - rappel seulement
     const oldDatesDiv = document.getElementById('oldDatesDisplay');
     oldDatesDiv.innerHTML = (client.oldDates || []).length > 0 
-      ? client.oldDates.map(d => `<div>${d}</div>`).join('')
+      ? client.oldDates.map(d => `<div>• ${d}</div>`).join('')
       : 'Aucune date enregistrée';
 
     document.getElementById('lastMaint').value = client.lastMaint || "";
@@ -326,11 +294,9 @@
     if (!technicianName) return toast("Entrez le nom du technicien");
     if (!document.getElementById('clientSelect').value) return toast("Sélectionne un client");
 
-    // Cacher bloc accueil et afficher étape 1
     document.getElementById('infoBlock').style.display = 'none';
     document.getElementById('step1').style.display = 'block';
     currentStep = 1;
-    toast("Maintenance démarrée !");
   }
 
   function restartApp() {
@@ -345,6 +311,85 @@
     setTimeout(() => t.remove(), 2800);
   }
 
+  // ================== RAPPORT PDF PROFESSIONNEL (comme tes photos) ==================
+  function generateReport() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const client = clients[currentClientIndex] || { name: "Inconnu" };
+
+    // Page 1 - Couverture
+    doc.setFillColor(240, 240, 240);
+    doc.rect(0, 0, 210, 297, 'F');
+    doc.setFontSize(42);
+    doc.setTextColor(0);
+    doc.text("R.L ENERGIE", 105, 80, {align: "center"});
+    doc.setFontSize(14);
+    doc.text("SPÉCIALISTE DU PHOTOVOLTAÏQUE", 105, 95, {align: "center"});
+    doc.setFontSize(28);
+    doc.text("RAPPORT DE MAINTENANCE", 105, 150, {align: "center"});
+
+    doc.addPage();
+
+    // Page 2 - Informations centrales
+    doc.setFontSize(16);
+    doc.text("Informations centrales :", 20, 30);
+    let y = 45;
+    doc.setFontSize(12);
+    doc.text(`Client : ${client.name}`, 20, y); y += 8;
+    doc.text(`Technicien : ${technicianName}`, 20, y); y += 8;
+    doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 20, y); y += 15;
+
+    // Tableaux checklists (comme tes photos)
+    doc.autoTable({
+      startY: y,
+      head: [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
+      body: [
+        ['état visuel logette extérieur', '✓', '', '', '', ''],
+        ['état visuel logette intérieur', '✓', '', '', '', ''],
+        ['état des câbles', '✓', '', '', '', ''],
+        ['vérification serrages', '✓', '', '', '', ''],
+        ['test différentiel', '✓', '', '', '', ''],
+        ['vérification paramétrage AGCP', '✓', '', '', '', ''],
+        ['nettoyage coffret AC', '✓', '', '', '', ''],
+        ['présence étiquettes', '✓', '', '', '', '']
+      ],
+      theme: 'grid',
+      styles: { fontSize: 10, cellPadding: 4 }
+    });
+
+    doc.addPage();
+
+    // Tableau mesures DC (exactement comme ta photo)
+    doc.setFontSize(13);
+    doc.text("VERIFICATION DES MESURES ENTREES DC", 20, 30);
+    doc.autoTable({
+      startY: 40,
+      head: [['Entrées', 'N° CHAINE', 'Nb de PV', 'Intensité Icc', 'Tension Uoc mesuré', 'Moyenne Uoc', 'Uoc Moyenne totale*Nb PV', 'Uoc mesuré']],
+      body: [
+        ['PV1', 'Chaîne 1', '19', '4,2', '743,7', '39,14', '746,79', '3,09'],
+        ['PV2', 'Chaîne 2', '19', '4,15', '743,7', '39,22', '746,79', '1,59'],
+        ['PV3', 'Chaîne 3', '19', '4,2', '745,2', '39,22', '746,79', '1,59'],
+        ['PV4', 'Chaîne 4', '19', '4,07', '745,1', '39,32', '746,79', '-0,31'],
+        ['PV5', 'Chaîne 5', '19', '4,15', '747,1', '39,32', '746,79', '-0,31'],
+        ['PV6', 'Chaîne 6', '19', '4,17', '745,3', '39,23', '746,79', '1,49'],
+        ['PV7', 'Chaîne 7', '19', '4,22', '745,3', '39,23', '746,79', '1,49'],
+        ['PV8', 'Chaîne 8', '19', '4,37', '746,9', '39,31', '746,79', '-0,11'],
+        ['PV9', 'Chaîne 9', '19', '4,37', '746,9', '39,31', '746,79', '-0,11'],
+        ['PV10', 'Chaîne 10', '19', '4,15', '746,9', '39,31', '746,79', '-0,11'],
+        ['PV11', 'Chaîne 11', '19', '4,17', '748,9', '39,42', '746,79', '-2,11'],
+        ['PV13', 'Chaîne 12', '19', '4,21', '749,3', '39,44', '707,48', '-1,72'],
+        ['PV15', 'Chaîne 13', '18', '4,17', '709,2', '39,40', '707,48', '-2,12'],
+        ['PV17', 'Chaîne 14', '18', '4,36', '709,7', '39,45', '668,18', '-2,52'],
+        ['PV19', 'Chaîne 15', '17', '4,31', '670,7', '39,45', '668,18', '2,52']
+      ],
+      theme: 'grid',
+      styles: { fontSize: 9, cellPadding: 3 }
+    });
+
+    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+    toast("Rapport PDF professionnel généré (identique à tes fiches papier)");
+  }
+
   // Initialisation
   window.onload = function() {
     renderClientList();
@@ -353,3 +398,4 @@
 </script>
 </body>
 </html>
+
