@@ -92,7 +92,7 @@
       position: absolute;
       top: 10px;
       right: 10px;
-      background: var(--danger);
+      background: #dc3545;
       color: white;
       width: 34px;
       height: 34px;
@@ -159,7 +159,7 @@
 
 <div class="main-content">
 
-  <!-- Bloc accueil (disposition revue comme tes fiches papier) -->
+  <!-- Bloc accueil (look plus proche de tes fiches) -->
   <div id="infoBlock" class="card block active">
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
     <div class="cb">
@@ -385,6 +385,8 @@
     currentStep = n + 1;
     if (currentStep <= stepsList.length) {
       document.getElementById(`step${currentStep}`).style.display = 'block';
+    } else {
+      toast("Fin des étapes !");
     }
   }
 
@@ -407,13 +409,13 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  // ================== RAPPORT PDF FINAL (comme tes photos) ==================
+  // ================== RAPPORT PDF PRO (comme tes fiches papier) ==================
   function generateReport() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const client = clients[currentClientIndex] || { name: "—" };
 
-    // Page 1 - Couverture
+    // Page 1 - Couverture (comme ta photo)
     doc.setFillColor(240, 240, 240);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setFontSize(42);
@@ -426,7 +428,7 @@
 
     doc.addPage();
 
-    // Page 2 - Informations centrales
+    // Page 2 - Informations centrales (comme ta photo)
     doc.setFontSize(16);
     doc.text("Informations centrales :", 20, 30);
     let y = 45;
@@ -435,30 +437,14 @@
     doc.text(`Technicien : ${technicianName}`, 20, y); y += 8;
     doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 20, y); y += 15;
 
-    // Tableau mesures DC (structure vide pour que le technicien remplisse)
+    // Tableau mesures DC (structure vide + colonnes exactes de ta photo)
     doc.setFontSize(14);
     doc.text("VÉRIFICATION DES MESURES ENTREES DC", 20, y); y += 12;
 
     doc.autoTable({
       startY: y,
       head: [['Entrées', 'N° CHAINE', 'Nb PV', 'Intensité Icc', 'Tension Uoc mesuré', 'Moyenne Uoc', 'Uoc Moyenne totale*Nb PV', 'Uoc mesuré']],
-      body: [
-        ['PV1', 'Chaîne 1', '', '', '', '', '', ''],
-        ['PV2', 'Chaîne 2', '', '', '', '', '', ''],
-        ['PV3', 'Chaîne 3', '', '', '', '', '', ''],
-        ['PV4', 'Chaîne 4', '', '', '', '', '', ''],
-        ['PV5', 'Chaîne 5', '', '', '', '', '', ''],
-        ['PV6', 'Chaîne 6', '', '', '', '', '', ''],
-        ['PV7', 'Chaîne 7', '', '', '', '', '', ''],
-        ['PV8', 'Chaîne 8', '', '', '', '', '', ''],
-        ['PV9', 'Chaîne 9', '', '', '', '', '', ''],
-        ['PV10', 'Chaîne 10', '', '', '', '', '', ''],
-        ['PV11', 'Chaîne 11', '', '', '', '', '', ''],
-        ['PV13', 'Chaîne 12', '', '', '', '', '', ''],
-        ['PV15', 'Chaîne 13', '', '', '', '', '', ''],
-        ['PV17', 'Chaîne 14', '', '', '', '', '', ''],
-        ['PV19', 'Chaîne 15', '', '', '', '', '', '']
-      ],
+      body: Array(15).fill(['', '', '', '', '', '', '', '']),
       theme: 'grid',
       headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold' },
       styles: { fontSize: 9, cellPadding: 3 },
@@ -467,7 +453,7 @@
 
     doc.addPage();
 
-    // Tableaux checklists (comme tes photos)
+    // Tableau Point de raccordement (comme ta photo)
     doc.setFontSize(13);
     doc.text("Point de raccordement", 20, 30);
     doc.autoTable({
@@ -482,11 +468,13 @@
         ['vérification des serrages', '', '', '', '', '']
       ],
       theme: 'grid',
+      headStyles: { fillColor: [0, 102, 204], textColor: 255 },
       styles: { fontSize: 10 }
     });
 
     doc.addPage();
 
+    // Tableau PARTIE AC (comme ta photo)
     doc.setFontSize(13);
     doc.text("PARTIE AC - Coffret de protection électrique local onduleur", 20, 30);
     doc.autoTable({
@@ -503,11 +491,13 @@
         ['Présence des étiquettes', '', '', '', '', '']
       ],
       theme: 'grid',
+      headStyles: { fillColor: [0, 102, 204], textColor: 255 },
       styles: { fontSize: 10 }
     });
 
     doc.addPage();
 
+    // Tableau PARTIE ONDULEUR (comme ta photo)
     doc.setFontSize(13);
     doc.text("PARTIE ONDULEUR", 20, 30);
     doc.autoTable({
@@ -525,10 +515,11 @@
         ['Présence étiquettes', '', '', '', '', '']
       ],
       theme: 'grid',
+      headStyles: { fillColor: [0, 102, 204], textColor: 255 },
       styles: { fontSize: 10 }
     });
 
-    doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
     toast("Rapport PDF généré (structure identique à tes fiches papier)");
   }
 
@@ -539,5 +530,6 @@
 </script>
 </body>
 </html>
+
 
 
