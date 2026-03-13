@@ -121,6 +121,7 @@
     .btn-ok:hover { background: #218838; transform: translateY(-1px); }
     .btn-prev { background: #6c757d; color: white; }
     .btn-prev:hover { background: #5a6268; }
+    .btn-quick { background: #17a2b8; color: white; font-size: 0.95rem; padding: 0.7rem 1.4rem; }
 
     .nav-row { display: flex; justify-content: space-between; margin-top: 3rem; gap: 1.5rem; }
 
@@ -159,7 +160,7 @@
 
 <div class="main-content">
 
-  <!-- Bloc accueil (look plus proche de tes fiches) -->
+  <!-- Bloc accueil ultra-propre (comme tes fiches papier) -->
   <div id="infoBlock" class="card block active">
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
     <div class="cb">
@@ -194,6 +195,28 @@
           <div>
             <label>Date début intervention</label>
             <input type="text" id="startDate" readonly value=""/>
+          </div>
+        </div>
+
+        <!-- Nouveaux champs détaillés pour le client -->
+        <div class="grid-2" style="margin-top:1.8rem;">
+          <div>
+            <label>Irradiance solaire</label>
+            <input type="text" id="irradiance" value="Forte"/>
+          </div>
+          <div>
+            <label>Relevé compteur Production</label>
+            <input type="text" id="releveProd"/>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div>
+            <label>Relevé compteur non-consommation</label>
+            <input type="text" id="releveNonConso"/>
+          </div>
+          <div>
+            <label>Présence du monitoring</label>
+            <select id="monitoring"><option>Oui</option><option>Non</option></select>
           </div>
         </div>
 
@@ -232,6 +255,7 @@
   let currentClientIndex = -1;
   let isAdminMode = false;
   const ADMIN_PASSWORD = "admin123";
+  let stepPhotos = {};
 
   const clients = [
     { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"], wiringPlan: null, sitePlan: null },
@@ -259,12 +283,16 @@
         <div id="step${n}" class="card block" style="display:none;">
           <div class="ch">${title}</div>
           <div class="cb">
-            <p style="color:#555;margin-bottom:1.2rem;">Prendre les photos nécessaires</p>
+            <p style="color:#555;margin-bottom:1rem;">Prendre les photos nécessaires</p>
             <label>Photos</label>
             <input type="file" id="photo${n}" accept="image/*" multiple capture="environment" onchange="addPhoto(${n})" style="padding:0.8rem 0;"/>
             <div class="photo-grid" id="photos${n}"></div>
 
-            <label style="margin-top:1.6rem;">Processus effectué ?</label>
+            <div style="margin-top:1.5rem;">
+              <button class="btn-quick" onclick="quickFill(${n})">Tout OK / RAS</button>
+            </div>
+
+            <label style="margin-top:1rem;">Processus effectué ?</label>
             <input type="checkbox" id="chk${n}" onchange="toggleProcess(${n})" style="width:1.5rem;height:1.5rem;"/> <span style="font-size:1.15rem;vertical-align:middle;">Oui</span>
 
             <div class="observation" id="obsBlock${n}">
@@ -314,9 +342,6 @@
 
     document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
-
-    document.getElementById('wiringPreview').innerHTML = c.wiringPlan ? `<img src="${c.wiringPlan}" style="max-width:100%;border-radius:10px;margin-top:0.6rem;">` : '';
-    document.getElementById('sitePreview').innerHTML   = c.sitePlan   ? `<img src="${c.sitePlan}"   style="max-width:100%;border-radius:10px;margin-top:0.6rem;">` : '';
   }
 
   function toggleAdminMode() {
@@ -385,8 +410,6 @@
     currentStep = n + 1;
     if (currentStep <= stepsList.length) {
       document.getElementById(`step${currentStep}`).style.display = 'block';
-    } else {
-      toast("Fin des étapes !");
     }
   }
 
@@ -401,6 +424,71 @@
     if (confirm("Recommencer ?")) location.reload();
   }
 
+  // ================== REMPLISSAGE RAPIDE ==================
+  function quickFill(n) {
+    document.getElementById(`chk${n}`).checked = true;
+    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté";
+    updateObsPreview(n);
+    toast(`Étape ${n} marquée Tout OK / RAS`);
+  }
+
+  // ================== PHOTOS ==================
+  function addPhoto(n) {
+    const files = document.getElementById(`photo${n}`).files;
+    if (!stepPhotos[n]) stepPhotos[n] = [];
+    for (let file of files) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        stepPhotos[n].push(e.target.result);
+        renderPhotos(n);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function renderPhotos(n) {
+    const grid = document.getElementById(`photos${n}`);
+    grid.innerHTML = '';
+    if (stepPhotos[n]) {
+      stepPhotos[n].forEach((src, idx) => {
+        grid.innerHTML += `
+          <div class="photo-preview">
+            <img src="${src}">
+            <button class="delete-btn" onclick="deletePhoto(${n},${idx})">×</button>
+          </div>
+        `;
+      });
+    }
+  }
+
+  function deletePhoto(n, idx) {
+    stepPhotos[n].splice(idx, 1);
+    renderPhotos(n);
+  }
+
+  function toggleProcess(n) {
+    const chk = document.getElementById(`chk${n}`);
+    if (chk.checked) {
+      document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté";
+      updateObsPreview(n);
+    }
+  }
+
+  function updateObsPreview(n) {
+    const textarea = document.getElementById(`obs${n}`);
+    const preview = document.getElementById(`preview${n}`);
+    if (textarea.value.trim()) {
+      preview.style.display = 'block';
+      preview.innerHTML = `<strong>Observation :</strong><br>${textarea.value}`;
+      preview.style.background = '#e6f3ff';
+      preview.style.padding = '1rem';
+      preview.style.borderRadius = '8px';
+      preview.style.border = '2px solid #0066cc';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
   function toast(msg) {
     const el = document.createElement('div');
     el.className = 'toast-msg';
@@ -409,13 +497,13 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  // ================== RAPPORT PDF PRO (comme tes fiches papier) ==================
+  // ================== RAPPORT PDF ULTRA-PROPRE (compact, sans espace blanc) ==================
   function generateReport() {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const doc = new jsPDF({margin: [15, 15, 15, 15]});
     const client = clients[currentClientIndex] || { name: "—" };
 
-    // Page 1 - Couverture (comme ta photo)
+    // Couverture
     doc.setFillColor(240, 240, 240);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setFontSize(42);
@@ -428,19 +516,24 @@
 
     doc.addPage();
 
-    // Page 2 - Informations centrales (comme ta photo)
+    // Informations centrales (détaillées pour le client)
+    let y = 30;
     doc.setFontSize(16);
-    doc.text("Informations centrales :", 20, 30);
-    let y = 45;
+    doc.text("Informations centrales :", 20, y);
+    y += 15;
     doc.setFontSize(12);
     doc.text(`Client : ${client.name}`, 20, y); y += 8;
     doc.text(`Technicien : ${technicianName}`, 20, y); y += 8;
-    doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 20, y); y += 15;
+    doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 20, y); y += 8;
+    doc.text(`Irradiance solaire : ${document.getElementById('irradiance').value}`, 20, y); y += 8;
+    doc.text(`Relevé compteur Production : ${document.getElementById('releveProd').value || "—"}`, 20, y); y += 8;
+    doc.text(`Relevé compteur non-consommation : ${document.getElementById('releveNonConso').value || "—"}`, 20, y); y += 8;
+    doc.text(`Monitoring : ${document.getElementById('monitoring').value}`, 20, y); y += 20;
 
-    // Tableau mesures DC (structure vide + colonnes exactes de ta photo)
-    doc.setFontSize(14);
-    doc.text("VÉRIFICATION DES MESURES ENTREES DC", 20, y); y += 12;
-
+    // Tableau DC (vide)
+    doc.setFontSize(13);
+    doc.text("VÉRIFICATION DES MESURES ENTREES DC", 20, y);
+    y += 10;
     doc.autoTable({
       startY: y,
       head: [['Entrées', 'N° CHAINE', 'Nb PV', 'Intensité Icc', 'Tension Uoc mesuré', 'Moyenne Uoc', 'Uoc Moyenne totale*Nb PV', 'Uoc mesuré']],
@@ -448,39 +541,20 @@
       theme: 'grid',
       headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold' },
       styles: { fontSize: 9, cellPadding: 3 },
-      margin: { top: y + 10 }
     });
+    y = doc.lastAutoTable.finalY + 25;
 
-    doc.addPage();
-
-    // Tableau Point de raccordement (comme ta photo)
-    doc.setFontSize(13);
-    doc.text("Point de raccordement", 20, 30);
-    doc.autoTable({
-      startY: 40,
-      head: [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
-      body: [
+    // Tableaux checklists (compact, titres + tableau sans gros blanc)
+    const checklists = [
+      { title: "Point de raccordement", rows: [
         ['état visuel logette extérieur', '', '', '', '', ''],
         ['état visuel logette intérieur', '', '', '', '', ''],
         ['état des câbles', '', '', '', '', ''],
         ['vérification paramétrage AGCP', '', '', '', '', ''],
         ['vérification test différentiel', '', '', '', '', ''],
         ['vérification des serrages', '', '', '', '', '']
-      ],
-      theme: 'grid',
-      headStyles: { fillColor: [0, 102, 204], textColor: 255 },
-      styles: { fontSize: 10 }
-    });
-
-    doc.addPage();
-
-    // Tableau PARTIE AC (comme ta photo)
-    doc.setFontSize(13);
-    doc.text("PARTIE AC - Coffret de protection électrique local onduleur", 20, 30);
-    doc.autoTable({
-      startY: 40,
-      head: [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
-      body: [
+      ]},
+      { title: "PARTIE AC - Coffret de protection électrique local onduleur", rows: [
         ['état visuel des câbles onduleur coffret AC', '', '', '', '', ''],
         ['état visuel du câble AC', '', '', '', '', ''],
         ['Test de continuité de terre', '', '', '', '', ''],
@@ -489,21 +563,8 @@
         ['vérification des serrages', '', '', '', '', ''],
         ['Nettoyage coffret AC', '', '', '', '', ''],
         ['Présence des étiquettes', '', '', '', '', '']
-      ],
-      theme: 'grid',
-      headStyles: { fillColor: [0, 102, 204], textColor: 255 },
-      styles: { fontSize: 10 }
-    });
-
-    doc.addPage();
-
-    // Tableau PARTIE ONDULEUR (comme ta photo)
-    doc.setFontSize(13);
-    doc.text("PARTIE ONDULEUR", 20, 30);
-    doc.autoTable({
-      startY: 40,
-      head: [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
-      body: [
+      ]},
+      { title: "PARTIE ONDULEUR", rows: [
         ['état visuel de(s) onduleur(s)', '', '', '', '', ''],
         ['Fonctionnement onduleur(s)', '', '', '', '', ''],
         ['Test de découplage', '', '', '', '', ''],
@@ -513,14 +574,60 @@
         ['Nettoyage onduleur', '', '', '', '', ''],
         ['Nettoyage ventilateur', '', '', '', '', ''],
         ['Présence étiquettes', '', '', '', '', '']
-      ],
-      theme: 'grid',
-      headStyles: { fillColor: [0, 102, 204], textColor: 255 },
-      styles: { fontSize: 10 }
+      ]}
+    ];
+
+    checklists.forEach((cl, idx) => {
+      if (y > 240) { doc.addPage(); y = 30; }
+      doc.setFontSize(13);
+      doc.text(cl.title, 20, y);
+      y += 12;
+      doc.autoTable({
+        startY: y,
+        head: [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
+        body: cl.rows,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 85, 170], textColor: 255 },
+        styles: { fontSize: 9.5, cellPadding: 3 }
+      });
+      y = doc.lastAutoTable.finalY + 25;
     });
 
+    // Observations par étape (détail client)
+    doc.addPage();
+    y = 30;
+    doc.setFontSize(14);
+    doc.text("Observations par étape", 20, y);
+    y += 15;
+    doc.setFontSize(11);
+    for (let n = 1; n <= 8; n++) {
+      const obsText = document.getElementById(`obs${n}`) ? document.getElementById(`obs${n}`).value.trim() : "";
+      doc.text(`Étape ${n} : ${obsText || "Aucune observation"}`, 20, y);
+      y += 12;
+    }
+
+    // Photos (détail visuel pour le client)
+    if (Object.keys(stepPhotos).length > 0) {
+      doc.addPage();
+      y = 30;
+      doc.setFontSize(14);
+      doc.text("Photos de la maintenance", 20, y);
+      y += 15;
+      for (let n = 1; n <= 8; n++) {
+        if (stepPhotos[n] && stepPhotos[n].length > 0) {
+          doc.text(`Étape ${n}`, 20, y);
+          y += 10;
+          stepPhotos[n].slice(0, 3).forEach(src => {
+            if (y > 260) { doc.addPage(); y = 30; }
+            doc.addImage(src, 'JPEG', 20, y, 80, 55);
+            y += 65;
+          });
+        }
+      }
+    }
+
     doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF généré (structure identique à tes fiches papier)");
+    toast("Rapport PDF généré (compact, détaillé pour le client)");
   }
 
   window.onload = function() {
@@ -530,6 +637,5 @@
 </script>
 </body>
 </html>
-
 
 
