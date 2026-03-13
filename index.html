@@ -2,14 +2,15 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>R.L ENERGIE — Maintenance Étapes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>R.L ENERGIE — Maintenance</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
     :root {
@@ -103,7 +104,7 @@
       box-shadow: 0 3px 8px rgba(0,0,0,0.3);
     }
 
-    .btn-big {
+    .btn-big, .btn-quick {
       padding: 1.1rem 2rem;
       border: none;
       border-radius: 10px;
@@ -146,6 +147,29 @@
       90%  { opacity:1; transform:translateY(0) translateX(-50%); }
       100% { opacity:0; transform:translateY(30px) translateX(-50%); }
     }
+
+    .checklist-grid {
+      display: grid;
+      grid-template-columns: 3fr 1fr 1fr 1fr 1fr 1fr;
+      gap: 8px;
+      margin: 1rem 0;
+      align-items: center;
+    }
+    .checklist-header {
+      font-weight: bold;
+      text-align: center;
+      background: var(--primary);
+      color: white;
+      padding: 0.6rem;
+      border-radius: 6px;
+    }
+    .checklist-item {
+      padding: 0.6rem;
+      border-bottom: 1px solid #eee;
+    }
+    .checklist-check {
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -160,7 +184,6 @@
 
 <div class="main-content">
 
-  <!-- Bloc accueil ultra-propre (comme tes fiches papier) -->
   <div id="infoBlock" class="card block active">
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
     <div class="cb">
@@ -198,8 +221,7 @@
           </div>
         </div>
 
-        <!-- Nouveaux champs détaillés pour le client -->
-        <div class="grid-2" style="margin-top:1.8rem;">
+        <div class="grid-2">
           <div>
             <label>Irradiance solaire</label>
             <input type="text" id="irradiance" value="Forte"/>
@@ -245,6 +267,9 @@
     <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.3rem 2.5rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
     </button>
+    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:1.5rem;font-size:1.2rem;padding:1.3rem 2.5rem;" onclick="generateExcel()">
+      <i class="fas fa-file-excel"></i> Exporter Excel modifiable
+    </button>
   </div>
 
 </div>
@@ -256,6 +281,12 @@
   let isAdminMode = false;
   const ADMIN_PASSWORD = "admin123";
   let stepPhotos = {};
+  let checklistData = {
+    raccordement: Array(6).fill({bon:false, acceptable:false, mauvais:false, ok:false, ras:false}),
+    partieAC: Array(8).fill({bon:false, acceptable:false, mauvais:false, ok:false, ras:false}),
+    partieOnduleur: Array(9).fill({bon:false, acceptable:false, mauvais:false, ok:false, ras:false}),
+    observations: Array(8).fill("")
+  };
 
   const clients = [
     { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"], wiringPlan: null, sitePlan: null },
@@ -288,7 +319,7 @@
             <input type="file" id="photo${n}" accept="image/*" multiple capture="environment" onchange="addPhoto(${n})" style="padding:0.8rem 0;"/>
             <div class="photo-grid" id="photos${n}"></div>
 
-            <div style="margin-top:1.5rem;">
+            <div style="margin:1.5rem 0;">
               <button class="btn-quick" onclick="quickFill(${n})">Tout OK / RAS</button>
             </div>
 
@@ -424,7 +455,6 @@
     if (confirm("Recommencer ?")) location.reload();
   }
 
-  // ================== REMPLISSAGE RAPIDE ==================
   function quickFill(n) {
     document.getElementById(`chk${n}`).checked = true;
     document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté";
@@ -432,7 +462,6 @@
     toast(`Étape ${n} marquée Tout OK / RAS`);
   }
 
-  // ================== PHOTOS ==================
   function addPhoto(n) {
     const files = document.getElementById(`photo${n}`).files;
     if (!stepPhotos[n]) stepPhotos[n] = [];
@@ -497,10 +526,10 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  // ================== RAPPORT PDF ULTRA-PROPRE (compact, sans espace blanc) ==================
+  // ================== RAPPORT PDF ULTRA-PROPRE (compact, titres seulement) ==================
   function generateReport() {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({margin: [15, 15, 15, 15]});
+    const doc = new jsPDF({margin: [12, 12, 12, 12]});
     const client = clients[currentClientIndex] || { name: "—" };
 
     // Couverture
@@ -516,19 +545,19 @@
 
     doc.addPage();
 
-    // Informations centrales (détaillées pour le client)
-    let y = 30;
+    // Informations centrales
+    let y = 25;
     doc.setFontSize(16);
-    doc.text("Informations centrales :", 20, y);
-    y += 15;
-    doc.setFontSize(12);
+    doc.text("Informations centrales", 20, y);
+    y += 12;
+    doc.setFontSize(11);
     doc.text(`Client : ${client.name}`, 20, y); y += 8;
     doc.text(`Technicien : ${technicianName}`, 20, y); y += 8;
     doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 20, y); y += 8;
     doc.text(`Irradiance solaire : ${document.getElementById('irradiance').value}`, 20, y); y += 8;
     doc.text(`Relevé compteur Production : ${document.getElementById('releveProd').value || "—"}`, 20, y); y += 8;
     doc.text(`Relevé compteur non-consommation : ${document.getElementById('releveNonConso').value || "—"}`, 20, y); y += 8;
-    doc.text(`Monitoring : ${document.getElementById('monitoring').value}`, 20, y); y += 20;
+    doc.text(`Monitoring : ${document.getElementById('monitoring').value}`, 20, y); y += 15;
 
     // Tableau DC (vide)
     doc.setFontSize(13);
@@ -541,10 +570,11 @@
       theme: 'grid',
       headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold' },
       styles: { fontSize: 9, cellPadding: 3 },
+      margin: { top: y + 5 }
     });
-    y = doc.lastAutoTable.finalY + 25;
+    y = doc.lastAutoTable.finalY + 15;
 
-    // Tableaux checklists (compact, titres + tableau sans gros blanc)
+    // Tableaux checklists (compact, sans espace blanc)
     const checklists = [
       { title: "Point de raccordement", rows: [
         ['état visuel logette extérieur', '', '', '', '', ''],
@@ -577,57 +607,91 @@
       ]}
     ];
 
-    checklists.forEach((cl, idx) => {
-      if (y > 240) { doc.addPage(); y = 30; }
+    checklists.forEach(cl => {
+      if (y > 240) { doc.addPage(); y = 25; }
       doc.setFontSize(13);
       doc.text(cl.title, 20, y);
-      y += 12;
+      y += 10;
       doc.autoTable({
         startY: y,
         head: [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
         body: cl.rows,
         theme: 'grid',
-        headStyles: { fillColor: [0, 85, 170], textColor: 255 },
-        styles: { fontSize: 9.5, cellPadding: 3 }
+        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 9.5, cellPadding: 2.5 },
+        margin: { top: y + 5 }
       });
-      y = doc.lastAutoTable.finalY + 25;
+      y = doc.lastAutoTable.finalY + 12;
     });
 
-    // Observations par étape (détail client)
-    doc.addPage();
-    y = 30;
-    doc.setFontSize(14);
-    doc.text("Observations par étape", 20, y);
-    y += 15;
-    doc.setFontSize(11);
-    for (let n = 1; n <= 8; n++) {
-      const obsText = document.getElementById(`obs${n}`) ? document.getElementById(`obs${n}`).value.trim() : "";
-      doc.text(`Étape ${n} : ${obsText || "Aucune observation"}`, 20, y);
-      y += 12;
-    }
-
-    // Photos (détail visuel pour le client)
-    if (Object.keys(stepPhotos).length > 0) {
-      doc.addPage();
-      y = 30;
-      doc.setFontSize(14);
-      doc.text("Photos de la maintenance", 20, y);
-      y += 15;
-      for (let n = 1; n <= 8; n++) {
-        if (stepPhotos[n] && stepPhotos[n].length > 0) {
-          doc.text(`Étape ${n}`, 20, y);
-          y += 10;
-          stepPhotos[n].slice(0, 3).forEach(src => {
-            if (y > 260) { doc.addPage(); y = 30; }
-            doc.addImage(src, 'JPEG', 20, y, 80, 55);
-            y += 65;
-          });
-        }
-      }
-    }
-
     doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF généré (compact, détaillé pour le client)");
+    toast("Rapport PDF généré (compact et détaillé)");
+  }
+
+  // ================== EXPORT EXCEL MODIFIABLE ==================
+  function generateExcel() {
+    const wb = XLSX.utils.book_new();
+
+    // Feuille Infos centrales
+    const infos = [
+      ["Client", clients[currentClientIndex]?.name || "—"],
+      ["Technicien", technicianName],
+      ["Date intervention", document.getElementById('startDate').value],
+      ["Irradiance solaire", document.getElementById('irradiance').value],
+      ["Relevé compteur Production", document.getElementById('releveProd').value || "—"],
+      ["Relevé compteur non-consommation", document.getElementById('releveNonConso').value || "—"],
+      ["Monitoring", document.getElementById('monitoring').value]
+    ];
+    const wsInfos = XLSX.utils.aoa_to_sheet(infos);
+    XLSX.utils.book_append_sheet(wb, wsInfos, "Infos centrales");
+
+    // Feuille Mesures DC (vide + colonnes)
+    const dcHeaders = [['Entrées', 'N° CHAINE', 'Nb PV', 'Intensité Icc', 'Tension Uoc mesuré', 'Moyenne Uoc', 'Uoc Moyenne totale*Nb PV', 'Uoc mesuré']];
+    const wsDC = XLSX.utils.aoa_to_sheet(dcHeaders.concat(Array(15).fill(['', '', '', '', '', '', '', ''])));
+    XLSX.utils.book_append_sheet(wb, wsDC, "Mesures DC");
+
+    // Feuilles checklists
+    const checklists = [
+      { name: "Point raccordement", rows: [
+        ['état visuel logette extérieur'],
+        ['état visuel logette intérieur'],
+        ['état des câbles'],
+        ['vérification paramétrage AGCP'],
+        ['vérification test différentiel'],
+        ['vérification des serrages']
+      ]},
+      { name: "Partie AC", rows: [
+        ['état visuel des câbles onduleur coffret AC'],
+        ['état visuel du câble AC'],
+        ['Test de continuité de terre'],
+        ['Test réseau'],
+        ['vérification disjoncteur / fusibles / parafoudre'],
+        ['vérification des serrages'],
+        ['Nettoyage coffret AC'],
+        ['Présence des étiquettes']
+      ]},
+      { name: "Partie Onduleur", rows: [
+        ['état visuel de(s) onduleur(s)'],
+        ['Fonctionnement onduleur(s)'],
+        ['Test de découplage'],
+        ['Environnement local onduleur'],
+        ['vérification connectiques DC'],
+        ['vérification serrage AC'],
+        ['Nettoyage onduleur'],
+        ['Nettoyage ventilateur'],
+        ['Présence étiquettes']
+      ]}
+    ];
+
+    checklists.forEach(cl => {
+      const ws = XLSX.utils.aoa_to_sheet([
+        ['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']
+      ].concat(cl.rows.map(row => [row[0], '', '', '', '', ''])));
+      XLSX.utils.book_append_sheet(wb, ws, cl.name);
+    });
+
+    XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    toast("Fichier Excel modifiable généré");
   }
 
   window.onload = function() {
