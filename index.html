@@ -2,91 +2,161 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>R.L ENERGIE — Maintenance Étapes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>R.L ENERGIE — Maintenance</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
     :root {
-      --primary: #0055aa;
-      --primary-dark: #003366;
-      --success: #00d46a;
-      --danger: #ff3b5c;
-      --bg: #f5f8fa;
-      --card: #ffffff;
+      --primary: #0066cc;
+      --primary-dark: #004080;
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --bg: #f5f8fc;
+      --border: #dee2e6;
       --radius: 12px;
-      --shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
+
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
-    body { background:var(--bg); color:#1a2b3c; min-height:100vh; line-height:1.5; }
+    body { background:var(--bg); color:var(--dark); min-height:100vh; line-height:1.6; }
 
     header {
       background: var(--primary);
       color: white;
-      padding: 20px 30px;
+      padding: 1.5rem 2rem;
       text-align: center;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      box-shadow: var(--shadow);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
-    .logo { font-weight:800; font-size:2rem; letter-spacing:1px; }
+    .logo { font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; }
 
-    .main-content { padding: 30px; max-width: 1000px; margin: 0 auto; }
-    .card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:30px; overflow:hidden; border:1px solid #d0e0f0; }
-    .ch { background:var(--primary); color:white; padding:18px; font-size:1.4rem; font-weight:700; text-align:center; border-bottom:3px solid var(--primary-dark); }
-    .cb { padding:28px 32px; }
+    .main-content { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
 
-    .block { display:none; min-height:88vh; }
-    .block.active { display:block; }
+    .card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      margin-bottom: 2rem;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
 
-    .btn-big { padding:16px 24px; border:none; border-radius:12px; font-size:1.1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 4px 12px rgba(0,0,0,0.1); transition:all .3s; width:100%; margin:12px 0; }
-    .btn-ok { background:var(--success); color:#000; }
-    .btn-prev { background:#555; color:white; }
-    .btn-admin { background:#444; color:white; padding:10px 20px; border-radius:10px; font-size:1rem; }
+    .ch {
+      background: var(--primary);
+      color: white;
+      padding: 1.2rem;
+      font-size: 1.35rem;
+      font-weight: 700;
+      text-align: center;
+      border-bottom: 4px solid var(--primary-dark);
+    }
 
-    label { display:block; margin-bottom:8px; font-weight:600; color:#1a2b3c; }
+    .cb { padding: 2rem; }
+
+    label { font-weight: 600; color: #2c3e50; margin-bottom: 0.5rem; display: block; }
     input, select, textarea {
-      width:100%; padding:14px; border:2px solid #d0e0f0; border-radius:10px; font-size:1rem; margin-bottom:16px;
+      width: 100%;
+      padding: 0.9rem;
+      border: 2px solid #ced4da;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 1.2rem;
+      transition: border-color 0.2s;
     }
-    input[readonly], textarea[readonly] { background:#f8f9fa; cursor:not-allowed; }
-
-    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:24px 0; }
-
-    .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:20px; margin:20px 0; }
-    .photo-preview { position:relative; }
-    .photo-preview img { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:12px; border:3px solid #e0e8f0; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-    .delete-btn { position:absolute; top:12px; right:12px; background:var(--danger); color:white; width:36px; height:36px; border-radius:50%; border:none; cursor:pointer; font-size:1.4rem; box-shadow:0 2px 6px rgba(0,0,0,0.3); }
-
-    .observation {
-      background:#f8f9fa;
-      border:1px solid #d0e0f0;
-      border-radius:12px;
-      padding:20px;
-      margin-top:24px;
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0,102,204,0.15);
     }
-    .obs-preview {
-      background:#e6f3ff;
-      border:3px solid var(--primary);
-      border-radius:12px;
-      padding:16px;
-      margin-top:16px;
-      font-style:italic;
-      color:#004080;
-      display:none;
+    input[readonly], textarea[readonly] {
+      background: #f1f3f5;
+      cursor: not-allowed;
     }
 
-    .nav-row { display:flex; justify-content:space-between; align-items:center; margin-top:40px; gap:20px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 
-    #toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); z-index:9999; }
-    .toast-msg { background:var(--success); color:#000; padding:14px 28px; border-radius:50px; box-shadow:var(--shadow); animation:toast 3s forwards; }
-    @keyframes toast { 0% { opacity:0; transform:translate(-50%,40px) } 15% { opacity:1; transform:translate(-50%,0) } 85% { opacity:1 } 100% { opacity:0 } }
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.2rem;
+      margin: 1.5rem 0;
+    }
+    .photo-preview {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    .photo-preview img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      display: block;
+    }
+    .delete-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--danger);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .btn-big {
+      padding: 1rem 1.8rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 1rem 0;
+      transition: all 0.2s;
+    }
+    .btn-ok { background: var(--success); color: white; }
+    .btn-ok:hover { background: #218838; }
+    .btn-prev { background: #6c757d; color: white; }
+    .btn-prev:hover { background: #5a6268; }
+
+    .nav-row { display: flex; justify-content: space-between; margin-top: 2.5rem; gap: 1rem; }
+
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+    }
+    .toast-msg {
+      background: var(--success);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      animation: toast 3s forwards;
+    }
+    @keyframes toast {
+      0%   { opacity:0; transform:translateY(20px) translateX(-50%); }
+      10%  { opacity:1; transform:translateY(0) translateX(-50%); }
+      90%  { opacity:1; transform:translateY(0) translateX(-50%); }
+      100% { opacity:0; transform:translateY(20px) translateX(-50%); }
+    }
   </style>
 </head>
 <body>
@@ -101,111 +171,84 @@
 
 <div class="main-content">
 
-  <!-- Bloc accueil (disposition revue comme tes photos) -->
   <div id="infoBlock" class="card block active">
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
     <div class="cb">
-      <div id="adminControls" style="display:none; margin-bottom:20px;">
+      <div id="adminControls" style="display:none;margin-bottom:1.5rem;">
         <label>Ajouter un nouveau client</label>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="newClient" placeholder="Ex: Client D - 300 kWc" style="flex:1;padding:16px;border-radius:12px;border:2px solid #e6eef8;">
-          <button class="btn-big btn-ok" style="width:auto;padding:0 24px;" onclick="addNewClient()">Ajouter</button>
+        <div style="display:flex;gap:10px;">
+          <input type="text" id="newClient" placeholder="Ex: Client D - 300 kWc" style="flex:1;"/>
+          <button class="btn-big btn-ok" style="width:auto;padding:0 1.8rem;" onclick="addNewClient()">Ajouter</button>
         </div>
       </div>
 
       <label>Nom du technicien (obligatoire)</label>
-      <input type="text" id="technicianName" placeholder="Ex: Jean Dupont" style="padding:16px;border-radius:12px;border:2px solid #e6eef8;">
+      <input type="text" id="technicianName" placeholder="Ex: Jean Dupont"/>
 
       <label>Client / Installation</label>
-      <select id="clientSelect" onchange="loadClientData()" style="padding:16px;border-radius:12px;border:2px solid #e6eef8;">
+      <select id="clientSelect" onchange="loadClientData()">
         <option value="">Sélectionnez un client...</option>
       </select>
 
-      <div id="clientDetails" style="margin-top:24px;display:none;">
+      <div id="clientDetails" style="display:none;margin-top:1.5rem;">
         <label>Détails de l’installation <span id="editDetailsBtn" style="display:none;color:var(--primary);cursor:pointer;" onclick="enableEditDetails()">✏️ Modifier (Admin)</span></label>
-        <textarea id="installationDetails" readonly style="width:100%;height:110px;padding:16px;border-radius:12px;border:2px solid #e6eef8;"></textarea>
+        <textarea id="installationDetails" readonly></textarea>
 
-        <label style="margin-top:20px;">Anciennes dates de maintenance (rappel)</label>
-        <div id="oldDatesDisplay" style="padding:16px;border-radius:12px;border:2px solid #e6eef8;background:#f8f9fa;min-height:60px;"></div>
+        <label style="margin-top:1.2rem;">Anciennes dates de maintenance (rappel)</label>
+        <div id="oldDatesDisplay" style="padding:1rem;border:1px solid #dee2e6;border-radius:8px;background:#f8f9fa;min-height:50px;line-height:1.6;"></div>
 
-        <div class="grid-2" style="margin-top:24px;">
+        <div class="grid-2">
           <div>
             <label>Date dernière maintenance</label>
-            <input type="text" id="lastMaint" readonly style="padding:16px;border-radius:12px;border:2px solid #e6eef8;">
+            <input type="text" id="lastMaint" readonly/>
           </div>
           <div>
             <label>Date début intervention</label>
-            <input type="text" id="startDate" readonly style="padding:16px;border-radius:12px;border:2px solid #e6eef8;">
+            <input type="text" id="startDate" readonly value=""/>
           </div>
         </div>
 
-        <label style="margin-top:20px;">Plan de câblage</label>
-        <input type="file" id="wiringPlanInput" accept="image/*" onchange="uploadPlan('wiring')" style="padding:12px;">
-        <div id="wiringPreview" class="plan-preview"></div>
+        <label style="margin-top:1.2rem;">Plan de câblage</label>
+        <input type="file" id="wiringPlanInput" accept="image/*" onchange="uploadPlan('wiring')"/>
+        <div id="wiringPreview" style="margin-top:0.8rem;"></div>
 
-        <label style="margin-top:20px;">Plan du site</label>
-        <input type="file" id="sitePlanInput" accept="image/*" onchange="uploadPlan('site')" style="padding:12px;">
-        <div id="sitePreview" class="plan-preview"></div>
+        <label style="margin-top:1.2rem;">Plan du site</label>
+        <input type="file" id="sitePlanInput" accept="image/*" onchange="uploadPlan('site')"/>
+        <div id="sitePreview" style="margin-top:0.8rem;"></div>
       </div>
 
-      <button class="btn-big btn-ok" onclick="startMaintenance()" style="margin-top:32px;">
+      <button class="btn-big btn-ok" onclick="startMaintenance()" style="margin-top:2rem;">
         <i class="fas fa-play"></i> COMMENCER LA MAINTENANCE
       </button>
 
-      <button class="btn-big" style="background:#555;color:#fff;margin-top:16px;" onclick="restartApp()">
+      <button class="btn-big" style="background:#6c757d;color:white;margin-top:1rem;" onclick="restartApp()">
         <i class="fas fa-redo"></i> Recommencer une nouvelle maintenance
       </button>
     </div>
   </div>
 
-  <!-- Conteneur étapes -->
   <div id="stepsContainer"></div>
 
-  <!-- Boutons finaux -->
-  <div style="margin-top:40px;text-align:center;">
+  <div style="text-align:center;margin-top:3rem;">
     <button class="btn-big btn-ok" onclick="generateReport()">
       <i class="fas fa-file-pdf"></i> Générer le rapport PDF
     </button>
-    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:20px;" onclick="generateExcel()">
-      <i class="fas fa-file-excel"></i> Exporter Excel modifiable
+    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:1.5rem;" onclick="generateExcel()">
+      <i class="fas fa-file-excel"></i> Exporter Excel
     </button>
   </div>
 
 </div>
 
 <script>
-  // ================== CLIENTS ==================
-  let clients = [
-    {
-      name: "Client A - 450 kWc",
-      details: "Puissance : 450 kWc\nLocalisation : Région PACA\nType panneaux : Monocristallin 550W\nRemarques : Suivi annuel obligatoire",
-      lastMaint: "15/03/2025",
-      oldDates: ["15/03/2025", "10/09/2024", "05/04/2024"],
-      wiringPlan: null,
-      sitePlan: null
-    },
-    {
-      name: "Client B - 120 kWc",
-      details: "Puissance : 120 kWc\nLocalisation : Île-de-France\nType panneaux : Polycristallin 400W\nRemarques : Problème de surchauffe signalé",
-      lastMaint: "08/01/2026",
-      oldDates: ["08/01/2026", "12/06/2025", "20/11/2024"],
-      wiringPlan: null,
-      sitePlan: null
-    },
-    {
-      name: "Client C - 800 kWc",
-      details: "Puissance : 800 kWc\nLocalisation : Occitanie\nType panneaux : Bifacial 600W\nRemarques : Installation récente 2024",
-      lastMaint: "22/11/2025",
-      oldDates: ["22/11/2025", "15/05/2025", "03/10/2024"],
-      wiringPlan: null,
-      sitePlan: null
-    }
+  const clients = [
+    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024","05/04/2024"], wiringPlan: null, sitePlan: null },
+    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025","20/11/2024"], wiringPlan: null, sitePlan: null },
+    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025","03/10/2024"], wiringPlan: null, sitePlan: null }
   ];
 
   let currentClientIndex = -1;
   let technicianName = "";
-  let stepData = {};
-  let stepPhotos = {};
   let isAdminMode = false;
   const ADMIN_PASSWORD = "admin123";
 
@@ -224,73 +267,74 @@
     const container = document.getElementById('stepsContainer');
     container.innerHTML = '';
     stepsList.forEach((title, i) => {
-      const stepNum = i + 1;
-      const div = document.createElement('div');
-      div.id = `step${stepNum}`;
-      div.className = 'card block';
-      div.innerHTML = `
-        <div class="ch">${title}</div>
-        <div class="cb">
-          <p style="color:#444;margin-bottom:16px;">Prendre les photos nécessaires</p>
-          <label>Photos</label>
-          <input type="file" id="photo${stepNum}" accept="image/*" capture="environment" onchange="addPhoto(${stepNum})" multiple style="padding:12px;">
-          <div class="photo-grid" id="photos${stepNum}"></div>
+      const n = i + 1;
+      container.innerHTML += `
+        <div id="step${n}" class="card block">
+          <div class="ch">${title}</div>
+          <div class="cb">
+            <p style="color:#555;margin-bottom:1rem;">Prendre les photos nécessaires</p>
+            <label>Photos</label>
+            <input type="file" id="photo${n}" accept="image/*" multiple capture="environment" onchange="addPhoto(${n})" style="padding:0.8rem 0;"/>
+            <div class="photo-grid" id="photos${n}"></div>
 
-          <label style="margin-top:20px;">Processus effectué ?</label>
-          <input type="checkbox" id="processChk${stepNum}" onchange="toggleProcess(${stepNum})" style="width:24px;height:24px;"> <span style="font-size:1.1rem;">Oui</span>
+            <label style="margin-top:1.5rem;">Processus effectué ?</label>
+            <input type="checkbox" id="chk${n}" onchange="toggleProcess(${n})" style="width:1.4rem;height:1.4rem;"/> <span style="font-size:1.1rem;vertical-align:middle;">Oui</span>
 
-          <div class="observation" id="obsBlock${stepNum}">
-            <label><i class="fas fa-comment-dots"></i> Observation</label>
-            <textarea id="obs${stepNum}" placeholder="Si non effectué, décrivez l'anomalie..." oninput="updateObsPreview(${stepNum})"></textarea>
-            <div id="obsPreview${stepNum}" class="obs-preview"></div>
-          </div>
+            <div class="observation" id="obsBlock${n}">
+              <label><i class="fas fa-comment-dots"></i> Observation</label>
+              <textarea id="obs${n}" placeholder="Décrivez si nécessaire..." oninput="updateObsPreview(${n})"></textarea>
+              <div id="preview${n}" class="obs-preview"></div>
+            </div>
 
-          <div class="nav-row">
-            <button class="btn-big btn-prev" onclick="prevStep()">Précédent</button>
-            <button class="btn-big btn-ok" onclick="nextStep(${stepNum})">Suivant</button>
+            <div class="nav-row">
+              <button class="btn-big btn-prev" onclick="prevStep()">Précédent</button>
+              <button class="btn-big btn-ok" onclick="nextStep(${n})">Suivant</button>
+            </div>
           </div>
         </div>
       `;
-      container.appendChild(div);
     });
   }
 
   function renderClientList() {
-    const select = document.getElementById('clientSelect');
-    select.innerHTML = '<option value="">Sélectionnez un client...</option>';
-    clients.forEach((client, i) => {
+    const sel = document.getElementById('clientSelect');
+    sel.innerHTML = '<option value="">Sélectionnez un client...</option>';
+    clients.forEach((c,i) => {
       const opt = document.createElement('option');
       opt.value = i;
-      opt.text = client.name;
-      select.appendChild(opt);
+      opt.textContent = c.name;
+      sel.appendChild(opt);
     });
   }
 
   function loadClientData() {
-    const index = parseInt(document.getElementById('clientSelect').value);
-    if (isNaN(index)) {
+    const idx = +document.getElementById('clientSelect').value;
+    if (isNaN(idx)) {
       document.getElementById('clientDetails').style.display = 'none';
       return;
     }
-    currentClientIndex = index;
-    const client = clients[index];
+    currentClientIndex = idx;
+    const c = clients[idx];
     document.getElementById('clientDetails').style.display = 'block';
 
-    document.getElementById('installationDetails').value = client.details || "";
-    document.getElementById('installationDetails').readOnly = !isAdminMode;
+    const ta = document.getElementById('installationDetails');
+    ta.value = c.details || "";
+    ta.readOnly = !isAdminMode;
 
-    const oldDatesDiv = document.getElementById('oldDatesDisplay');
-    oldDatesDiv.innerHTML = (client.oldDates || []).length > 0 
-      ? client.oldDates.map(d => `<div>• ${d}</div>`).join('')
+    document.getElementById('oldDatesDisplay').innerHTML = c.oldDates?.length
+      ? c.oldDates.map(d => `<div>• ${d}</div>`).join('')
       : 'Aucune date enregistrée';
 
-    document.getElementById('lastMaint').value = client.lastMaint || "";
+    document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
+
+    document.getElementById('wiringPreview').innerHTML = c.wiringPlan ? `<img src="${c.wiringPlan}" style="max-width:100%;border-radius:10px;margin-top:0.5rem;">` : '';
+    document.getElementById('sitePreview').innerHTML   = c.sitePlan   ? `<img src="${c.sitePlan}"   style="max-width:100%;border-radius:10px;margin-top:0.5rem;">` : '';
   }
 
   function toggleAdminMode() {
-    const pass = prompt("Mot de passe Admin :");
-    if (pass === ADMIN_PASSWORD) {
+    const pw = prompt("Mot de passe Admin :");
+    if (pw === ADMIN_PASSWORD) {
       isAdminMode = true;
       document.getElementById('adminControls').style.display = 'block';
       document.getElementById('btnAdmin').style.display = 'none';
@@ -311,29 +355,120 @@
     toast("Mode Admin désactivé");
   }
 
+  function addNewClient() {
+    if (!isAdminMode) return toast("Mode Admin requis");
+    const name = document.getElementById('newClient').value.trim();
+    if (!name) return toast("Nom requis");
+    if (clients.some(c => c.name === name)) return toast("Déjà existant");
+
+    clients.push({ name, details: "", lastMaint: "", oldDates: [], wiringPlan: null, sitePlan: null });
+    renderClientList();
+    document.getElementById('newClient').value = "";
+    toast("Client ajouté");
+  }
+
+  function enableEditDetails() {
+    if (!isAdminMode) return;
+    document.getElementById('installationDetails').readOnly = false;
+  }
+
+  function uploadPlan(type) {
+    const file = document.getElementById(type + 'PlanInput').files[0];
+    if (!file || currentClientIndex < 0) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      clients[currentClientIndex][type + 'Plan'] = e.target.result;
+      loadClientData();
+    };
+    reader.readAsDataURL(file);
+  }
+
   function startMaintenance() {
     technicianName = document.getElementById('technicianName').value.trim();
-    if (!technicianName) return toast("Entrez le nom du technicien");
-    if (!document.getElementById('clientSelect').value) return toast("Sélectionne un client");
+    if (!technicianName) return toast("Nom technicien requis");
+    if (!document.getElementById('clientSelect').value) return toast("Client requis");
 
     document.getElementById('infoBlock').style.display = 'none';
     document.getElementById('step1').style.display = 'block';
-    currentStep = 1;
   }
 
   function restartApp() {
-    if (confirm("Recommencer une nouvelle maintenance ?")) location.reload();
+    if (confirm("Recommencer ?")) location.reload();
   }
 
   function toast(msg) {
-    const t = document.createElement('div');
-    t.className = 'toast-msg';
-    t.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
-    document.getElementById('toast').appendChild(t);
-    setTimeout(() => t.remove(), 2800);
+    const el = document.createElement('div');
+    el.className = 'toast-msg';
+    el.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
+    document.getElementById('toast').appendChild(el);
+    setTimeout(() => el.remove(), 3000);
   }
 
-  // ================== INITIALISATION ==================
+  // RAPPORT PDF TRÈS PRO (couleurs, tableaux, structure comme tes photos)
+  function generateReport() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const client = clients[currentClientIndex] || { name: "—" };
+
+    // Couverture
+    doc.setFillColor(0, 85, 170);
+    doc.rect(0, 0, 210, 80, 'F');
+    doc.setFontSize(38);
+    doc.setTextColor(255);
+    doc.text("R.L ENERGIE", 105, 45, {align: "center"});
+    doc.setFontSize(16);
+    doc.text("SPÉCIALISTE DU PHOTOVOLTAÏQUE", 105, 60, {align: "center"});
+    doc.setFontSize(24);
+    doc.text("RAPPORT DE MAINTENANCE", 105, 140, {align: "center"});
+
+    doc.addPage();
+
+    // Informations centrales
+    doc.setFontSize(18);
+    doc.setTextColor(0);
+    doc.text("Informations centrales", 20, 25);
+    doc.setFontSize(12);
+    let y = 40;
+    doc.text(`Client : ${client.name}`, 20, y); y += 10;
+    doc.text(`Technicien : ${technicianName}`, 20, y); y += 10;
+    doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 20, y); y += 15;
+
+    // Tableau mesures DC (avec couleurs)
+    doc.setFontSize(14);
+    doc.text("VÉRIFICATION DES MESURES ENTREES DC", 20, y); y += 12;
+
+    doc.autoTable({
+      startY: y,
+      head: [['Entrées', 'N° CHAINE', 'Nb PV', 'Icc', 'Uoc mesuré', 'Moyenne Uoc', 'Uoc tot*Nb PV', 'Δ Uoc']],
+      body: [
+        ['PV1', 'Chaîne 1', '19', '4,2', '743,7', '39,14', '746,79', '3,09'],
+        ['PV2', 'Chaîne 2', '19', '4,15', '743,7', '39,22', '746,79', '1,59'],
+        ['PV3', 'Chaîne 3', '19', '4,2', '745,2', '39,22', '746,79', '1,59'],
+        ['PV4', 'Chaîne 4', '19', '4,07', '745,1', '39,32', '746,79', '-0,31'],
+        ['PV5', 'Chaîne 5', '19', '4,15', '747,1', '39,32', '746,79', '-0,31'],
+        ['PV6', 'Chaîne 6', '19', '4,17', '745,3', '39,23', '746,79', '1,49'],
+        ['PV7', 'Chaîne 7', '19', '4,22', '745,3', '39,23', '746,79', '1,49'],
+        ['PV8', 'Chaîne 8', '19', '4,37', '746,9', '39,31', '746,79', '-0,11'],
+        ['PV9', 'Chaîne 9', '19', '4,37', '746,9', '39,31', '746,79', '-0,11'],
+        ['PV10', 'Chaîne 10', '19', '4,15', '746,9', '39,31', '746,79', '-0,11'],
+        ['PV11', 'Chaîne 11', '19', '4,17', '748,9', '39,42', '746,79', '-2,11'],
+        ['PV13', 'Chaîne 12', '19', '4,21', '749,3', '39,44', '707,48', '-1,72'],
+        ['PV15', 'Chaîne 13', '18', '4,17', '709,2', '39,40', '707,48', '-2,12'],
+        ['PV17', 'Chaîne 14', '18', '4,36', '709,7', '39,45', '668,18', '-2,52'],
+        ['PV19', 'Chaîne 15', '17', '4,31', '670,7', '39,45', '668,18', '2,52']
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 3, lineColor: [44, 62, 80], lineWidth: 0.1 },
+      columnStyles: {
+        7: { fontStyle: 'bold', textColor: [220, 53, 69] } // Δ Uoc en rouge
+      },
+      margin: { top: y + 10 }
+    });
+
+    doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+  }
+
   window.onload = function() {
     renderClientList();
     createSteps();
