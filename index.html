@@ -156,21 +156,18 @@
 
   <div id="stepsContainer"></div>
 
-  <!-- Étape finale avec tableaux remplissables -->
+  <!-- Étape finale avec boutons d'export -->
   <div id="step8" class="card block" style="display:none;">
     <div class="ch">8 — Finalisation & Checklists</div>
     <div class="cb">
       <p style="color:#555;margin-bottom:0.8rem;">Cochez les cases ci-dessous (le PDF et Excel seront remplis automatiquement)</p>
 
-      <!-- Point de raccordement -->
       <h3 style="margin:1.2rem 0 0.5rem; font-size:1.1rem;">Point de raccordement</h3>
       <div id="check-raccordement" class="checklist-grid"></div>
 
-      <!-- Partie AC -->
       <h3 style="margin:1.2rem 0 0.5rem; font-size:1.1rem;">PARTIE AC - Coffret protection</h3>
       <div id="check-ac" class="checklist-grid"></div>
 
-      <!-- Partie Onduleur -->
       <h3 style="margin:1.2rem 0 0.5rem; font-size:1.1rem;">PARTIE ONDULEUR</h3>
       <div id="check-onduleur" class="checklist-grid"></div>
 
@@ -181,7 +178,9 @@
 
       <div class="nav-row" style="margin-top:2.2rem;">
         <button class="btn-big btn-prev" onclick="prevStep()">Précédent</button>
-        <button class="btn-big btn-ok" onclick="generateReport()">GÉNÉRER PDF + EXCEL</button>
+        <button class="btn-big btn-ok" onclick="generateReport()" style="background:#0055aa;color:white;font-size:1.1rem;padding:1rem 2rem;">
+          <i class="fas fa-file-pdf"></i> GÉNÉRER PDF + EXCEL
+        </button>
       </div>
     </div>
   </div>
