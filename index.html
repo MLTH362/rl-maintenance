@@ -213,7 +213,6 @@
     "8 — Finalisation & Checklists"
   ];
 
-  // Données checklists
   let checklists = {
     raccordement: Array(6).fill({bon:false,acc:false,mau:false,ok:false,ras:false}),
     ac: Array(8).fill({bon:false,acc:false,mau:false,ok:false,ras:false}),
@@ -409,9 +408,13 @@
 
   function prevStep() {
     if (currentStep <= 1) return;
-    document.getElementById(`step${currentStep}`).style.display = 'none';
+    if (document.getElementById(`step${currentStep}`)) {
+      document.getElementById(`step${currentStep}`).style.display = 'none';
+    }
     currentStep--;
-    document.getElementById(`step${currentStep}`).style.display = 'block';
+    if (currentStep >= 1) {
+      document.getElementById(`step${currentStep}`).style.display = 'block';
+    }
   }
 
   function restartApp() {
@@ -482,7 +485,6 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  // PDF très pro (compact, titres seulement)
   function generateReport() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({margin: [10, 12, 10, 12]});
