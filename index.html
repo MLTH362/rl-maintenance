@@ -54,12 +54,6 @@
 
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
 
-    .checklist-grid { display:grid; grid-template-columns:3fr 1fr 1fr 1fr 1fr 1fr; gap:5px; margin:0.8rem 0; align-items:center; }
-    .checklist-header { font-weight:bold; text-align:center; background:var(--primary); color:white; padding:0.45rem; border-radius:5px; font-size:0.85rem; }
-    .checklist-item { padding:0.45rem; border-bottom:1px solid #eee; font-size:0.92rem; }
-    .checklist-check { text-align:center; }
-    input[type="checkbox"] { width:1.2rem; height:1.2rem; cursor:pointer; }
-
     #toast { position:fixed; bottom:1.8rem; left:50%; transform:translateX(-50%); z-index:9999; }
     .toast-msg { background:var(--success); color:white; padding:0.9rem 2rem; border-radius:50px; box-shadow:0 6px 20px rgba(0,0,0,0.25); animation:toast 2.8s forwards; }
     @keyframes toast { 0%{opacity:0;transform:translateY(20px) translateX(-50%);} 10%{opacity:1;transform:translateY(0) translateX(-50%);} 90%{opacity:1;transform:translateY(0) translateX(-50%);} 100%{opacity:0;transform:translateY(20px) translateX(-50%);} }
@@ -156,33 +150,13 @@
 
   <div id="stepsContainer"></div>
 
-  <!-- Étape finale avec boutons d'export -->
-  <div id="step8" class="card block" style="display:none;">
-    <div class="ch">8 — Finalisation & Checklists</div>
-    <div class="cb">
-      <p style="color:#555;margin-bottom:0.8rem;">Cochez les cases ci-dessous (le PDF et Excel seront remplis automatiquement)</p>
-
-      <h3 style="margin:1.2rem 0 0.5rem; font-size:1.1rem;">Point de raccordement</h3>
-      <div id="check-raccordement" class="checklist-grid"></div>
-
-      <h3 style="margin:1.2rem 0 0.5rem; font-size:1.1rem;">PARTIE AC - Coffret protection</h3>
-      <div id="check-ac" class="checklist-grid"></div>
-
-      <h3 style="margin:1.2rem 0 0.5rem; font-size:1.1rem;">PARTIE ONDULEUR</h3>
-      <div id="check-onduleur" class="checklist-grid"></div>
-
-      <div style="margin-top:1.8rem;">
-        <label>Observations globales / Conclusion</label>
-        <textarea id="obsFinal" rows="3" placeholder="Conclusion générale, remarques pour le client..."></textarea>
-      </div>
-
-      <div class="nav-row" style="margin-top:2.2rem;">
-        <button class="btn-big btn-prev" onclick="prevStep()">Précédent</button>
-        <button class="btn-big btn-ok" onclick="generateReport()" style="background:#0055aa;color:white;font-size:1.1rem;padding:1rem 2rem;">
-          <i class="fas fa-file-pdf"></i> GÉNÉRER PDF + EXCEL
-        </button>
-      </div>
-    </div>
+  <div style="text-align:center;margin:3.5rem 0;">
+    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.15rem;padding:1.2rem 2.4rem;">
+      <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
+    </button>
+    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:1.4rem;font-size:1.15rem;padding:1.2rem 2.4rem;" onclick="generateExcel()">
+      <i class="fas fa-file-excel"></i> Exporter Excel modifiable
+    </button>
   </div>
 
 </div>
@@ -209,14 +183,8 @@
     "5 — Partie AC (câbles, tests, serrages)",
     "6 — Partie Onduleur (état visuel, fonctionnement, nettoyage)",
     "7 — Point de raccordement (logette, câbles, vérifications)",
-    "8 — Finalisation & Checklists"
+    "8 — Vérification des mesures entrées DC + Finalisation"
   ];
-
-  let checklists = {
-    raccordement: Array(6).fill({bon:false,acc:false,mau:false,ok:false,ras:false}),
-    ac: Array(8).fill({bon:false,acc:false,mau:false,ok:false,ras:false}),
-    onduleur: Array(9).fill({bon:false,acc:false,mau:false,ok:false,ras:false})
-  };
 
   function createSteps() {
     const container = document.getElementById('stepsContainer');
@@ -253,50 +221,6 @@
         </div>
       `;
     });
-  }
-
-  function createChecklists() {
-    const items = {
-      raccordement: ["état visuel logette extérieur","état visuel logette intérieur","état des câbles","vérif paramétrage AGCP","vérif test différentiel","vérif serrages"],
-      ac: ["état visuel câbles onduleur coffret AC","état visuel câble AC","Test continuité terre","Test réseau","vérif disjoncteur/fusibles/parafoudre","vérif serrages","Nettoyage coffret AC","Présence étiquettes"],
-      onduleur: ["état visuel onduleur(s)","Fonctionnement onduleur(s)","Test découplage","Environnement local","vérif connectiques DC","vérif serrage AC","Nettoyage onduleur","Nettoyage ventilateur","Présence étiquettes"]
-    };
-
-    function build(id, list) {
-      const div = document.getElementById(id);
-      div.innerHTML = `<div class="checklist-header">Item</div><div class="checklist-header">Bon</div><div class="checklist-header">Acceptable</div><div class="checklist-header">Mauvais</div><div class="checklist-header">OK</div><div class="checklist-header">RAS</div>`;
-      list.forEach((item, i) => {
-        div.innerHTML += `
-          <div class="checklist-item">${item}</div>
-          <div class="checklist-check"><input type="checkbox" id="${id}-bon-${i}" onchange="updateCheck('${id}',${i},'bon')"></div>
-          <div class="checklist-check"><input type="checkbox" id="${id}-acc-${i}" onchange="updateCheck('${id}',${i},'acc')"></div>
-          <div class="checklist-check"><input type="checkbox" id="${id}-mau-${i}" onchange="updateCheck('${id}',${i},'mau')"></div>
-          <div class="checklist-check"><input type="checkbox" id="${id}-ok-${i}" onchange="updateCheck('${id}',${i},'ok')"></div>
-          <div class="checklist-check"><input type="checkbox" id="${id}-ras-${i}" onchange="updateCheck('${id}',${i},'ras')"></div>
-        `;
-      });
-    }
-
-    build('check-raccordement', items.raccordement);
-    build('check-ac', items.ac);
-    build('check-onduleur', items.onduleur);
-  }
-
-  function updateCheck(id, row, col) {
-    const prefix = `${id}-${col}-${row}`;
-    const chk = document.getElementById(prefix);
-    if (chk.checked) {
-      ['bon','acc','mau','ok','ras'].forEach(c => {
-        if (c !== col) document.getElementById(`${id}-${c}-${row}`).checked = false;
-      });
-    }
-  }
-
-  function quickFill(n) {
-    document.getElementById(`chk${n}`).checked = true;
-    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté";
-    updateObsPreview(n);
-    toast(`Étape ${n} → Tout OK / RAS`);
   }
 
   function renderClientList() {
@@ -531,42 +455,60 @@
     });
     y = doc.lastAutoTable.finalY + 10;
 
-    // Tableaux checklists
-    const clData = [
-      { title: "Point de raccordement", id: 'check-raccordement', rows: 6 },
-      { title: "PARTIE AC - Coffret protection", id: 'check-ac', rows: 8 },
-      { title: "PARTIE ONDULEUR", id: 'check-onduleur', rows: 9 }
+    // Tableaux checklists (structure vide)
+    const checklists = [
+      { title: "Point de raccordement", rows: [
+        ['état visuel logette extérieur'],
+        ['état visuel logette intérieur'],
+        ['état des câbles'],
+        ['vérification paramétrage AGCP'],
+        ['vérification test différentiel'],
+        ['vérification des serrages']
+      ]},
+      { title: "PARTIE AC - Coffret de protection électrique local onduleur", rows: [
+        ['état visuel des câbles onduleur coffret AC'],
+        ['état visuel du câble AC'],
+        ['Test de continuité de terre'],
+        ['Test réseau'],
+        ['vérification disjoncteur / fusibles / parafoudre'],
+        ['vérification des serrages'],
+        ['Nettoyage coffret AC'],
+        ['Présence des étiquettes']
+      ]},
+      { title: "PARTIE ONDULEUR", rows: [
+        ['état visuel de(s) onduleur(s)'],
+        ['Fonctionnement onduleur(s)'],
+        ['Test de découplage'],
+        ['Environnement local onduleur'],
+        ['vérification connectiques DC'],
+        ['vérification serrage AC'],
+        ['Nettoyage onduleur'],
+        ['Nettoyage ventilateur'],
+        ['Présence étiquettes']
+      ]}
     ];
 
-    clData.forEach(cl => {
+    checklists.forEach(cl => {
       if (y > 240) { doc.addPage(); y = 22; }
       doc.setFontSize(12);
       doc.text(cl.title, 20, y);
-      y += 7;
-      const body = [];
-      for (let i = 0; i < cl.rows; i++) {
-        const row = ['', '', '', '', '', ''];
-        ['bon','acc','mau','ok','ras'].forEach((col, j) => {
-          if (document.getElementById(`${cl.id}-${col}-${i}`)?.checked) row[j+1] = '✓';
-        });
-        body.push(row);
-      }
+      y += 8;
       doc.autoTable({
         startY: y,
         head: [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
-        body: body,
+        body: cl.rows.map(row => [row[0], '', '', '', '', '']),
         theme: 'grid',
         headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 9, cellPadding: 2.4, lineWidth: 0.1 },
+        styles: { fontSize: 9.5, cellPadding: 2.5, lineWidth: 0.1 },
         margin: { top: y + 4 }
       });
       y = doc.lastAutoTable.finalY + 8;
     });
 
-    // Observations + conclusion
+    // Observations
     if (y > 220) { doc.addPage(); y = 22; }
     doc.setFontSize(13);
-    doc.text("Observations & Conclusion", 20, y);
+    doc.text("Observations par étape", 20, y);
     y += 10;
     doc.setFontSize(10.5);
     for (let n = 1; n <= 8; n++) {
@@ -581,13 +523,49 @@
     doc.text("Client (signature) : ___________________________", 20, 290);
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF pro généré");
+    toast("Rapport PDF généré");
+  }
+
+  function generateExcel() {
+    const wb = XLSX.utils.book_new();
+
+    // Infos centrales
+    const infos = [
+      ["Client", clients[currentClientIndex]?.name || "—"],
+      ["Technicien", technicianName],
+      ["Date", document.getElementById('startDate').value],
+      ["Irradiance", document.getElementById('irradiance').value],
+      ["Compteur Production", document.getElementById('releveProd').value || "—"],
+      ["Compteur non-consommation", document.getElementById('releveNonConso').value || "—"],
+      ["Monitoring", document.getElementById('monitoring').value]
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infos), "Infos");
+
+    // Mesures DC
+    const dc = [['Entrées', 'N° CHAINE', 'Nb PV', 'Icc', 'Uoc mesuré', 'Moyenne Uoc', 'Uoc tot*Nb PV', 'Uoc mesuré']];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dc.concat(Array(15).fill(['', '', '', '', '', '', '', '']))), "Mesures DC");
+
+    // Checklists
+    const clNames = ["Point raccordement", "Partie AC", "Partie Onduleur"];
+    const clRows = [
+      [['état visuel logette extérieur'], ['état visuel logette intérieur'], ['état des câbles'], ['vérification paramétrage AGCP'], ['vérification test différentiel'], ['vérification des serrages']],
+      [['état visuel câbles onduleur coffret AC'], ['état visuel câble AC'], ['Test continuité terre'], ['Test réseau'], ['vérif disjoncteur/fusibles/parafoudre'], ['vérif serrages'], ['Nettoyage coffret AC'], ['Présence étiquettes']],
+      [['état visuel onduleur(s)'], ['Fonctionnement onduleur(s)'], ['Test découplage'], ['Environnement local'], ['vérif connectiques DC'], ['vérif serrage AC'], ['Nettoyage onduleur'], ['Nettoyage ventilateur'], ['Présence étiquettes']]
+    ];
+
+    clNames.forEach((name, i) => {
+      const data = [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']];
+      clRows[i].forEach(row => data.push([row[0], '', '', '', '', '']));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), name);
+    });
+
+    XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    toast("Excel modifiable généré");
   }
 
   window.onload = function() {
     renderClientList();
     createSteps();
-    createChecklists();
   };
 </script>
 </body>
