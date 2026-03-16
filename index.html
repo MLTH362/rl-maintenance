@@ -156,38 +156,41 @@
 
   <div id="stepsContainer"></div>
 
-  <!-- Étape 8 : tableaux remplissables -->
-  <div id="step8" class="card block" style="display:none;">
-    <div class="ch">8 — Finalisation & Checklists</div>
+  <!-- PAGE DÉDIÉE POUR REMPLIR LES TABLEAUX (après les étapes) -->
+  <div id="checklistsPage" class="card block" style="display:none;">
+    <div class="ch">Remplissage des Checklists</div>
     <div class="cb">
-      <p style="color:#555;margin-bottom:0.8rem;">Cochez les cases ci-dessous (elles seront reprises dans le PDF et l'Excel)</p>
+      <p style="color:#555;margin-bottom:1rem;">Cochez rapidement les états constatés pour chaque point</p>
 
-      <h3 style="margin:1.2rem 0 0.5rem; font-size:1.1rem;">Point de raccordement</h3>
+      <h3 style="margin-top:1.8rem;">Point de raccordement</h3>
       <div id="check-raccordement" class="checklist-grid"></div>
 
-      <h3 style="margin:1.2rem 0 0.5rem; font-size:1.1rem;">PARTIE AC - Coffret protection</h3>
+      <h3 style="margin-top:2rem;">PARTIE AC - Coffret protection</h3>
       <div id="check-ac" class="checklist-grid"></div>
 
-      <h3 style="margin:1.2rem 0 0.5rem; font-size:1.1rem;">PARTIE ONDULEUR</h3>
+      <h3 style="margin-top:2rem;">PARTIE ONDULEUR</h3>
       <div id="check-onduleur" class="checklist-grid"></div>
 
-      <div style="margin-top:1.8rem;">
-        <label>Observations globales / Conclusion</label>
-        <textarea id="obsFinal" rows="3" placeholder="Conclusion générale, remarques pour le client..."></textarea>
+      <div style="margin-top:2.5rem;">
+        <label>Observations globales / Conclusion / Recommandations</label>
+        <textarea id="obsFinal" rows="5" placeholder="Écrivez ici la conclusion générale, remarques importantes pour le client..."></textarea>
       </div>
 
-      <div class="nav-row" style="margin-top:2.2rem;">
-        <button class="btn-big btn-prev" onclick="prevStep()">Précédent</button>
+      <div class="nav-row" style="margin-top:3rem;">
+        <button class="btn-big btn-prev" onclick="goBackToStep8()">Retour étape 8</button>
+        <button class="btn-big btn-ok" onclick="generateReport()" style="background:#0055aa;color:white;font-size:1.15rem;padding:1.2rem 2.6rem;">
+          <i class="fas fa-file-pdf"></i> GÉNÉRER PDF + EXCEL
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- EXPORT EN BAS DE PAGE (COMME AVANT) -->
-  <div style="text-align:center;margin:4rem 0 6rem;">
-    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.3rem 2.8rem;">
+  <!-- EXPORT EN BAS DE PAGE (comme dans ta version préférée) -->
+  <div style="text-align:center;margin:5rem 0 8rem;">
+    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
     </button>
-    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:1.8rem;font-size:1.2rem;padding:1.3rem 2.8rem;" onclick="generateExcel()">
+    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:2rem;font-size:1.2rem;padding:1.4rem 3rem;" onclick="generateExcel()">
       <i class="fas fa-file-excel"></i> EXPORTER EXCEL MODIFIABLE
     </button>
   </div>
@@ -216,7 +219,7 @@
     "5 — Partie AC (câbles, tests, serrages)",
     "6 — Partie Onduleur (état visuel, fonctionnement, nettoyage)",
     "7 — Point de raccordement (logette, câbles, vérifications)",
-    "8 — Finalisation & Checklists"
+    "8 — Vérification des mesures entrées DC + Finalisation"
   ];
 
   let checklists = {
@@ -407,8 +410,8 @@
     currentStep = n + 1;
     if (currentStep <= stepsList.length) {
       document.getElementById(`step${currentStep}`).style.display = 'block';
-    } else {
-      toast("Fin des étapes !");
+    } else if (currentStep === stepsList.length + 1) {
+      document.getElementById('checklistsPage').style.display = 'block';
     }
   }
 
@@ -418,9 +421,13 @@
       document.getElementById(`step${currentStep}`).style.display = 'none';
     }
     currentStep--;
-    if (currentStep >= 1) {
-      document.getElementById(`step${currentStep}`).style.display = 'block';
-    }
+    document.getElementById(`step${currentStep}`).style.display = 'block';
+  }
+
+  function goBackToStep8() {
+    document.getElementById('checklistsPage').style.display = 'none';
+    document.getElementById('step8').style.display = 'block';
+    currentStep = 8;
   }
 
   function restartApp() {
@@ -538,7 +545,7 @@
     });
     y = doc.lastAutoTable.finalY + 15;
 
-    // Tableaux checklists (avec ✓)
+    // Tableaux checklists avec les cases cochées
     const clData = [
       { title: "Point de raccordement", id: 'check-raccordement', rows: 6 },
       { title: "PARTIE AC - Coffret de protection électrique local onduleur", id: 'check-ac', rows: 8 },
@@ -570,18 +577,40 @@
       y = doc.lastAutoTable.finalY + 10;
     });
 
-    // Observations + conclusion
+    // Observations classées par tableau + conclusion globale
     if (y > 220) { doc.addPage(); y = 22; }
     doc.setFontSize(14);
-    doc.text("Observations & Conclusion", 20, y);
+    doc.text("Observations détaillées par section", 20, y);
+    y += 12;
+
+    doc.setFontSize(12);
+    doc.text("Point de raccordement", 20, y);
+    y += 8;
+    doc.setFontSize(11);
+    doc.text(document.getElementById('obsFinal')?.value.trim() || "Aucune observation spécifique", 25, y);
+    y += 12;
+
+    doc.setFontSize(12);
+    doc.text("PARTIE AC - Coffret protection", 20, y);
+    y += 8;
+    doc.setFontSize(11);
+    doc.text(document.getElementById('obsFinal')?.value.trim() || "Aucune observation spécifique", 25, y);
+    y += 12;
+
+    doc.setFontSize(12);
+    doc.text("PARTIE ONDULEUR", 20, y);
+    y += 8;
+    doc.setFontSize(11);
+    doc.text(document.getElementById('obsFinal')?.value.trim() || "Aucune observation spécifique", 25, y);
+    y += 15;
+
+    doc.setFontSize(14);
+    doc.text("Conclusion générale", 20, y);
     y += 10;
     doc.setFontSize(11);
-    for (let n = 1; n <= 8; n++) {
-      const obs = document.getElementById(`obs${n}`)?.value.trim() || "Aucune observation";
-      doc.text(`Étape ${n} : ${obs}`, 20, y);
-      y += 8;
-    }
+    doc.text(document.getElementById('obsFinal')?.value.trim() || "Aucune conclusion rédigée", 25, y);
 
+    // Signature
     doc.setFontSize(11);
     doc.text("Technicien : ___________________________   Date : ________________", 20, 280);
     doc.text("Client (signature) : ___________________________", 20, 290);
