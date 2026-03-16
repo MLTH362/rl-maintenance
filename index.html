@@ -156,7 +156,7 @@
 
   <div id="stepsContainer"></div>
 
-  <!-- Étape 8 avec remplissage rapide des tableaux -->
+  <!-- Étape 8 : tableaux remplissables -->
   <div id="step8" class="card block" style="display:none;">
     <div class="ch">8 — Finalisation & Checklists</div>
     <div class="cb">
@@ -178,20 +178,17 @@
 
       <div class="nav-row" style="margin-top:2.2rem;">
         <button class="btn-big btn-prev" onclick="prevStep()">Précédent</button>
-        <button class="btn-big btn-ok" onclick="generateReport()" style="background:#0055aa;color:white;font-size:1.1rem;padding:1rem 2rem;">
-          <i class="fas fa-file-pdf"></i> GÉNÉRER PDF + EXCEL
-        </button>
       </div>
     </div>
   </div>
 
-  <!-- Boutons d'export en bas de page (comme avant) -->
-  <div style="text-align:center;margin:3.5rem 0;">
-    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.15rem;padding:1.2rem 2.4rem;">
+  <!-- EXPORT EN BAS DE PAGE (COMME AVANT) -->
+  <div style="text-align:center;margin:4rem 0 6rem;">
+    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.3rem 2.8rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
     </button>
-    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:1.4rem;font-size:1.15rem;padding:1.2rem 2.4rem;" onclick="generateExcel()">
-      <i class="fas fa-file-excel"></i> Exporter Excel modifiable
+    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:1.8rem;font-size:1.2rem;padding:1.3rem 2.8rem;" onclick="generateExcel()">
+      <i class="fas fa-file-excel"></i> EXPORTER EXCEL MODIFIABLE
     </button>
   </div>
 
@@ -502,57 +499,57 @@
     // Couverture
     doc.setFillColor(240, 240, 240);
     doc.rect(0, 0, 210, 297, 'F');
-    doc.setFontSize(40);
+    doc.setFontSize(42);
     doc.setTextColor(0);
     doc.text("R.L ENERGIE", 105, 80, {align: "center"});
     doc.setFontSize(14);
     doc.text("SPÉCIALISTE DU PHOTOVOLTAÏQUE", 105, 95, {align: "center"});
-    doc.setFontSize(26);
-    doc.text("RAPPORT DE MAINTENANCE", 105, 145, {align: "center"});
+    doc.setFontSize(28);
+    doc.text("RAPPORT DE MAINTENANCE", 105, 150, {align: "center"});
 
     doc.addPage();
 
     // Informations centrales
     let y = 22;
-    doc.setFontSize(15);
+    doc.setFontSize(16);
     doc.text("Informations centrales", 20, y);
     y += 10;
-    doc.setFontSize(10.5);
-    doc.text(`Client : ${client.name}`, 20, y); y += 7;
-    doc.text(`Technicien : ${technicianName}`, 20, y); y += 7;
-    doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 20, y); y += 7;
-    doc.text(`Irradiance solaire : ${document.getElementById('irradiance').value}`, 20, y); y += 7;
-    doc.text(`Relevé compteur Production : ${document.getElementById('releveProd').value || "—"}`, 20, y); y += 7;
-    doc.text(`Relevé compteur non-consommation : ${document.getElementById('releveNonConso').value || "—"}`, 20, y); y += 7;
-    doc.text(`Monitoring : ${document.getElementById('monitoring').value}`, 20, y); y += 12;
+    doc.setFontSize(11);
+    doc.text(`Client : ${client.name}`, 20, y); y += 8;
+    doc.text(`Technicien : ${technicianName}`, 20, y); y += 8;
+    doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 20, y); y += 8;
+    doc.text(`Irradiance solaire : ${document.getElementById('irradiance').value}`, 20, y); y += 8;
+    doc.text(`Relevé compteur Production : ${document.getElementById('releveProd').value || "—"}`, 20, y); y += 8;
+    doc.text(`Relevé compteur non-consommation : ${document.getElementById('releveNonConso').value || "—"}`, 20, y); y += 8;
+    doc.text(`Monitoring : ${document.getElementById('monitoring').value}`, 20, y); y += 15;
 
-    // Tableau DC (vide)
-    doc.setFontSize(12);
+    // Tableau DC
+    doc.setFontSize(14);
     doc.text("VÉRIFICATION DES MESURES ENTREES DC", 20, y);
-    y += 8;
+    y += 10;
     doc.autoTable({
       startY: y,
       head: [['Entrées', 'N° CHAINE', 'Nb PV', 'Intensité Icc', 'Tension Uoc mesuré', 'Moyenne Uoc', 'Uoc Moyenne totale*Nb PV', 'Uoc mesuré']],
       body: Array(15).fill(['', '', '', '', '', '', '', '']),
       theme: 'grid',
       headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold' },
-      styles: { fontSize: 8.8, cellPadding: 2.5, lineWidth: 0.1 },
-      margin: { top: y + 4 }
+      styles: { fontSize: 9, cellPadding: 3 },
+      margin: { top: y + 5 }
     });
-    y = doc.lastAutoTable.finalY + 10;
+    y = doc.lastAutoTable.finalY + 15;
 
-    // Tableaux checklists avec les cases cochées
+    // Tableaux checklists (avec ✓)
     const clData = [
       { title: "Point de raccordement", id: 'check-raccordement', rows: 6 },
-      { title: "PARTIE AC - Coffret protection", id: 'check-ac', rows: 8 },
+      { title: "PARTIE AC - Coffret de protection électrique local onduleur", id: 'check-ac', rows: 8 },
       { title: "PARTIE ONDULEUR", id: 'check-onduleur', rows: 9 }
     ];
 
     clData.forEach(cl => {
       if (y > 240) { doc.addPage(); y = 22; }
-      doc.setFontSize(12);
+      doc.setFontSize(13);
       doc.text(cl.title, 20, y);
-      y += 7;
+      y += 8;
       const body = [];
       for (let i = 0; i < cl.rows; i++) {
         const row = ['', '', '', '', '', ''];
@@ -567,22 +564,22 @@
         body: body,
         theme: 'grid',
         headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 9, cellPadding: 2.4, lineWidth: 0.1 },
-        margin: { top: y + 4 }
+        styles: { fontSize: 9.5, cellPadding: 3, lineWidth: 0.1 },
+        margin: { top: y + 5 }
       });
-      y = doc.lastAutoTable.finalY + 8;
+      y = doc.lastAutoTable.finalY + 10;
     });
 
-    // Observations
+    // Observations + conclusion
     if (y > 220) { doc.addPage(); y = 22; }
-    doc.setFontSize(13);
+    doc.setFontSize(14);
     doc.text("Observations & Conclusion", 20, y);
     y += 10;
-    doc.setFontSize(10.5);
+    doc.setFontSize(11);
     for (let n = 1; n <= 8; n++) {
       const obs = document.getElementById(`obs${n}`)?.value.trim() || "Aucune observation";
       doc.text(`Étape ${n} : ${obs}`, 20, y);
-      y += 7;
+      y += 8;
     }
 
     doc.setFontSize(11);
@@ -605,16 +602,16 @@
       ["Compteur non-consommation", document.getElementById('releveNonConso').value || "—"],
       ["Monitoring", document.getElementById('monitoring').value]
     ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infos), "Infos");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infos), "Infos centrales");
 
-    const dc = [['Entrées', 'N° CHAINE', 'Nb PV', 'Icc', 'Uoc mesuré', 'Moyenne Uoc', 'Uoc tot*Nb PV', 'Uoc mesuré']];
+    const dc = [['Entrées', 'N° CHAINE', 'Nb PV', 'Intensité Icc', 'Tension Uoc mesuré', 'Moyenne Uoc', 'Uoc Moyenne totale*Nb PV', 'Uoc mesuré']];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dc.concat(Array(15).fill(['', '', '', '', '', '', '', '']))), "Mesures DC");
 
     const clNames = ["Point raccordement", "Partie AC", "Partie Onduleur"];
     const clRows = [
       [['état visuel logette extérieur'], ['état visuel logette intérieur'], ['état des câbles'], ['vérification paramétrage AGCP'], ['vérification test différentiel'], ['vérification des serrages']],
-      [['état visuel câbles onduleur coffret AC'], ['état visuel câble AC'], ['Test continuité terre'], ['Test réseau'], ['vérif disjoncteur/fusibles/parafoudre'], ['vérif serrages'], ['Nettoyage coffret AC'], ['Présence étiquettes']],
-      [['état visuel onduleur(s)'], ['Fonctionnement onduleur(s)'], ['Test découplage'], ['Environnement local'], ['vérif connectiques DC'], ['vérif serrage AC'], ['Nettoyage onduleur'], ['Nettoyage ventilateur'], ['Présence étiquettes']]
+      [['état visuel câbles onduleur coffret AC'], ['état visuel câble AC'], ['Test de continuité de terre'], ['Test réseau'], ['vérification disjoncteur / fusibles / parafoudre'], ['vérification des serrages'], ['Nettoyage coffret AC'], ['Présence des étiquettes']],
+      [['état visuel de(s) onduleur(s)'], ['Fonctionnement onduleur(s)'], ['Test de découplage'], ['Environnement local onduleur'], ['vérification connectiques DC'], ['vérification serrage AC'], ['Nettoyage onduleur'], ['Nettoyage ventilateur'], ['Présence étiquettes']]
     ];
 
     clNames.forEach((name, i) => {
