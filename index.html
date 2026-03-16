@@ -156,11 +156,11 @@
 
   <div id="stepsContainer"></div>
 
-  <!-- Étape 8 : tableaux remplissables + export -->
+  <!-- Étape 8 avec remplissage rapide des tableaux -->
   <div id="step8" class="card block" style="display:none;">
     <div class="ch">8 — Finalisation & Checklists</div>
     <div class="cb">
-      <p style="color:#555;margin-bottom:0.8rem;">Cochez les cases ci-dessous (le PDF et Excel seront remplis automatiquement)</p>
+      <p style="color:#555;margin-bottom:0.8rem;">Cochez les cases ci-dessous (elles seront reprises dans le PDF et l'Excel)</p>
 
       <h3 style="margin:1.2rem 0 0.5rem; font-size:1.1rem;">Point de raccordement</h3>
       <div id="check-raccordement" class="checklist-grid"></div>
@@ -183,6 +183,16 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- Boutons d'export en bas de page (comme avant) -->
+  <div style="text-align:center;margin:3.5rem 0;">
+    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.15rem;padding:1.2rem 2.4rem;">
+      <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
+    </button>
+    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:1.4rem;font-size:1.15rem;padding:1.2rem 2.4rem;" onclick="generateExcel()">
+      <i class="fas fa-file-excel"></i> Exporter Excel modifiable
+    </button>
   </div>
 
 </div>
@@ -531,7 +541,7 @@
     });
     y = doc.lastAutoTable.finalY + 10;
 
-    // Tableaux checklists (avec ✓ si coché dans l'app)
+    // Tableaux checklists avec les cases cochées
     const clData = [
       { title: "Point de raccordement", id: 'check-raccordement', rows: 6 },
       { title: "PARTIE AC - Coffret protection", id: 'check-ac', rows: 8 },
@@ -575,13 +585,46 @@
       y += 7;
     }
 
-    // Signature
     doc.setFontSize(11);
     doc.text("Technicien : ___________________________   Date : ________________", 20, 280);
     doc.text("Client (signature) : ___________________________", 20, 290);
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
     toast("Rapport PDF pro généré");
+  }
+
+  function generateExcel() {
+    const wb = XLSX.utils.book_new();
+
+    const infos = [
+      ["Client", clients[currentClientIndex]?.name || "—"],
+      ["Technicien", technicianName],
+      ["Date", document.getElementById('startDate').value],
+      ["Irradiance", document.getElementById('irradiance').value],
+      ["Compteur Production", document.getElementById('releveProd').value || "—"],
+      ["Compteur non-consommation", document.getElementById('releveNonConso').value || "—"],
+      ["Monitoring", document.getElementById('monitoring').value]
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infos), "Infos");
+
+    const dc = [['Entrées', 'N° CHAINE', 'Nb PV', 'Icc', 'Uoc mesuré', 'Moyenne Uoc', 'Uoc tot*Nb PV', 'Uoc mesuré']];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dc.concat(Array(15).fill(['', '', '', '', '', '', '', '']))), "Mesures DC");
+
+    const clNames = ["Point raccordement", "Partie AC", "Partie Onduleur"];
+    const clRows = [
+      [['état visuel logette extérieur'], ['état visuel logette intérieur'], ['état des câbles'], ['vérification paramétrage AGCP'], ['vérification test différentiel'], ['vérification des serrages']],
+      [['état visuel câbles onduleur coffret AC'], ['état visuel câble AC'], ['Test continuité terre'], ['Test réseau'], ['vérif disjoncteur/fusibles/parafoudre'], ['vérif serrages'], ['Nettoyage coffret AC'], ['Présence étiquettes']],
+      [['état visuel onduleur(s)'], ['Fonctionnement onduleur(s)'], ['Test découplage'], ['Environnement local'], ['vérif connectiques DC'], ['vérif serrage AC'], ['Nettoyage onduleur'], ['Nettoyage ventilateur'], ['Présence étiquettes']]
+    ];
+
+    clNames.forEach((name, i) => {
+      const data = [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']];
+      clRows[i].forEach(row => data.push([row[0], '', '', '', '', '']));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), name);
+    });
+
+    XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    toast("Excel modifiable généré");
   }
 
   window.onload = function() {
