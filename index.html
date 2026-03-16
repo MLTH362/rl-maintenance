@@ -213,7 +213,7 @@
     "8 — Finalisation & Checklists"
   ];
 
-  // Données checklists (remplies depuis l’app)
+  // Données checklists
   let checklists = {
     raccordement: Array(6).fill({bon:false,acc:false,mau:false,ok:false,ras:false}),
     ac: Array(8).fill({bon:false,acc:false,mau:false,ok:false,ras:false}),
@@ -292,6 +292,13 @@
         if (c !== col) document.getElementById(`${id}-${c}-${row}`).checked = false;
       });
     }
+  }
+
+  function quickFill(n) {
+    document.getElementById(`chk${n}`).checked = true;
+    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté";
+    updateObsPreview(n);
+    toast(`Étape ${n} → Tout OK / RAS`);
   }
 
   function renderClientList() {
@@ -389,10 +396,14 @@
   }
 
   function nextStep(n) {
-    document.getElementById(`step${n}`).style.display = 'none';
+    if (document.getElementById(`step${n}`)) {
+      document.getElementById(`step${n}`).style.display = 'none';
+    }
     currentStep = n + 1;
     if (currentStep <= stepsList.length) {
       document.getElementById(`step${currentStep}`).style.display = 'block';
+    } else {
+      toast("Fin des étapes !");
     }
   }
 
@@ -568,7 +579,7 @@
     doc.text("Technicien : ___________________________   Date : ________________", 20, 280);
     doc.text("Client (signature) : ___________________________", 20, 290);
 
-    doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+    doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
     toast("Rapport PDF pro généré");
   }
 
