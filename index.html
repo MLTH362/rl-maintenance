@@ -39,7 +39,12 @@
     input, select, textarea { width:100%; padding:0.75rem; border:2px solid var(--border); border-radius:6px; font-size:0.95rem; margin-bottom:1rem; }
     input[readonly], textarea[readonly] { background:#f8f9fa; cursor:not-allowed; }
 
-    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.4rem; margin:1.4rem 0; }
+    .photo-upload-btn {
+      background: var(--primary-light); color: white; padding: 1.2rem; border-radius: 12px; text-align: center; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.15rem; font-weight: 600;
+      border: none; margin: 1rem 0; transition: all 0.2s;
+    }
+    .photo-upload-btn:hover { background: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 
     .photo-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:1rem; margin:1.2rem 0; }
     .photo-preview { position:relative; border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
@@ -136,11 +141,17 @@
         </div>
 
         <label style="margin-top:1.2rem;">Plan de câblage</label>
-        <input type="file" id="wiringPlanInput" accept="image/*" onchange="uploadPlan('wiring')"/>
+        <div class="photo-upload-btn" onclick="document.getElementById('wiringPlanInput').click()">
+          <i class="fas fa-camera"></i> Ajouter plan de câblage
+        </div>
+        <input type="file" id="wiringPlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('wiring')"/>
         <div id="wiringPreview" style="margin-top:0.6rem;"></div>
 
         <label style="margin-top:1.2rem;">Plan du site</label>
-        <input type="file" id="sitePlanInput" accept="image/*" onchange="uploadPlan('site')"/>
+        <div class="photo-upload-btn" onclick="document.getElementById('sitePlanInput').click()">
+          <i class="fas fa-camera"></i> Ajouter plan du site
+        </div>
+        <input type="file" id="sitePlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('site')"/>
         <div id="sitePreview" style="margin-top:0.6rem;"></div>
       </div>
 
@@ -156,7 +167,21 @@
 
   <div id="stepsContainer"></div>
 
-  <!-- EXPORT EN BAS DE PAGE -->
+  <!-- BOUTONS SAUVEGARDE / IMPORT / EXPORT -->
+  <div style="text-align:center;margin:3rem 0;">
+    <button class="btn-big" style="background:#6c757d;color:white;" onclick="saveToLocalStorage()">
+      <i class="fas fa-save"></i> Sauvegarder sur tablette
+    </button>
+    <button class="btn-big" style="background:#28a745;color:white;margin-left:1rem;" onclick="exportJSON()">
+      <i class="fas fa-download"></i> Exporter JSON (vers PC)
+    </button>
+    <button class="btn-big" style="background:#0066cc;color:white;margin-left:1rem;" onclick="document.getElementById('importJsonInput').click()">
+      <i class="fas fa-upload"></i> Importer JSON (de PC)
+    </button>
+    <input type="file" id="importJsonInput" accept=".json" style="display:none;" onchange="importJSON(event)">
+  </div>
+
+  <!-- EXPORT PDF/EXCEL -->
   <div style="text-align:center;margin:5rem 0 8rem;">
     <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
@@ -214,8 +239,11 @@
           <div class="ch">${title}</div>
           <div class="cb">
             <p style="color:#555;margin-bottom:0.9rem;">Prendre les photos nécessaires</p>
-            <label>Photos</label>
-            <input type="file" id="photo${n}" accept="image/*" multiple capture="environment" onchange="addPhoto(${n})" style="padding:0.7rem 0;"/>
+
+            <div class="photo-upload-btn" onclick="document.getElementById('photo${n}').click()">
+              <i class="fas fa-camera"></i> Ajouter photos (plusieurs possibles)
+            </div>
+            <input type="file" id="photo${n}" accept="image/*" multiple capture="environment" style="display:none;" onchange="addPhoto(${n})"/>
             <div class="photo-grid" id="photos${n}"></div>
 
             ${extraHTML}
@@ -469,6 +497,60 @@
     setTimeout(() => el.remove(), 3000);
   }
 
+  // Sauvegarde / import / export
+  function saveToLocalStorage() {
+    const data = {
+      currentClientIndex,
+      technicianName,
+      stepPhotos,
+      checklists,
+      obs: {}
+    };
+    for (let n = 1; n <= 8; n++) {
+      data.obs[n] = document.getElementById(`obs${n}`)?.value || "";
+    }
+    data.obs.final = document.getElementById('obsFinal')?.value || "";
+    localStorage.setItem('rl_maintenance_save', JSON.stringify(data));
+    toast("Sauvegardé sur la tablette");
+  }
+
+  function exportJSON() {
+    saveToLocalStorage();
+    const data = JSON.parse(localStorage.getItem('rl_maintenance_save'));
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `maintenance_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    toast("JSON exporté – transfère-le sur PC");
+  }
+
+  function importJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      localStorage.setItem('rl_maintenance_save', ev.target.result);
+      const data = JSON.parse(ev.target.result);
+      technicianName = data.technicianName || "";
+      currentClientIndex = data.currentClientIndex || -1;
+      stepPhotos = data.stepPhotos || {};
+      checklists = data.checklists || checklists;
+      for (let n = 1; n <= 8; n++) {
+        if (document.getElementById(`obs${n}`)) {
+          document.getElementById(`obs${n}`).value = data.obs[n] || "";
+        }
+      }
+      if (document.getElementById('obsFinal')) {
+        document.getElementById('obsFinal').value = data.obs.final || "";
+      }
+      renderClientList();
+      toast("Données importées depuis JSON");
+    };
+    reader.readAsText(file);
+  }
+
   function generateReport() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
@@ -530,7 +612,7 @@
         "vérif serrages",
         "Nettoyage coffret AC",
         "Présence étiquettes"
-      ], obsKey: 'ac' },
+      ], obsKey: 5 },
       { title: "PARTIE ONDULEUR", id: 'check-onduleur', items: [
         "état visuel onduleur(s)",
         "Fonctionnement onduleur(s)",
@@ -541,7 +623,7 @@
         "Nettoyage onduleur",
         "Nettoyage ventilateur",
         "Présence étiquettes"
-      ], obsKey: 'onduleur' },
+      ], obsKey: 6 },
       { title: "POINT DE RACCORDEMENT", id: 'check-raccordement', items: [
         "état visuel logette extérieur",
         "état visuel logette intérieur",
@@ -549,7 +631,7 @@
         "vérif paramétrage AGCP",
         "vérif test différentiel",
         "vérif serrages"
-      ], obsKey: 'raccordement' }
+      ], obsKey: 7 }
     ];
 
     clData.forEach(cl => {
@@ -584,7 +666,7 @@
       // Observation spécifique à cette section
       doc.setFontSize(11);
       doc.setFont("helvetica", "italic");
-      const sectionObs = document.getElementById(`obs${stepsList.findIndex(t => t.includes(cl.title)) + 1}`)?.value.trim() || "RAS – Aucun commentaire spécifique";
+      const sectionObs = document.getElementById(`obs${cl.obsKey}`)?.value.trim() || "RAS – Aucun commentaire spécifique";
       doc.text(`Observation pour ${cl.title} :`, 25, y); y += 6;
       const obsLines = doc.splitTextToSize(sectionObs, 160);
       doc.text(obsLines, 30, y);
@@ -615,7 +697,7 @@
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text("CONCLUSION GLOBALE", 20, y); y += 10;
-    const finalObs = document.getElementById('obsFinal') ? document.getElementById('obsFinal').value.trim() : "RAS – Installation conforme aux normes en vigueur.";
+    const finalObs = document.getElementById('obsFinal')?.value.trim() || "RAS – Installation conforme aux normes en vigueur.";
     doc.setFont("helvetica", "normal");
     const finalLines = doc.splitTextToSize(finalObs, 160);
     doc.text(finalLines, 25, y);
@@ -633,7 +715,7 @@
     doc.text("Nom & Signature", 140, y);
 
     doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF corrigé et amélioré généré");
+    toast("Rapport PDF complet généré");
   }
 
   function generateExcel() {
@@ -674,7 +756,27 @@
     renderClientList();
     createSteps();
     createChecklists();
+    // Charge la sauvegarde précédente au démarrage
+    const saved = localStorage.getItem('rl_maintenance_save');
+    if (saved) {
+      const data = JSON.parse(saved);
+      technicianName = data.technicianName || "";
+      currentClientIndex = data.currentClientIndex || -1;
+      stepPhotos = data.stepPhotos || {};
+      checklists = data.checklists || checklists;
+      for (let n = 1; n <= 8; n++) {
+        if (document.getElementById(`obs${n}`)) {
+          document.getElementById(`obs${n}`).value = data.obs[n] || "";
+        }
+      }
+      if (document.getElementById('obsFinal')) {
+        document.getElementById('obsFinal').value = data.obs.final || "";
+      }
+      renderClientList();
+      toast("Dernière sauvegarde chargée");
+    }
   };
 </script>
 </body>
 </html>
+  
