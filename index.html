@@ -70,6 +70,8 @@
     @keyframes toast { 0%{opacity:0;transform:translateY(20px) translateX(-50%);} 10%{opacity:1;transform:translateY(0) translateX(-50%);} 90%{opacity:1;transform:translateY(0) translateX(-50%);} 100%{opacity:0;transform:translateY(20px) translateX(-50%);} }
 
     #historyList { margin:1.5rem 0; padding:1rem; background:#f8f9fa; border-radius:8px; max-height:300px; overflow-y:auto; }
+    .history-item { padding:0.8rem; border-bottom:1px solid #ddd; cursor:pointer; }
+    .history-item:hover { background:#e9ecef; }
   </style>
 </head>
 <body>
@@ -171,9 +173,11 @@
 
   <!-- HISTORIQUE -->
   <div class="card" style="margin-top:2rem;">
-    <div class="ch">Historique des maintenances</div>
+    <div class="ch">Historique des maintenances enregistrées</div>
     <div class="cb">
-      <button class="btn-big" onclick="showHistory()" style="background:#17a2b8;">Voir / Charger ancienne maintenance</button>
+      <button class="btn-big" onclick="showHistory()" style="background:#17a2b8;color:white;">
+        <i class="fas fa-history"></i> Voir / Charger une ancienne maintenance
+      </button>
       <div id="historyList"></div>
     </div>
   </div>
@@ -181,13 +185,13 @@
   <!-- BOUTONS SAUVEGARDE -->
   <div style="text-align:center;margin:2rem 0;">
     <button class="btn-big" style="background:#6c757d;color:white;" onclick="saveToLocalStorage()">
-      <i class="fas fa-save"></i> Sauvegarder sur tablette
+      <i class="fas fa-save"></i> Sauvegarder maintenant
     </button>
     <button class="btn-big" style="background:#28a745;color:white;margin-left:1rem;" onclick="exportJSON()">
-      <i class="fas fa-download"></i> Exporter JSON (vers PC)
+      <i class="fas fa-download"></i> Exporter JSON (vers PC / autre tablette)
     </button>
     <button class="btn-big" style="background:#0066cc;color:white;margin-left:1rem;" onclick="document.getElementById('importJsonInput').click()">
-      <i class="fas fa-upload"></i> Importer JSON (de PC)
+      <i class="fas fa-upload"></i> Importer JSON (de PC / autre tablette)
     </button>
     <input type="file" id="importJsonInput" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
@@ -235,7 +239,7 @@
     raccordement: Array(6).fill({bon:false,acc:false,mau:false,ok:false,ras:false})
   };
 
-  let maintenanceHistory = [];
+  let maintenanceHistory = JSON.parse(localStorage.getItem('rl_maintenance_history')) || [];
 
   function createSteps() {
     const container = document.getElementById('stepsContainer');
@@ -454,6 +458,7 @@
       reader.onload = e => {
         stepPhotos[n].push(e.target.result);
         renderPhotos(n);
+        saveToLocalStorage(); // sauvegarde auto
       };
       reader.readAsDataURL(file);
     }
@@ -477,6 +482,7 @@
   function deletePhoto(n, idx) {
     stepPhotos[n].splice(idx, 1);
     renderPhotos(n);
+    saveToLocalStorage(); // sauvegarde auto
   }
 
   function toggleProcess(n) {
@@ -484,6 +490,7 @@
     if (chk.checked) {
       document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté";
       updateObsPreview(n);
+      saveToLocalStorage(); // sauvegarde auto
     }
   }
 
@@ -500,6 +507,7 @@
     } else {
       preview.style.display = 'none';
     }
+    saveToLocalStorage(); // sauvegarde auto
   }
 
   function toast(msg) {
@@ -510,7 +518,7 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  // Historique + sauvegarde
+  // Sauvegarde / Historique
   let maintenanceHistory = JSON.parse(localStorage.getItem('rl_maintenance_history')) || [];
 
   function saveToLocalStorage() {
@@ -531,7 +539,6 @@
     localStorage.setItem('rl_maintenance_history', JSON.stringify(maintenanceHistory));
     localStorage.setItem('rl_maintenance_last', JSON.stringify(data));
     renderHistory();
-    toast("Sauvegardé !");
   }
 
   function renderHistory() {
@@ -539,25 +546,26 @@
     list.innerHTML = '';
     maintenanceHistory.forEach((entry, i) => {
       const div = document.createElement('div');
-      div.style.padding = '0.8rem';
-      div.style.borderBottom = '1px solid #ddd';
+      div.className = 'history-item';
       div.innerHTML = `
-        <strong>${entry.date}</strong> - ${entry.client} (${entry.technician}) 
-        <button onclick="loadHistory(${i})" style="margin-left:10px;background:#28a745;color:white;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;">Charger</button>
+        <strong>${entry.date}</strong> — ${entry.client} (${entry.technician})
       `;
+      div.onclick = () => loadHistory(i);
       list.appendChild(div);
     });
   }
 
   function loadHistory(i) {
     const entry = maintenanceHistory[i];
-    stepPhotos = entry.stepPhotos;
-    checklists = entry.checklists;
+    stepPhotos = entry.stepPhotos || {};
+    checklists = entry.checklists || checklists;
     for (let n = 1; n <= 8; n++) {
-      if (document.getElementById(`obs${n}`)) document.getElementById(`obs${n}`).value = entry.obs[n] || "";
+      const obsEl = document.getElementById(`obs${n}`);
+      if (obsEl) obsEl.value = entry.obs[n] || "";
     }
-    if (document.getElementById('obsFinal')) document.getElementById('obsFinal').value = entry.obs.final || "";
-    toast("Maintenance chargée");
+    const finalEl = document.getElementById('obsFinal');
+    if (finalEl) finalEl.value = entry.obs.final || "";
+    toast("Maintenance chargée depuis l'historique");
   }
 
   function showHistory() {
@@ -574,10 +582,12 @@
     a.href = url;
     a.download = `maintenance_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
+    toast("JSON exporté – transfère-le sur PC");
   }
 
   function importJSON(e) {
     const file = e.target.files[0];
+    if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
       localStorage.setItem('rl_maintenance_last', ev.target.result);
@@ -587,9 +597,11 @@
       stepPhotos = data.stepPhotos || {};
       checklists = data.checklists || checklists;
       for (let n = 1; n <= 8; n++) {
-        if (document.getElementById(`obs${n}`)) document.getElementById(`obs${n}`).value = data.obs[n] || "";
+        const obsEl = document.getElementById(`obs${n}`);
+        if (obsEl) obsEl.value = data.obs[n] || "";
       }
-      if (document.getElementById('obsFinal')) document.getElementById('obsFinal').value = data.obs.final || "";
+      const finalEl = document.getElementById('obsFinal');
+      if (finalEl) finalEl.value = data.obs.final || "";
       renderClientList();
       toast("Importé depuis PC");
     };
@@ -707,6 +719,7 @@
       });
       y = doc.lastAutoTable.finalY + 12;
 
+      // Observation spécifique
       doc.setFontSize(11);
       doc.setFont("helvetica", "italic");
       const sectionObs = document.getElementById(`obs${cl.obsKey}`)?.value.trim() || "RAS – Aucun commentaire spécifique";
@@ -746,8 +759,13 @@
     const finalLines = doc.splitTextToSize(finalObs, 160);
     doc.text(finalLines, 25, y);
 
-    // Signature
-    y = 260;
+    // Signature (toujours sur la dernière page, pas de page blanche)
+    if (y > 240) {
+      doc.addPage();
+      addHeader();
+      y = 35;
+    }
+    y = Math.max(y, 260); // on force la signature en bas
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text("Technicien", 20, y);
@@ -759,11 +777,10 @@
     doc.text("Nom & Signature", 140, y);
 
     doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF complet généré");
+    toast("Rapport PDF complet généré (sans page blanche)");
   }
 
   function generateExcel() {
-    // (code Excel identique à avant)
     const wb = XLSX.utils.book_new();
     const infos = [
       ["Client", clients[currentClientIndex]?.name || "—"],
@@ -786,6 +803,8 @@
     const savedHistory = localStorage.getItem('rl_maintenance_history');
     if (savedHistory) maintenanceHistory = JSON.parse(savedHistory);
     renderHistory();
+    // Sauvegarde auto toutes les 30 secondes
+    setInterval(saveToLocalStorage, 30000);
   };
 </script>
 </body>
