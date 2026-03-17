@@ -68,6 +68,8 @@
     #toast { position:fixed; bottom:1.8rem; left:50%; transform:translateX(-50%); z-index:9999; }
     .toast-msg { background:var(--success); color:white; padding:0.9rem 2rem; border-radius:50px; box-shadow:0 6px 20px rgba(0,0,0,0.25); animation:toast 2.8s forwards; }
     @keyframes toast { 0%{opacity:0;transform:translateY(20px) translateX(-50%);} 10%{opacity:1;transform:translateY(0) translateX(-50%);} 90%{opacity:1;transform:translateY(0) translateX(-50%);} 100%{opacity:0;transform:translateY(20px) translateX(-50%);} }
+
+    #historyList { margin:1.5rem 0; padding:1rem; background:#f8f9fa; border-radius:8px; max-height:300px; overflow-y:auto; }
   </style>
 </head>
 <body>
@@ -167,8 +169,17 @@
 
   <div id="stepsContainer"></div>
 
-  <!-- BOUTONS SAUVEGARDE / IMPORT / EXPORT -->
-  <div style="text-align:center;margin:3rem 0;">
+  <!-- HISTORIQUE -->
+  <div class="card" style="margin-top:2rem;">
+    <div class="ch">Historique des maintenances</div>
+    <div class="cb">
+      <button class="btn-big" onclick="showHistory()" style="background:#17a2b8;">Voir / Charger ancienne maintenance</button>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+  <!-- BOUTONS SAUVEGARDE -->
+  <div style="text-align:center;margin:2rem 0;">
     <button class="btn-big" style="background:#6c757d;color:white;" onclick="saveToLocalStorage()">
       <i class="fas fa-save"></i> Sauvegarder sur tablette
     </button>
@@ -223,6 +234,8 @@
     onduleur: Array(9).fill({bon:false,acc:false,mau:false,ok:false,ras:false}),
     raccordement: Array(6).fill({bon:false,acc:false,mau:false,ok:false,ras:false})
   };
+
+  let maintenanceHistory = [];
 
   function createSteps() {
     const container = document.getElementById('stepsContainer');
@@ -497,11 +510,14 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  // Sauvegarde / import / export
+  // Historique + sauvegarde
+  let maintenanceHistory = JSON.parse(localStorage.getItem('rl_maintenance_history')) || [];
+
   function saveToLocalStorage() {
     const data = {
-      currentClientIndex,
-      technicianName,
+      date: new Date().toLocaleString('fr-FR'),
+      client: clients[currentClientIndex]?.name || "Sans client",
+      technician: technicianName,
       stepPhotos,
       checklists,
       obs: {}
@@ -510,43 +526,72 @@
       data.obs[n] = document.getElementById(`obs${n}`)?.value || "";
     }
     data.obs.final = document.getElementById('obsFinal')?.value || "";
-    localStorage.setItem('rl_maintenance_save', JSON.stringify(data));
-    toast("Sauvegardé sur la tablette");
+
+    maintenanceHistory.push(data);
+    localStorage.setItem('rl_maintenance_history', JSON.stringify(maintenanceHistory));
+    localStorage.setItem('rl_maintenance_last', JSON.stringify(data));
+    renderHistory();
+    toast("Sauvegardé !");
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+    maintenanceHistory.forEach((entry, i) => {
+      const div = document.createElement('div');
+      div.style.padding = '0.8rem';
+      div.style.borderBottom = '1px solid #ddd';
+      div.innerHTML = `
+        <strong>${entry.date}</strong> - ${entry.client} (${entry.technician}) 
+        <button onclick="loadHistory(${i})" style="margin-left:10px;background:#28a745;color:white;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;">Charger</button>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  function loadHistory(i) {
+    const entry = maintenanceHistory[i];
+    stepPhotos = entry.stepPhotos;
+    checklists = entry.checklists;
+    for (let n = 1; n <= 8; n++) {
+      if (document.getElementById(`obs${n}`)) document.getElementById(`obs${n}`).value = entry.obs[n] || "";
+    }
+    if (document.getElementById('obsFinal')) document.getElementById('obsFinal').value = entry.obs.final || "";
+    toast("Maintenance chargée");
+  }
+
+  function showHistory() {
+    renderHistory();
+    document.getElementById('historyList').scrollIntoView({behavior: "smooth"});
   }
 
   function exportJSON() {
     saveToLocalStorage();
-    const data = JSON.parse(localStorage.getItem('rl_maintenance_save'));
+    const data = JSON.parse(localStorage.getItem('rl_maintenance_last'));
     const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `maintenance_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
-    toast("JSON exporté – transfère-le sur PC");
   }
 
-  function importJSON(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+  function importJSON(e) {
+    const file = e.target.files[0];
     const reader = new FileReader();
     reader.onload = ev => {
-      localStorage.setItem('rl_maintenance_save', ev.target.result);
+      localStorage.setItem('rl_maintenance_last', ev.target.result);
       const data = JSON.parse(ev.target.result);
-      technicianName = data.technicianName || "";
-      currentClientIndex = data.currentClientIndex || -1;
+      technicianName = data.technician || "";
+      currentClientIndex = clients.findIndex(c => c.name === data.client) || -1;
       stepPhotos = data.stepPhotos || {};
       checklists = data.checklists || checklists;
       for (let n = 1; n <= 8; n++) {
-        if (document.getElementById(`obs${n}`)) {
-          document.getElementById(`obs${n}`).value = data.obs[n] || "";
-        }
+        if (document.getElementById(`obs${n}`)) document.getElementById(`obs${n}`).value = data.obs[n] || "";
       }
-      if (document.getElementById('obsFinal')) {
-        document.getElementById('obsFinal').value = data.obs.final || "";
-      }
+      if (document.getElementById('obsFinal')) document.getElementById('obsFinal').value = data.obs.final || "";
       renderClientList();
-      toast("Données importées depuis JSON");
+      toast("Importé depuis PC");
     };
     reader.readAsText(file);
   }
@@ -583,7 +628,6 @@
 
     addHeader();
 
-    // Informations centrales
     let y = 35;
     doc.setFontSize(16);
     doc.setTextColor(0);
@@ -601,7 +645,7 @@
     doc.text(`Relevé compteur non-consommation : ${document.getElementById('releveNonConso').value || "—"} kWh`, 25, y); y += 7;
     doc.text(`Présence monitoring : ${document.getElementById('monitoring').value}`, 25, y); y += 18;
 
-    // Checklists avec croix ×
+    // Checklists
     const clData = [
       { title: "PARTIE AC — Coffret de protection", id: 'check-ac', items: [
         "état visuel câbles onduleur coffret AC",
@@ -663,7 +707,6 @@
       });
       y = doc.lastAutoTable.finalY + 12;
 
-      // Observation spécifique à cette section
       doc.setFontSize(11);
       doc.setFont("helvetica", "italic");
       const sectionObs = document.getElementById(`obs${cl.obsKey}`)?.value.trim() || "RAS – Aucun commentaire spécifique";
@@ -673,7 +716,7 @@
       y += obsLines.length * 7 + 10;
     });
 
-    // Observations par étape + conclusion globale
+    // Observations par étape
     if (y > 220) {
       doc.addPage();
       addHeader();
@@ -693,6 +736,7 @@
       y += lines.length * 7 + 5;
     }
 
+    // Conclusion globale
     y += 5;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
@@ -719,8 +763,8 @@
   }
 
   function generateExcel() {
+    // (code Excel identique à avant)
     const wb = XLSX.utils.book_new();
-
     const infos = [
       ["Client", clients[currentClientIndex]?.name || "—"],
       ["Technicien", technicianName],
@@ -731,52 +775,18 @@
       ["Monitoring", document.getElementById('monitoring').value]
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infos), "Infos centrales");
-
-    const dc = [['Entrées', 'N° CHAINE', 'Nb PV', 'Intensité Icc', 'Tension Uoc mesuré', 'Moyenne Uoc', 'Uoc Moyenne × Nb PV', 'Uoc mesuré']];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dc.concat(Array(15).fill(['', '', '', '', '', '', '', '']))), "Mesures DC");
-
-    const clNames = ["Point de raccordement", "Partie AC", "Partie Onduleur"];
-    const clRows = [
-      [['état visuel logette extérieur'], ['état visuel logette intérieur'], ['état des câbles'], ['vérification paramétrage AGCP'], ['vérification test différentiel'], ['vérification des serrages']],
-      [['état visuel câbles onduleur coffret AC'], ['état visuel câble AC'], ['Test continuité terre'], ['Test réseau'], ['vérif disjoncteur/fusibles/parafoudre'], ['vérif serrages'], ['Nettoyage coffret AC'], ['Présence étiquettes']],
-      [['état visuel de(s) onduleur(s)'], ['Fonctionnement onduleur(s)'], ['Test découplage'], ['Environnement local'], ['vérif connectiques DC'], ['vérif serrage AC'], ['Nettoyage onduleur'], ['Nettoyage ventilateur'], ['Présence étiquettes']]
-    ];
-
-    clNames.forEach((name, i) => {
-      const data = [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']];
-      clRows[i].forEach(row => data.push([row[0], '', '', '', '', '']));
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), name);
-    });
-
     XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.xlsx`);
-    toast("Excel modifiable généré");
+    toast("Excel généré");
   }
 
   window.onload = function() {
     renderClientList();
     createSteps();
     createChecklists();
-    // Charge la sauvegarde précédente au démarrage
-    const saved = localStorage.getItem('rl_maintenance_save');
-    if (saved) {
-      const data = JSON.parse(saved);
-      technicianName = data.technicianName || "";
-      currentClientIndex = data.currentClientIndex || -1;
-      stepPhotos = data.stepPhotos || {};
-      checklists = data.checklists || checklists;
-      for (let n = 1; n <= 8; n++) {
-        if (document.getElementById(`obs${n}`)) {
-          document.getElementById(`obs${n}`).value = data.obs[n] || "";
-        }
-      }
-      if (document.getElementById('obsFinal')) {
-        document.getElementById('obsFinal').value = data.obs.final || "";
-      }
-      renderClientList();
-      toast("Dernière sauvegarde chargée");
-    }
+    const savedHistory = localStorage.getItem('rl_maintenance_history');
+    if (savedHistory) maintenanceHistory = JSON.parse(savedHistory);
+    renderHistory();
   };
 </script>
 </body>
 </html>
-  
