@@ -243,6 +243,10 @@
 
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
+    if (!sel) {
+      console.error("Le select #clientSelect n'existe pas encore dans le DOM");
+      return;
+    }
     sel.innerHTML = '<option value="">Sélectionnez un client...</option>';
     clients.forEach((c, i) => {
       const opt = document.createElement('option');
@@ -250,6 +254,7 @@
       opt.textContent = c.name;
       sel.appendChild(opt);
     });
+    console.log("Liste des clients chargée :", clients.map(c => c.name));
   }
 
   function loadClientData() {
@@ -701,13 +706,14 @@
   }
 
   window.onload = function() {
-    renderClientList();          // ← IMPORTANT : remplit la liste des clients
+    renderClientList();  // ← Cette ligne est cruciale : elle remplit le menu des clients
     createSteps();
     createChecklists();
     const savedHistory = localStorage.getItem('rl_maintenance_history');
     if (savedHistory) maintenanceHistory = JSON.parse(savedHistory);
     renderHistory();
     setInterval(saveToLocalStorage, 30000); // sauvegarde auto
+    console.log("Page chargée - Liste des clients devrait être visible maintenant");
   };
 </script>
 </body>
