@@ -241,102 +241,10 @@
 
   let maintenanceHistory = JSON.parse(localStorage.getItem('rl_maintenance_history')) || [];
 
-  function createSteps() {
-    const container = document.getElementById('stepsContainer');
-    container.innerHTML = '';
-    stepsList.forEach((title, i) => {
-      const n = i + 1;
-      let extraHTML = '';
-      if (n === 5) extraHTML = `<div class="checklist-grid" id="check-ac"></div>`;
-      if (n === 6) extraHTML = `<div class="checklist-grid" id="check-onduleur"></div>`;
-      if (n === 7) extraHTML = `<div class="checklist-grid" id="check-raccordement"></div>`;
-
-      container.innerHTML += `
-        <div id="step${n}" class="card block" style="display:none;">
-          <div class="ch">${title}</div>
-          <div class="cb">
-            <p style="color:#555;margin-bottom:0.9rem;">Prendre les photos nécessaires</p>
-
-            <div class="photo-upload-btn" onclick="document.getElementById('photo${n}').click()">
-              <i class="fas fa-camera"></i> Ajouter photos (plusieurs possibles)
-            </div>
-            <input type="file" id="photo${n}" accept="image/*" multiple capture="environment" style="display:none;" onchange="addPhoto(${n})"/>
-            <div class="photo-grid" id="photos${n}"></div>
-
-            ${extraHTML}
-
-            <div style="margin:1.2rem 0;">
-              <button class="btn-quick" onclick="quickFill(${n})">Tout OK / RAS</button>
-            </div>
-
-            <label style="margin-top:0.8rem;">Processus effectué ?</label>
-            <input type="checkbox" id="chk${n}" onchange="toggleProcess(${n})" style="width:1.4rem;height:1.4rem;"/> <span style="font-size:1.05rem;vertical-align:middle;">Oui</span>
-
-            <div class="observation" id="obsBlock${n}">
-              <label><i class="fas fa-comment-dots"></i> Observation pour cette étape</label>
-              <textarea id="obs${n}" placeholder="Décrivez ce que vous avez constaté..." oninput="updateObsPreview(${n})"></textarea>
-              <div id="preview${n}" class="obs-preview"></div>
-            </div>
-
-            <div class="nav-row">
-              <button class="btn-big btn-prev" onclick="prevStep()">Précédent</button>
-              <button class="btn-big btn-ok" onclick="nextStep(${n})">Suivant</button>
-            </div>
-          </div>
-        </div>
-      `;
-    });
-  }
-
-  function createChecklists() {
-    const items = {
-      ac: ["état visuel câbles onduleur coffret AC","état visuel câble AC","Test continuité terre","Test réseau","vérif disjoncteur/fusibles/parafoudre","vérif serrages","Nettoyage coffret AC","Présence étiquettes"],
-      onduleur: ["état visuel onduleur(s)","Fonctionnement onduleur(s)","Test découplage","Environnement local","vérif connectiques DC","vérif serrage AC","Nettoyage onduleur","Nettoyage ventilateur","Présence étiquettes"],
-      raccordement: ["état visuel logette extérieur","état visuel logette intérieur","état des câbles","vérif paramétrage AGCP","vérif test différentiel","vérif serrages"]
-    };
-
-    function build(id, list) {
-      const div = document.getElementById(id);
-      if (!div) return;
-      div.innerHTML = `<div class="checklist-header">Item</div><div class="checklist-header">Bon</div><div class="checklist-header">Acceptable</div><div class="checklist-header">Mauvais</div><div class="checklist-header">OK</div><div class="checklist-header">RAS</div>`;
-      list.forEach((item, i) => {
-        div.innerHTML += `
-          <div class="checklist-item">${item}</div>
-          <div class="checklist-check"><input type="checkbox" id="${id}-bon-${i}" onchange="updateCheck('${id}',${i},'bon')"></div>
-          <div class="checklist-check"><input type="checkbox" id="${id}-acc-${i}" onchange="updateCheck('${id}',${i},'acc')"></div>
-          <div class="checklist-check"><input type="checkbox" id="${id}-mau-${i}" onchange="updateCheck('${id}',${i},'mau')"></div>
-          <div class="checklist-check"><input type="checkbox" id="${id}-ok-${i}" onchange="updateCheck('${id}',${i},'ok')"></div>
-          <div class="checklist-check"><input type="checkbox" id="${id}-ras-${i}" onchange="updateCheck('${id}',${i},'ras')"></div>
-        `;
-      });
-    }
-
-    build('check-ac', items.ac);
-    build('check-onduleur', items.onduleur);
-    build('check-raccordement', items.raccordement);
-  }
-
-  function updateCheck(id, row, col) {
-    const prefix = `${id}-${col}-${row}`;
-    const chk = document.getElementById(prefix);
-    if (chk.checked) {
-      ['bon','acc','mau','ok','ras'].forEach(c => {
-        if (c !== col) document.getElementById(`${id}-${c}-${row}`).checked = false;
-      });
-    }
-  }
-
-  function quickFill(n) {
-    document.getElementById(`chk${n}`).checked = true;
-    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté";
-    updateObsPreview(n);
-    toast(`Étape ${n} → Tout OK / RAS`);
-  }
-
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
     sel.innerHTML = '<option value="">Sélectionnez un client...</option>';
-    clients.forEach((c,i) => {
+    clients.forEach((c, i) => {
       const opt = document.createElement('option');
       opt.value = i;
       opt.textContent = c.name;
@@ -346,7 +254,7 @@
 
   function loadClientData() {
     const idx = +document.getElementById('clientSelect').value;
-    if (isNaN(idx)) {
+    if (isNaN(idx) || idx < 0) {
       document.getElementById('clientDetails').style.display = 'none';
       return;
     }
@@ -354,10 +262,7 @@
     const c = clients[idx];
     document.getElementById('clientDetails').style.display = 'block';
 
-    const ta = document.getElementById('installationDetails');
-    ta.value = c.details || "";
-    ta.readOnly = !isAdminMode;
-
+    document.getElementById('installationDetails').value = c.details || "";
     document.getElementById('oldDatesDisplay').innerHTML = c.oldDates?.length
       ? c.oldDates.map(d => `<div>• ${d}</div>`).join('')
       : 'Aucune date enregistrée';
@@ -458,7 +363,7 @@
       reader.onload = e => {
         stepPhotos[n].push(e.target.result);
         renderPhotos(n);
-        saveToLocalStorage(); // sauvegarde auto
+        saveToLocalStorage();
       };
       reader.readAsDataURL(file);
     }
@@ -482,7 +387,7 @@
   function deletePhoto(n, idx) {
     stepPhotos[n].splice(idx, 1);
     renderPhotos(n);
-    saveToLocalStorage(); // sauvegarde auto
+    saveToLocalStorage();
   }
 
   function toggleProcess(n) {
@@ -490,7 +395,7 @@
     if (chk.checked) {
       document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté";
       updateObsPreview(n);
-      saveToLocalStorage(); // sauvegarde auto
+      saveToLocalStorage();
     }
   }
 
@@ -507,7 +412,7 @@
     } else {
       preview.style.display = 'none';
     }
-    saveToLocalStorage(); // sauvegarde auto
+    saveToLocalStorage();
   }
 
   function toast(msg) {
@@ -764,7 +669,7 @@
       addHeader();
       y = 35;
     }
-    y = Math.max(y, 260); // on force la signature en bas
+    y = Math.max(y, 260);
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text("Technicien", 20, y);
@@ -776,7 +681,7 @@
     doc.text("Nom & Signature", 140, y);
 
     doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF complet généré (sans page blanche)");
+    toast("Rapport PDF complet généré");
   }
 
   function generateExcel() {
@@ -796,14 +701,13 @@
   }
 
   window.onload = function() {
-    renderClientList();
+    renderClientList();          // ← IMPORTANT : remplit la liste des clients
     createSteps();
     createChecklists();
     const savedHistory = localStorage.getItem('rl_maintenance_history');
     if (savedHistory) maintenanceHistory = JSON.parse(savedHistory);
     renderHistory();
-    // Sauvegarde auto toutes les 30 secondes
-    setInterval(saveToLocalStorage, 30000);
+    setInterval(saveToLocalStorage, 30000); // sauvegarde auto
   };
 </script>
 </body>
