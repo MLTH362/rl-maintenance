@@ -582,7 +582,6 @@
     a.href = url;
     a.download = `maintenance_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
-    toast("JSON exporté – transfère-le sur PC");
   }
 
   function importJSON(e) {
@@ -759,7 +758,7 @@
     const finalLines = doc.splitTextToSize(finalObs, 160);
     doc.text(finalLines, 25, y);
 
-    // Signature (toujours sur la dernière page, pas de page blanche)
+    // Signature (forcée en bas, pas de page blanche)
     if (y > 240) {
       doc.addPage();
       addHeader();
