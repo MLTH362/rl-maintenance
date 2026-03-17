@@ -159,13 +159,14 @@
         <div id="sitePreview" style="margin-top:0.6rem;"></div>
       </div>
 
-      <button class="btn-big btn-ok" onclick="startMaintenance()" style="margin-top:2rem;font-size:1.12rem;">
-        <i class="fas fa-play"></i> COMMENCER LA MAINTENANCE
-      </button>
-
-      <button class="btn-big" style="background:#6c757d;color:white;margin-top:0.9rem;" onclick="restartApp()">
-        <i class="fas fa-redo"></i> Recommencer une nouvelle maintenance
-      </button>
+      <div style="display:flex; gap:1rem; margin-top:2rem;">
+        <button class="btn-big btn-ok" onclick="startMaintenance()" style="flex:1;font-size:1.12rem;">
+          <i class="fas fa-play"></i> COMMENCER LA MAINTENANCE
+        </button>
+        <button class="btn-big" style="background:#6c757d;color:white;flex:1;" onclick="restartApp()">
+          <i class="fas fa-redo"></i> Recommencer une nouvelle maintenance
+        </button>
+      </div>
     </div>
   </div>
 
@@ -244,7 +245,7 @@
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
     if (!sel) {
-      console.error("Le select #clientSelect n'existe pas encore dans le DOM");
+      console.error("Erreur : #clientSelect n'existe pas dans le DOM");
       return;
     }
     sel.innerHTML = '<option value="">Sélectionnez un client...</option>';
@@ -254,7 +255,7 @@
       opt.textContent = c.name;
       sel.appendChild(opt);
     });
-    console.log("Liste des clients chargée :", clients.map(c => c.name));
+    console.log("Clients chargés :", clients.map(c => c.name));
   }
 
   function loadClientData() {
@@ -330,34 +331,15 @@
   function startMaintenance() {
     technicianName = document.getElementById('technicianName').value.trim();
     if (!technicianName) return toast("Nom technicien requis");
-    if (!document.getElementById('clientSelect').value) return toast("Client requis");
+    if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
 
     document.getElementById('infoBlock').style.display = 'none';
     document.getElementById('step1').style.display = 'block';
     currentStep = 1;
   }
 
-  function nextStep(n) {
-    if (document.getElementById(`step${n}`)) {
-      document.getElementById(`step${n}`).style.display = 'none';
-    }
-    currentStep = n + 1;
-    if (currentStep <= stepsList.length) {
-      document.getElementById(`step${currentStep}`).style.display = 'block';
-    }
-  }
-
-  function prevStep() {
-    if (currentStep <= 1) return;
-    if (document.getElementById(`step${currentStep}`)) {
-      document.getElementById(`step${currentStep}`).style.display = 'none';
-    }
-    currentStep--;
-    document.getElementById(`step${currentStep}`).style.display = 'block';
-  }
-
   function restartApp() {
-    if (confirm("Recommencer ?")) location.reload();
+    if (confirm("Recommencer toute la maintenance ?")) location.reload();
   }
 
   function addPhoto(n) {
@@ -428,7 +410,6 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  // Sauvegarde / Historique
   let maintenanceHistory = JSON.parse(localStorage.getItem('rl_maintenance_history')) || [];
 
   function saveToLocalStorage() {
@@ -523,7 +504,6 @@
 
     const client = clients[currentClientIndex] || { name: "—" };
 
-    // Page de couverture
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255);
@@ -566,7 +546,6 @@
     doc.text(`Relevé compteur non-consommation : ${document.getElementById('releveNonConso').value || "—"} kWh`, 25, y); y += 7;
     doc.text(`Présence monitoring : ${document.getElementById('monitoring').value}`, 25, y); y += 18;
 
-    // Checklists
     const clData = [
       { title: "PARTIE AC — Coffret de protection", id: 'check-ac', items: [
         "état visuel câbles onduleur coffret AC",
@@ -628,7 +607,6 @@
       });
       y = doc.lastAutoTable.finalY + 12;
 
-      // Observation spécifique
       doc.setFontSize(11);
       doc.setFont("helvetica", "italic");
       const sectionObs = document.getElementById(`obs${cl.obsKey}`)?.value.trim() || "RAS – Aucun commentaire spécifique";
@@ -638,7 +616,6 @@
       y += obsLines.length * 7 + 10;
     });
 
-    // Observations par étape
     if (y > 220) {
       doc.addPage();
       addHeader();
@@ -658,7 +635,6 @@
       y += lines.length * 7 + 5;
     }
 
-    // Conclusion globale
     y += 5;
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
@@ -668,7 +644,6 @@
     const finalLines = doc.splitTextToSize(finalObs, 160);
     doc.text(finalLines, 25, y);
 
-    // Signature (forcée en bas, pas de page blanche)
     if (y > 240) {
       doc.addPage();
       addHeader();
@@ -686,7 +661,7 @@
     doc.text("Nom & Signature", 140, y);
 
     doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF complet généré");
+    toast("Rapport PDF généré");
   }
 
   function generateExcel() {
@@ -706,14 +681,14 @@
   }
 
   window.onload = function() {
-    renderClientList();  // ← Cette ligne est cruciale : elle remplit le menu des clients
+    renderClientList();
     createSteps();
     createChecklists();
     const savedHistory = localStorage.getItem('rl_maintenance_history');
     if (savedHistory) maintenanceHistory = JSON.parse(savedHistory);
     renderHistory();
-    setInterval(saveToLocalStorage, 30000); // sauvegarde auto
-    console.log("Page chargée - Liste des clients devrait être visible maintenant");
+    setInterval(saveToLocalStorage, 30000);
+    console.log("Page chargée - Clients devraient apparaître");
   };
 </script>
 </body>
