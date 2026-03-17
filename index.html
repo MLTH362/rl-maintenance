@@ -245,7 +245,7 @@
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
     if (!sel) {
-      console.error("Erreur : #clientSelect n'existe pas dans le DOM");
+      console.error("Le select #clientSelect n'est pas trouvé dans le DOM");
       return;
     }
     sel.innerHTML = '<option value="">Sélectionnez un client...</option>';
@@ -336,6 +336,7 @@
     document.getElementById('infoBlock').style.display = 'none';
     document.getElementById('step1').style.display = 'block';
     currentStep = 1;
+    toast("Maintenance démarrée");
   }
 
   function restartApp() {
@@ -681,14 +682,22 @@
   }
 
   window.onload = function() {
-    renderClientList();
+    console.log("Début du onload");
+    renderClientList();  // Appel principal
+    setTimeout(renderClientList, 100); // Sécurité supplémentaire
+
     createSteps();
     createChecklists();
+
     const savedHistory = localStorage.getItem('rl_maintenance_history');
-    if (savedHistory) maintenanceHistory = JSON.parse(savedHistory);
-    renderHistory();
+    if (savedHistory) {
+      maintenanceHistory = JSON.parse(savedHistory);
+      renderHistory();
+    }
+
     setInterval(saveToLocalStorage, 30000);
-    console.log("Page chargée - Clients devraient apparaître");
+
+    console.log("Fin du onload - Vérifie le menu déroulant maintenant");
   };
 </script>
 </body>
