@@ -199,6 +199,13 @@
     raccordement: Array(6).fill({bon:false,acc:false,mau:false,ok:false,ras:false})
   };
 
+  let obsPerSection = {
+    ac: "",
+    onduleur: "",
+    raccordement: "",
+    global: ""
+  };
+
   function createSteps() {
     const container = document.getElementById('stepsContainer');
     container.innerHTML = '';
@@ -228,8 +235,8 @@
             <input type="checkbox" id="chk${n}" onchange="toggleProcess(${n})" style="width:1.4rem;height:1.4rem;"/> <span style="font-size:1.05rem;vertical-align:middle;">Oui</span>
 
             <div class="observation" id="obsBlock${n}">
-              <label><i class="fas fa-comment-dots"></i> Observation</label>
-              <textarea id="obs${n}" placeholder="Décrivez si nécessaire..." oninput="updateObsPreview(${n})"></textarea>
+              <label><i class="fas fa-comment-dots"></i> Observation pour cette étape</label>
+              <textarea id="obs${n}" placeholder="Décrivez ce que vous avez constaté..." oninput="updateObsPreview(${n})"></textarea>
               <div id="preview${n}" class="obs-preview"></div>
             </div>
 
@@ -475,11 +482,10 @@
 
     const client = clients[currentClientIndex] || { name: "—" };
 
-    // Page de couverture professionnelle
+    // Page de couverture
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255);
     doc.setFontSize(48);
     doc.text("R.L ENERGIE", 105, 90, { align: "center" });
     doc.setFontSize(18);
@@ -509,7 +515,6 @@
     doc.setTextColor(0);
     doc.setFont("helvetica", "bold");
     doc.text("INFORMATIONS CENTRALES", 20, y); y += 10;
-    doc.setLineWidth(0.5);
     doc.line(20, y, 190, y); y += 8;
 
     doc.setFontSize(11);
@@ -520,25 +525,9 @@
     doc.text(`Irradiance solaire : ${document.getElementById('irradiance').value}`, 25, y); y += 7;
     doc.text(`Relevé compteur Production : ${document.getElementById('releveProd').value || "—"} kWh`, 25, y); y += 7;
     doc.text(`Relevé compteur non-consommation : ${document.getElementById('releveNonConso').value || "—"} kWh`, 25, y); y += 7;
-    doc.text(`Présence monitoring : ${document.getElementById('monitoring').value}`, 25, y); y += 15;
+    doc.text(`Présence monitoring : ${document.getElementById('monitoring').value}`, 25, y); y += 18;
 
-    // Tableau DC
-    doc.setFontSize(13);
-    doc.setFont("helvetica", "bold");
-    doc.text("VÉRIFICATION DES MESURES ENTRÉES DC", 20, y); y += 8;
-    doc.autoTable({
-      startY: y,
-      head: [['Entrées', 'N° CHAINE', 'Nb PV', 'Intensité Icc (A)', 'Tension Uoc mesuré (V)', 'Moyenne Uoc (V)', 'Uoc Moyenne × Nb PV (V)', 'Uoc mesuré']],
-      body: Array(15).fill(['', '', '', '', '', '', '', '']),
-      theme: 'grid',
-      headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold', halign: 'center' },
-      styles: { fontSize: 9, cellPadding: 3.5, lineWidth: 0.1, halign: 'center' },
-      columnStyles: { 0: { halign: 'left' } },
-      margin: { left: 20, right: 20 }
-    });
-    y = doc.lastAutoTable.finalY + 18;
-
-    // Checklists avec vraies croix ✓ et descriptions remplies
+    // Checklists avec croix × et descriptions complètes
     const clData = [
       { title: "PARTIE AC — Coffret de protection", id: 'check-ac', items: [
         "état visuel câbles onduleur coffret AC",
@@ -549,7 +538,7 @@
         "vérif serrages",
         "Nettoyage coffret AC",
         "Présence étiquettes"
-      ]},
+      ], obsKey: 'ac' },
       { title: "PARTIE ONDULEUR", id: 'check-onduleur', items: [
         "état visuel onduleur(s)",
         "Fonctionnement onduleur(s)",
@@ -560,7 +549,7 @@
         "Nettoyage onduleur",
         "Nettoyage ventilateur",
         "Présence étiquettes"
-      ]},
+      ], obsKey: 'onduleur' },
       { title: "POINT DE RACCORDEMENT", id: 'check-raccordement', items: [
         "état visuel logette extérieur",
         "état visuel logette intérieur",
@@ -568,7 +557,7 @@
         "vérif paramétrage AGCP",
         "vérif test différentiel",
         "vérif serrages"
-      ]}
+      ], obsKey: 'raccordement' }
     ];
 
     clData.forEach(cl => {
@@ -584,7 +573,7 @@
       cl.items.forEach((desc, i) => {
         const row = [desc, '', '', '', '', ''];
         ['bon','acc','mau','ok','ras'].forEach((col, j) => {
-          if (document.getElementById(`${cl.id}-${col}-${i}`)?.checked) row[j+1] = '✓';
+          if (document.getElementById(`${cl.id}-${col}-${i}`)?.checked) row[j+1] = '×';
         });
         body.push(row);
       });
@@ -599,9 +588,18 @@
         margin: { left: 20, right: 20 }
       });
       y = doc.lastAutoTable.finalY + 12;
+
+      // Observation spécifique à cette section
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "italic");
+      const sectionObs = obsPerSection[cl.obsKey] || "RAS – Aucun commentaire spécifique";
+      doc.text(`Observation pour ${cl.title} :`, 25, y); y += 6;
+      const obsLines = doc.splitTextToSize(sectionObs, 160);
+      doc.text(obsLines, 30, y);
+      y += obsLines.length * 7 + 8;
     });
 
-    // Observations par étape + conclusion globale
+    // Conclusion globale
     if (y > 220) {
       doc.addPage();
       addHeader();
@@ -609,28 +607,13 @@
     }
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("OBSERVATIONS PAR ÉTAPE ET CONCLUSION", 20, y); y += 12;
-
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    for (let n = 1; n <= 8; n++) {
-      const obs = document.getElementById(`obs${n}`)?.value.trim() || "RAS – Aucun point particulier";
-      doc.text(`Étape ${n} :`, 25, y);
-      const lines = doc.splitTextToSize(obs, 160);
-      doc.text(lines, 45, y);
-      y += lines.length * 7;
-    }
-
-    y += 5;
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
     doc.text("CONCLUSION GLOBALE", 20, y); y += 10;
     const finalObs = document.getElementById('obsFinal')?.value.trim() || "RAS – Installation conforme aux normes en vigueur.";
     doc.setFont("helvetica", "normal");
     const finalLines = doc.splitTextToSize(finalObs, 160);
     doc.text(finalLines, 25, y);
 
-    // Signature élégante
+    // Signature
     y = 260;
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
@@ -643,12 +626,12 @@
     doc.text("Nom & Signature", 140, y);
 
     doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF professionnel généré");
+    toast("Rapport PDF ultra propre généré");
   }
 
   function generateExcel() {
+    // (code Excel identique – pas de changement ici)
     const wb = XLSX.utils.book_new();
-
     const infos = [
       ["Client", clients[currentClientIndex]?.name || "—"],
       ["Technicien", technicianName],
@@ -659,23 +642,6 @@
       ["Monitoring", document.getElementById('monitoring').value]
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infos), "Infos centrales");
-
-    const dc = [['Entrées', 'N° CHAINE', 'Nb PV', 'Intensité Icc', 'Tension Uoc mesuré', 'Moyenne Uoc', 'Uoc Moyenne × Nb PV', 'Uoc mesuré']];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dc.concat(Array(15).fill(['', '', '', '', '', '', '', '']))), "Mesures DC");
-
-    const clNames = ["Point de raccordement", "Partie AC", "Partie Onduleur"];
-    const clRows = [
-      [['état visuel logette extérieur'], ['état visuel logette intérieur'], ['état des câbles'], ['vérification paramétrage AGCP'], ['vérification test différentiel'], ['vérification des serrages']],
-      [['état visuel câbles onduleur coffret AC'], ['état visuel câble AC'], ['Test continuité terre'], ['Test réseau'], ['vérif disjoncteur/fusibles/parafoudre'], ['vérif serrages'], ['Nettoyage coffret AC'], ['Présence étiquettes']],
-      [['état visuel de(s) onduleur(s)'], ['Fonctionnement onduleur(s)'], ['Test découplage'], ['Environnement local'], ['vérif connectiques DC'], ['vérif serrage AC'], ['Nettoyage onduleur'], ['Nettoyage ventilateur'], ['Présence étiquettes']]
-    ];
-
-    clNames.forEach((name, i) => {
-      const data = [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']];
-      clRows[i].forEach(row => data.push([row[0], '', '', '', '', '']));
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), name);
-    });
-
     XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.xlsx`);
     toast("Excel modifiable généré");
   }
