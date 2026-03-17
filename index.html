@@ -199,13 +199,6 @@
     raccordement: Array(6).fill({bon:false,acc:false,mau:false,ok:false,ras:false})
   };
 
-  let obsPerSection = {
-    ac: "",
-    onduleur: "",
-    raccordement: "",
-    global: ""
-  };
-
   function createSteps() {
     const container = document.getElementById('stepsContainer');
     container.innerHTML = '';
@@ -497,7 +490,6 @@
 
     doc.addPage();
 
-    // En-tête sur chaque page
     function addHeader() {
       doc.setFillColor(4, 64, 128);
       doc.rect(0, 0, 210, 20, 'F');
@@ -527,7 +519,7 @@
     doc.text(`Relevé compteur non-consommation : ${document.getElementById('releveNonConso').value || "—"} kWh`, 25, y); y += 7;
     doc.text(`Présence monitoring : ${document.getElementById('monitoring').value}`, 25, y); y += 18;
 
-    // Checklists avec croix × et descriptions complètes
+    // Checklists avec croix ×
     const clData = [
       { title: "PARTIE AC — Coffret de protection", id: 'check-ac', items: [
         "état visuel câbles onduleur coffret AC",
@@ -592,14 +584,14 @@
       // Observation spécifique à cette section
       doc.setFontSize(11);
       doc.setFont("helvetica", "italic");
-      const sectionObs = obsPerSection[cl.obsKey] || "RAS – Aucun commentaire spécifique";
+      const sectionObs = document.getElementById(`obs${stepsList.findIndex(t => t.includes(cl.title)) + 1}`)?.value.trim() || "RAS – Aucun commentaire spécifique";
       doc.text(`Observation pour ${cl.title} :`, 25, y); y += 6;
       const obsLines = doc.splitTextToSize(sectionObs, 160);
       doc.text(obsLines, 30, y);
-      y += obsLines.length * 7 + 8;
+      y += obsLines.length * 7 + 10;
     });
 
-    // Conclusion globale
+    // Observations par étape + conclusion globale
     if (y > 220) {
       doc.addPage();
       addHeader();
@@ -607,8 +599,23 @@
     }
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
+    doc.text("OBSERVATIONS PAR ÉTAPE", 20, y); y += 12;
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    for (let n = 1; n <= 8; n++) {
+      const obs = document.getElementById(`obs${n}`)?.value.trim() || "RAS – Aucun point particulier";
+      doc.text(`Étape ${n} :`, 25, y);
+      const lines = doc.splitTextToSize(obs, 160);
+      doc.text(lines, 45, y);
+      y += lines.length * 7 + 5;
+    }
+
+    y += 5;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
     doc.text("CONCLUSION GLOBALE", 20, y); y += 10;
-    const finalObs = document.getElementById('obsFinal')?.value.trim() || "RAS – Installation conforme aux normes en vigueur.";
+    const finalObs = document.getElementById('obsFinal') ? document.getElementById('obsFinal').value.trim() : "RAS – Installation conforme aux normes en vigueur.";
     doc.setFont("helvetica", "normal");
     const finalLines = doc.splitTextToSize(finalObs, 160);
     doc.text(finalLines, 25, y);
@@ -626,12 +633,12 @@
     doc.text("Nom & Signature", 140, y);
 
     doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF ultra propre généré");
+    toast("Rapport PDF corrigé et amélioré généré");
   }
 
   function generateExcel() {
-    // (code Excel identique – pas de changement ici)
     const wb = XLSX.utils.book_new();
+
     const infos = [
       ["Client", clients[currentClientIndex]?.name || "—"],
       ["Technicien", technicianName],
@@ -642,6 +649,23 @@
       ["Monitoring", document.getElementById('monitoring').value]
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infos), "Infos centrales");
+
+    const dc = [['Entrées', 'N° CHAINE', 'Nb PV', 'Intensité Icc', 'Tension Uoc mesuré', 'Moyenne Uoc', 'Uoc Moyenne × Nb PV', 'Uoc mesuré']];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dc.concat(Array(15).fill(['', '', '', '', '', '', '', '']))), "Mesures DC");
+
+    const clNames = ["Point de raccordement", "Partie AC", "Partie Onduleur"];
+    const clRows = [
+      [['état visuel logette extérieur'], ['état visuel logette intérieur'], ['état des câbles'], ['vérification paramétrage AGCP'], ['vérification test différentiel'], ['vérification des serrages']],
+      [['état visuel câbles onduleur coffret AC'], ['état visuel câble AC'], ['Test continuité terre'], ['Test réseau'], ['vérif disjoncteur/fusibles/parafoudre'], ['vérif serrages'], ['Nettoyage coffret AC'], ['Présence étiquettes']],
+      [['état visuel de(s) onduleur(s)'], ['Fonctionnement onduleur(s)'], ['Test découplage'], ['Environnement local'], ['vérif connectiques DC'], ['vérif serrage AC'], ['Nettoyage onduleur'], ['Nettoyage ventilateur'], ['Présence étiquettes']]
+    ];
+
+    clNames.forEach((name, i) => {
+      const data = [['Item', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']];
+      clRows[i].forEach(row => data.push([row[0], '', '', '', '', '']));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), name);
+    });
+
     XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.xlsx`);
     toast("Excel modifiable généré");
   }
