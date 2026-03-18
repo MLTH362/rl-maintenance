@@ -74,6 +74,7 @@
     .history-item:hover { background:#e9ecef; }
 
     .step { display:none; }
+    .step.active { display:block; }
   </style>
 </head>
 <body>
@@ -172,8 +173,10 @@
     </div>
   </div>
 
+  <!-- ÉTAPES -->
   <div id="stepsContainer"></div>
 
+  <!-- HISTORIQUE -->
   <div class="card" style="margin-top:2rem;">
     <div class="ch">Historique des maintenances enregistrées</div>
     <div class="cb">
@@ -184,6 +187,7 @@
     </div>
   </div>
 
+  <!-- BOUTONS SAUVEGARDE -->
   <div style="text-align:center;margin:2rem 0;">
     <button class="btn-big" style="background:#6c757d;color:white;" onclick="saveToLocalStorage()">
       <i class="fas fa-save"></i> Sauvegarder maintenant
@@ -197,6 +201,7 @@
     <input type="file" id="importJsonInput" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
 
+  <!-- EXPORT PDF/EXCEL -->
   <div style="text-align:center;margin:5rem 0 8rem;">
     <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
@@ -302,10 +307,30 @@
           <h3 style="margin-top:1.5rem;">Photos</h3>
           <input type="file" id="photo${i+1}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${i+1})">
           <div id="photos${i+1}" class="photo-grid"></div>
+
+          <div class="nav-row" style="margin-top:2rem;">
+            <button class="btn-big btn-prev" onclick="prevStep()" ${i === 0 ? 'disabled' : ''}><i class="fas fa-arrow-left"></i> Précédent</button>
+            <button class="btn-big btn-ok" onclick="nextStep(${i+1})">Suivant <i class="fas fa-arrow-right"></i></button>
+          </div>
         </div>
       `;
       container.appendChild(stepDiv);
     });
+  }
+
+  function nextStep(n) {
+    document.getElementById(`step${n}`).classList.remove('active');
+    currentStep = n + 1;
+    if (currentStep <= stepsList.length) {
+      document.getElementById(`step${currentStep}`).classList.add('active');
+    }
+  }
+
+  function prevStep() {
+    if (currentStep <= 1) return;
+    document.getElementById(`step${currentStep}`).classList.remove('active');
+    currentStep--;
+    document.getElementById(`step${currentStep}`).classList.add('active');
   }
 
   function addPhoto(n) {
