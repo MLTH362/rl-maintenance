@@ -166,7 +166,7 @@
         <button id="startBtn" class="btn-big btn-ok" onclick="startMaintenance()" style="flex:1;font-size:1.12rem;">
           <i class="fas fa-play"></i> COMMENCER LA MAINTENANCE
         </button>
-        <button id="restartBtn" class="btn-big" style="background:#6c757d;color:white;flex:1;">
+        <button id="restartBtn" class="btn-big" style="background:#6c757d;color:white;flex:1;" onclick="location.reload()">
           <i class="fas fa-redo"></i> Recommencer une nouvelle maintenance
         </button>
       </div>
@@ -190,10 +190,10 @@
       <i class="fas fa-save"></i> Sauvegarder maintenant
     </button>
     <button class="btn-big" style="background:#28a745;color:white;margin-left:1rem;" onclick="exportJSON()">
-      <i class="fas fa-download"></i> Exporter JSON (vers PC / autre tablette)
+      <i class="fas fa-download"></i> Exporter JSON
     </button>
     <button class="btn-big" style="background:#0066cc;color:white;margin-left:1rem;" onclick="document.getElementById('importJsonInput').click()">
-      <i class="fas fa-upload"></i> Importer JSON (de PC / autre tablette)
+      <i class="fas fa-upload"></i> Importer JSON
     </button>
     <input type="file" id="importJsonInput" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
@@ -254,7 +254,6 @@
       opt.textContent = c.name;
       sel.appendChild(opt);
     });
-    console.log("Clients chargés :", clients.map(c => c.name));
   }
 
   function loadClientData() {
@@ -298,11 +297,33 @@
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
-          <h3>Observations</h3>
+          <h3>Checklist</h3>
+          <div class="checklist-grid">
+            <div class="checklist-header">Description</div>
+            <div class="checklist-header">Bon</div>
+            <div class="checklist-header">Acceptable</div>
+            <div class="checklist-header">Mauvais</div>
+            <div class="checklist-header">OK</div>
+            <div class="checklist-header">RAS</div>
+            ${getChecklistItems(index).map((item, i) => `
+              <div class="checklist-item">${item}</div>
+              <div class="checklist-check"><input type="checkbox" id="chk${index+1}-bon-${i}" onchange="toggleProcess(${index+1})"></div>
+              <div class="checklist-check"><input type="checkbox" id="chk${index+1}-acc-${i}"></div>
+              <div class="checklist-check"><input type="checkbox" id="chk${index+1}-mau-${i}"></div>
+              <div class="checklist-check"><input type="checkbox" id="chk${index+1}-ok-${i}"></div>
+              <div class="checklist-check"><input type="checkbox" id="chk${index+1}-ras-${i}" onchange="toggleProcess(${index+1})"></div>
+            `).join('')}
+          </div>
+
+          <button class="btn-big btn-ok" style="margin-top:1rem;" onclick="setAllRAS(${index+1})">
+            <i class="fas fa-check-double"></i> Tous OK / RAS
+          </button>
+
+          <h3 style="margin-top:2rem;">Observations</h3>
           <textarea id="obs${index + 1}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${index + 1})"></textarea>
           <div id="preview${index + 1}" style="margin-top:1rem;padding:1rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:6px;display:none;"></div>
 
-          <h3 style="margin-top:1.5rem;">Photos</h3>
+          <h3 style="margin-top:2rem;">Photos</h3>
           <input type="file" id="photo${index + 1}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${index + 1})">
           <div id="photos${index + 1}" class="photo-grid"></div>
 
@@ -314,6 +335,51 @@
       `;
       container.appendChild(stepDiv);
     });
+  }
+
+  function getChecklistItems(stepIndex) {
+    if (stepIndex === 4) { // Étape 5 - Partie AC
+      return [
+        "État visuel câbles onduleur → coffret AC",
+        "État visuel câble AC",
+        "Test continuité terre",
+        "Test réseau",
+        "Vérif disjoncteur / fusibles / parafoudre",
+        "Vérif serrages",
+        "Nettoyage coffret AC",
+        "Présence étiquettes"
+      ];
+    }
+    if (stepIndex === 5) { // Étape 6 - Partie Onduleur
+      return [
+        "État visuel onduleur(s)",
+        "Fonctionnement onduleur(s)",
+        "Test découplage",
+        "Environnement local",
+        "Vérif connectiques DC",
+        "Vérif serrage AC",
+        "Nettoyage onduleur",
+        "Nettoyage ventilateur",
+        "Présence étiquettes"
+      ];
+    }
+    if (stepIndex === 6) { // Étape 7 - Point de raccordement
+      return [
+        "État visuel logette extérieur",
+        "État visuel logette intérieur",
+        "État des câbles",
+        "Vérif paramétrage AGCP",
+        "Vérif test différentiel",
+        "Vérif serrages"
+      ];
+    }
+    return ["Checklist non définie pour cette étape"];
+  }
+
+  function setAllRAS(n) {
+    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
+    updateObsPreview(n);
+    toast("Tous OK / RAS coché pour l'étape " + n);
   }
 
   function nextStep(n) {
@@ -383,89 +449,8 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  function toggleAdminMode() {
-    const pw = prompt("Mot de passe Admin :");
-    if (pw === ADMIN_PASSWORD) {
-      isAdminMode = true;
-      document.getElementById('adminControls').style.display = 'block';
-      document.getElementById('btnAdmin').style.display = 'none';
-      document.getElementById('btnExitAdmin').style.display = 'inline-block';
-      document.getElementById('installationDetails').readOnly = false;
-      toast("Mode Admin activé");
-    } else {
-      toast("Mot de passe incorrect");
-    }
-  }
-
-  function exitAdminMode() {
-    isAdminMode = false;
-    document.getElementById('adminControls').style.display = 'none';
-    document.getElementById('btnAdmin').style.display = 'inline-block';
-    document.getElementById('btnExitAdmin').style.display = 'none';
-    document.getElementById('installationDetails').readOnly = true;
-    toast("Mode Admin désactivé");
-  }
-
-  function addNewClient() {
-    if (!isAdminMode) return toast("Mode Admin requis");
-    const name = document.getElementById('newClient').value.trim();
-    if (!name) return toast("Nom requis");
-    if (clients.some(c => c.name === name)) return toast("Déjà existant");
-
-    clients.push({ name, details: "", lastMaint: "", oldDates: [], wiringPlan: null, sitePlan: null });
-    renderClientList();
-    document.getElementById('newClient').value = "";
-    toast("Client ajouté");
-  }
-
-  function enableEditDetails() {
-    if (!isAdminMode) return;
-    document.getElementById('installationDetails').readOnly = false;
-  }
-
-  function uploadPlan(type) {
-    const file = document.getElementById(type + 'PlanInput').files[0];
-    if (!file || currentClientIndex < 0) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      clients[currentClientIndex][type + 'Plan'] = e.target.result;
-      loadClientData();
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function saveToLocalStorage() {
-    toast("Sauvegarde effectuée (fonction à compléter)");
-  }
-
-  function showHistory() {
-    toast("Historique à venir (fonction à compléter)");
-  }
-
-  function generateReport() {
-    toast("Génération du rapport PDF (fonction à compléter)");
-  }
-
-  function generateExcel() {
-    toast("Export Excel (fonction à compléter)");
-  }
-
-  function exportJSON() {
-    toast("Export JSON (fonction à compléter)");
-  }
-
-  function importJSON(e) {
-    toast("Import JSON (fonction à compléter)");
-  }
-
   window.onload = function() {
-    try {
-      renderClientList();
-      console.log("Application chargée correctement");
-    } catch (e) {
-      console.error("Erreur au chargement :", e);
-      alert("Erreur au démarrage – ouvre la console (F12)");
-    }
+    renderClientList();
   };
 </script>
 </body>
