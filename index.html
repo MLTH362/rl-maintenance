@@ -163,20 +163,18 @@
       </div>
 
       <div style="display:flex; gap:1rem; margin-top:2rem;">
-        <button class="btn-big btn-ok" onclick="startMaintenance()" style="flex:1;font-size:1.12rem;">
+        <button id="startBtn" class="btn-big btn-ok" onclick="startMaintenance()" style="flex:1;font-size:1.12rem;">
           <i class="fas fa-play"></i> COMMENCER LA MAINTENANCE
         </button>
-        <button class="btn-big" style="background:#6c757d;color:white;flex:1;" onclick="location.reload()">
-          <i class="fas fa-redo"></i> Recommencer
+        <button id="restartBtn" class="btn-big" style="background:#6c757d;color:white;flex:1;">
+          <i class="fas fa-redo"></i> Recommencer une nouvelle maintenance
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ÉTAPES -->
   <div id="stepsContainer"></div>
 
-  <!-- HISTORIQUE -->
   <div class="card" style="margin-top:2rem;">
     <div class="ch">Historique des maintenances enregistrées</div>
     <div class="cb">
@@ -187,27 +185,25 @@
     </div>
   </div>
 
-  <!-- BOUTONS SAUVEGARDE -->
   <div style="text-align:center;margin:2rem 0;">
     <button class="btn-big" style="background:#6c757d;color:white;" onclick="saveToLocalStorage()">
       <i class="fas fa-save"></i> Sauvegarder maintenant
     </button>
     <button class="btn-big" style="background:#28a745;color:white;margin-left:1rem;" onclick="exportJSON()">
-      <i class="fas fa-download"></i> Exporter JSON
+      <i class="fas fa-download"></i> Exporter JSON (vers PC / autre tablette)
     </button>
     <button class="btn-big" style="background:#0066cc;color:white;margin-left:1rem;" onclick="document.getElementById('importJsonInput').click()">
-      <i class="fas fa-upload"></i> Importer JSON
+      <i class="fas fa-upload"></i> Importer JSON (de PC / autre tablette)
     </button>
     <input type="file" id="importJsonInput" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
 
-  <!-- EXPORT PDF/EXCEL -->
   <div style="text-align:center;margin:5rem 0 8rem;">
     <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
     </button>
     <button class="btn-big" style="background:#1e7e34;color:white;margin-left:2rem;font-size:1.2rem;padding:1.4rem 3rem;" onclick="generateExcel()">
-      <i class="fas fa-file-excel"></i> EXPORTER EXCEL
+      <i class="fas fa-file-excel"></i> EXPORTER EXCEL MODIFIABLE
     </button>
   </div>
 
@@ -250,6 +246,7 @@
 
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
+    if (!sel) return console.error("#clientSelect introuvable");
     sel.innerHTML = '<option value="">Sélectionnez un client...</option>';
     clients.forEach((c, i) => {
       const opt = document.createElement('option');
@@ -257,6 +254,7 @@
       opt.textContent = c.name;
       sel.appendChild(opt);
     });
+    console.log("Clients chargés :", clients.map(c => c.name));
   }
 
   function loadClientData() {
@@ -280,37 +278,37 @@
 
   function startMaintenance() {
     technicianName = document.getElementById('technicianName').value.trim();
-    if (!technicianName) return alert("Nom technicien requis");
-    if (document.getElementById('clientSelect').value === "") return alert("Sélectionnez un client");
+    if (!technicianName) return toast("Nom technicien requis");
+    if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
 
     document.getElementById('infoBlock').style.display = 'none';
     createSteps();
     document.getElementById('step1').classList.add('active');
     currentStep = 1;
-    toast("Maintenance démarrée !");
+    toast("Maintenance démarrée");
   }
 
   function createSteps() {
     const container = document.getElementById('stepsContainer');
     container.innerHTML = '';
-    stepsList.forEach((title, i) => {
+    stepsList.forEach((title, index) => {
       const stepDiv = document.createElement('div');
-      stepDiv.id = `step${i+1}`;
+      stepDiv.id = `step${index + 1}`;
       stepDiv.className = 'step card';
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
           <h3>Observations</h3>
-          <textarea id="obs${i+1}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${i+1})"></textarea>
-          <div id="preview${i+1}" style="margin-top:1rem;padding:1rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:6px;display:none;"></div>
+          <textarea id="obs${index + 1}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${index + 1})"></textarea>
+          <div id="preview${index + 1}" style="margin-top:1rem;padding:1rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:6px;display:none;"></div>
 
           <h3 style="margin-top:1.5rem;">Photos</h3>
-          <input type="file" id="photo${i+1}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${i+1})">
-          <div id="photos${i+1}" class="photo-grid"></div>
+          <input type="file" id="photo${index + 1}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${index + 1})">
+          <div id="photos${index + 1}" class="photo-grid"></div>
 
           <div class="nav-row" style="margin-top:2rem;">
-            <button class="btn-big btn-prev" onclick="prevStep()" ${i === 0 ? 'disabled' : ''}><i class="fas fa-arrow-left"></i> Précédent</button>
-            <button class="btn-big btn-ok" onclick="nextStep(${i+1})">Suivant <i class="fas fa-arrow-right"></i></button>
+            <button class="btn-big btn-prev" onclick="prevStep()" ${index === 0 ? 'disabled' : ''}><i class="fas fa-arrow-left"></i> Précédent</button>
+            <button class="btn-big btn-ok" onclick="nextStep(${index + 1})">Suivant <i class="fas fa-arrow-right"></i></button>
           </div>
         </div>
       `;
@@ -385,8 +383,89 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  window.onload = function() {
+  function toggleAdminMode() {
+    const pw = prompt("Mot de passe Admin :");
+    if (pw === ADMIN_PASSWORD) {
+      isAdminMode = true;
+      document.getElementById('adminControls').style.display = 'block';
+      document.getElementById('btnAdmin').style.display = 'none';
+      document.getElementById('btnExitAdmin').style.display = 'inline-block';
+      document.getElementById('installationDetails').readOnly = false;
+      toast("Mode Admin activé");
+    } else {
+      toast("Mot de passe incorrect");
+    }
+  }
+
+  function exitAdminMode() {
+    isAdminMode = false;
+    document.getElementById('adminControls').style.display = 'none';
+    document.getElementById('btnAdmin').style.display = 'inline-block';
+    document.getElementById('btnExitAdmin').style.display = 'none';
+    document.getElementById('installationDetails').readOnly = true;
+    toast("Mode Admin désactivé");
+  }
+
+  function addNewClient() {
+    if (!isAdminMode) return toast("Mode Admin requis");
+    const name = document.getElementById('newClient').value.trim();
+    if (!name) return toast("Nom requis");
+    if (clients.some(c => c.name === name)) return toast("Déjà existant");
+
+    clients.push({ name, details: "", lastMaint: "", oldDates: [], wiringPlan: null, sitePlan: null });
     renderClientList();
+    document.getElementById('newClient').value = "";
+    toast("Client ajouté");
+  }
+
+  function enableEditDetails() {
+    if (!isAdminMode) return;
+    document.getElementById('installationDetails').readOnly = false;
+  }
+
+  function uploadPlan(type) {
+    const file = document.getElementById(type + 'PlanInput').files[0];
+    if (!file || currentClientIndex < 0) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      clients[currentClientIndex][type + 'Plan'] = e.target.result;
+      loadClientData();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function saveToLocalStorage() {
+    toast("Sauvegarde effectuée (fonction à compléter)");
+  }
+
+  function showHistory() {
+    toast("Historique à venir (fonction à compléter)");
+  }
+
+  function generateReport() {
+    toast("Génération du rapport PDF (fonction à compléter)");
+  }
+
+  function generateExcel() {
+    toast("Export Excel (fonction à compléter)");
+  }
+
+  function exportJSON() {
+    toast("Export JSON (fonction à compléter)");
+  }
+
+  function importJSON(e) {
+    toast("Import JSON (fonction à compléter)");
+  }
+
+  window.onload = function() {
+    try {
+      renderClientList();
+      console.log("Application chargée correctement");
+    } catch (e) {
+      console.error("Erreur au chargement :", e);
+      alert("Erreur au démarrage – ouvre la console (F12)");
+    }
   };
 </script>
 </body>
