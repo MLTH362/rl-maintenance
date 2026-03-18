@@ -151,8 +151,8 @@
         <button class="btn-big btn-ok" onclick="startMaintenance()" style="flex:1;font-size:1.12rem;">
           <i class="fas fa-play"></i> COMMENCER LA MAINTENANCE
         </button>
-        <button class="btn-big" style="background:#6c757d;color:white;flex:1;" onclick="restartApp()">
-          <i class="fas fa-redo"></i> Recommencer une nouvelle maintenance
+        <button class="btn-big" style="background:#6c757d;color:white;flex:1;" onclick="location.reload()">
+          <i class="fas fa-redo"></i> Recommencer
         </button>
       </div>
     </div>
@@ -160,38 +160,21 @@
 
   <div id="stepsContainer"></div>
 
-  <!-- HISTORIQUE -->
+  <!-- HISTORIQUE simplifié -->
   <div class="card" style="margin-top:2rem;">
-    <div class="ch">Historique des maintenances enregistrées</div>
+    <div class="ch">Historique des maintenances</div>
     <div class="cb">
-      <button class="btn-big" onclick="showHistory()" style="background:#17a2b8;color:white;">
-        <i class="fas fa-history"></i> Voir / Charger une ancienne maintenance
+      <button class="btn-big" onclick="alert('Historique à venir (bientôt les anciennes maintenances)')" style="background:#17a2b8;color:white;">
+        <i class="fas fa-history"></i> Voir / Charger historique
       </button>
-      <div id="historyList"></div>
+      <div id="historyList" style="margin-top:1rem;"></div>
     </div>
   </div>
 
-  <!-- BOUTONS SAUVEGARDE -->
+  <!-- BOUTONS SAUVEGARDE simplifiés -->
   <div style="text-align:center;margin:2rem 0;">
-    <button class="btn-big" style="background:#6c757d;color:white;" onclick="saveToLocalStorage()">
+    <button class="btn-big" style="background:#6c757d;color:white;" onclick="alert('Sauvegarde manuelle – à développer')">
       <i class="fas fa-save"></i> Sauvegarder maintenant
-    </button>
-    <button class="btn-big" style="background:#28a745;color:white;margin-left:1rem;" onclick="exportJSON()">
-      <i class="fas fa-download"></i> Exporter JSON (vers PC / autre tablette)
-    </button>
-    <button class="btn-big" style="background:#0066cc;color:white;margin-left:1rem;" onclick="document.getElementById('importJsonInput').click()">
-      <i class="fas fa-upload"></i> Importer JSON (de PC / autre tablette)
-    </button>
-    <input type="file" id="importJsonInput" accept=".json" style="display:none;" onchange="importJSON(event)">
-  </div>
-
-  <!-- EXPORT PDF/EXCEL -->
-  <div style="text-align:center;margin:5rem 0 8rem;">
-    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
-      <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
-    </button>
-    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:2rem;font-size:1.2rem;padding:1.4rem 3rem;" onclick="generateExcel()">
-      <i class="fas fa-file-excel"></i> EXPORTER EXCEL MODIFIABLE
     </button>
   </div>
 
@@ -205,40 +188,19 @@
   let currentClientIndex = -1;
   let isAdminMode = false;
   const ADMIN_PASSWORD = "admin123";
-  let stepPhotos = {};
 
   const clients = [
-    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"], wiringPlan: null, sitePlan: null },
-    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"], wiringPlan: null, sitePlan: null },
-    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"], wiringPlan: null, sitePlan: null }
+    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"] },
+    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"] },
+    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"] }
   ];
 
-  const stepsList = [
-    "1 — Drone thermique toiture",
-    "2 — Caméra thermique onduleur AC+DC",
-    "3 — Ouverture coffret AC et onduleur AC+DC",
-    "4 — Coffret de protection électrique local onduleur",
-    "5 — Partie AC (câbles, tests, serrages)",
-    "6 — Partie Onduleur (état visuel, fonctionnement, nettoyage)",
-    "7 — Point de raccordement (logette, câbles, vérifications)",
-    "8 — Vérification des mesures entrées DC + Finalisation"
-  ];
-
-  let checklists = {
-    ac: Array(8).fill({bon:false,acc:false,mau:false,ok:false,ras:false}),
-    onduleur: Array(9).fill({bon:false,acc:false,mau:false,ok:false,ras:false}),
-    raccordement: Array(6).fill({bon:false,acc:false,mau:false,ok:false,ras:false})
-  };
-
-  // Une seule déclaration de maintenanceHistory (le doublon a été supprimé)
+  // Une seule déclaration – pas de doublon
   let maintenanceHistory = JSON.parse(localStorage.getItem('rl_maintenance_history')) || [];
 
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
-    if (!sel) {
-      console.error("Le select #clientSelect n'est pas trouvé");
-      return;
-    }
+    if (!sel) return console.error("#clientSelect introuvable");
     sel.innerHTML = '<option value="">Sélectionnez un client...</option>';
     clients.forEach((c, i) => {
       const opt = document.createElement('option');
@@ -246,7 +208,7 @@
       opt.textContent = c.name;
       sel.appendChild(opt);
     });
-    console.log("Clients chargés :", clients.map(c => c.name));
+    console.log("Clients affichés :", clients.map(c => c.name));
   }
 
   function loadClientData() {
@@ -266,6 +228,38 @@
 
     document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
+  }
+
+  function startMaintenance() {
+    technicianName = document.getElementById('technicianName').value.trim();
+    if (!technicianName) return alert("Nom technicien requis");
+    if (document.getElementById('clientSelect').value === "") return alert("Sélectionnez un client");
+
+    document.getElementById('infoBlock').style.display = 'none';
+
+    document.getElementById('stepsContainer').innerHTML = `
+      <div class="card">
+        <div class="ch">MAINTENANCE EN COURS</div>
+        <div class="cb" style="text-align:center; padding: 60px 20px;">
+          <h2>Bonjour ${technicianName} !</h2>
+          <p style="font-size:1.3rem; margin:20px 0;">
+            Maintenance démarrée pour le client sélectionné.<br>
+            <strong>Les étapes détaillées arrivent bientôt.</strong>
+          </p>
+          <p>Pour l'instant tout est OK, on continue !</p>
+        </div>
+      </div>
+    `;
+
+    toast("Maintenance démarrée avec succès !");
+  }
+
+  function toast(msg) {
+    const el = document.createElement('div');
+    el.className = 'toast-msg';
+    el.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
+    document.getElementById('toast').appendChild(el);
+    setTimeout(() => el.remove(), 3000);
   }
 
   function toggleAdminMode() {
@@ -308,319 +302,14 @@
     document.getElementById('installationDetails').readOnly = false;
   }
 
-  function uploadPlan(type) {
-    const file = document.getElementById(type + 'PlanInput').files[0];
-    if (!file || currentClientIndex < 0) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      clients[currentClientIndex][type + 'Plan'] = e.target.result;
-      loadClientData();
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function startMaintenance() {
-    technicianName = document.getElementById('technicianName').value.trim();
-    if (!technicianName) return toast("Nom technicien requis");
-    if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
-
-    document.getElementById('infoBlock').style.display = 'none';
-    document.getElementById('step1').style.display = 'block';
-    currentStep = 1;
-  }
-
-  function restartApp() {
-    if (confirm("Recommencer ?")) location.reload();
-  }
-
-  function toast(msg) {
-    const el = document.createElement('div');
-    el.className = 'toast-msg';
-    el.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
-    document.getElementById('toast').appendChild(el);
-    setTimeout(() => el.remove(), 3000);
-  }
-
-  function saveToLocalStorage() {
-    const data = {
-      date: new Date().toLocaleString('fr-FR'),
-      client: clients[currentClientIndex]?.name || "Sans client",
-      technician: technicianName,
-      stepPhotos,
-      checklists,
-      obs: {}
-    };
-    for (let n = 1; n <= 8; n++) {
-      data.obs[n] = document.getElementById(`obs${n}`)?.value || "";
-    }
-    data.obs.final = document.getElementById('obsFinal')?.value || "";
-
-    maintenanceHistory.push(data);
-    localStorage.setItem('rl_maintenance_history', JSON.stringify(maintenanceHistory));
-    localStorage.setItem('rl_maintenance_last', JSON.stringify(data));
-    renderHistory();
-  }
-
-  function renderHistory() {
-    const list = document.getElementById('historyList');
-    list.innerHTML = '';
-    maintenanceHistory.forEach((entry, i) => {
-      const div = document.createElement('div');
-      div.className = 'history-item';
-      div.innerHTML = `
-        <strong>${entry.date}</strong> — ${entry.client} (${entry.technician})
-      `;
-      div.onclick = () => loadHistory(i);
-      list.appendChild(div);
-    });
-  }
-
-  function loadHistory(i) {
-    const entry = maintenanceHistory[i];
-    stepPhotos = entry.stepPhotos || {};
-    checklists = entry.checklists || checklists;
-    for (let n = 1; n <= 8; n++) {
-      const obsEl = document.getElementById(`obs${n}`);
-      if (obsEl) obsEl.value = entry.obs[n] || "";
-    }
-    const finalEl = document.getElementById('obsFinal');
-    if (finalEl) finalEl.value = entry.obs.final || "";
-    toast("Maintenance chargée depuis l'historique");
-  }
-
-  function showHistory() {
-    renderHistory();
-    document.getElementById('historyList').scrollIntoView({behavior: "smooth"});
-  }
-
-  function exportJSON() {
-    saveToLocalStorage();
-    const data = JSON.parse(localStorage.getItem('rl_maintenance_last'));
-    const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `maintenance_${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-  }
-
-  function importJSON(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      localStorage.setItem('rl_maintenance_last', ev.target.result);
-      const data = JSON.parse(ev.target.result);
-      technicianName = data.technician || "";
-      currentClientIndex = clients.findIndex(c => c.name === data.client) || -1;
-      stepPhotos = data.stepPhotos || {};
-      checklists = data.checklists || checklists;
-      for (let n = 1; n <= 8; n++) {
-        const obsEl = document.getElementById(`obs${n}`);
-        if (obsEl) obsEl.value = data.obs[n] || "";
-      }
-      const finalEl = document.getElementById('obsFinal');
-      if (finalEl) finalEl.value = data.obs.final || "";
-      renderClientList();
-      toast("Importé depuis PC");
-    };
-    reader.readAsText(file);
-  }
-
-  function generateReport() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-
-    const client = clients[currentClientIndex] || { name: "—" };
-
-    doc.setFillColor(4, 64, 128);
-    doc.rect(0, 0, 210, 297, 'F');
-    doc.setTextColor(255);
-    doc.setFontSize(48);
-    doc.text("R.L ENERGIE", 105, 90, { align: "center" });
-    doc.setFontSize(18);
-    doc.text("Spécialiste du Photovoltaïque", 105, 110, { align: "center" });
-    doc.setFontSize(32);
-    doc.text("RAPPORT DE MAINTENANCE", 105, 160, { align: "center" });
-    doc.setFontSize(14);
-    doc.text(new Date().toLocaleDateString('fr-FR'), 105, 180, { align: "center" });
-
-    doc.addPage();
-
-    function addHeader() {
-      doc.setFillColor(4, 64, 128);
-      doc.rect(0, 0, 210, 20, 'F');
-      doc.setTextColor(255);
-      doc.setFontSize(12);
-      doc.text("R.L ENERGIE – Rapport de Maintenance", 15, 13);
-      doc.text(`Client : ${client.name}`, 195, 13, { align: "right" });
-    }
-
-    addHeader();
-
-    let y = 35;
-    doc.setFontSize(16);
-    doc.setTextColor(0);
-    doc.setFont("helvetica", "bold");
-    doc.text("INFORMATIONS CENTRALES", 20, y); y += 10;
-    doc.line(20, y, 190, y); y += 8;
-
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Client : ${client.name}`, 25, y); y += 7;
-    doc.text(`Technicien : ${technicianName}`, 25, y); y += 7;
-    doc.text(`Date d'intervention : ${document.getElementById('startDate').value}`, 25, y); y += 7;
-    doc.text(`Irradiance solaire : ${document.getElementById('irradiance').value}`, 25, y); y += 7;
-    doc.text(`Relevé compteur Production : ${document.getElementById('releveProd').value || "—"} kWh`, 25, y); y += 7;
-    doc.text(`Relevé compteur non-consommation : ${document.getElementById('releveNonConso').value || "—"} kWh`, 25, y); y += 7;
-    doc.text(`Présence monitoring : ${document.getElementById('monitoring').value}`, 25, y); y += 18;
-
-    const clData = [
-      { title: "PARTIE AC — Coffret de protection", id: 'check-ac', items: [
-        "état visuel câbles onduleur coffret AC",
-        "état visuel câble AC",
-        "Test continuité terre",
-        "Test réseau",
-        "vérif disjoncteur/fusibles/parafoudre",
-        "vérif serrages",
-        "Nettoyage coffret AC",
-        "Présence étiquettes"
-      ], obsKey: 5 },
-      { title: "PARTIE ONDULEUR", id: 'check-onduleur', items: [
-        "état visuel onduleur(s)",
-        "Fonctionnement onduleur(s)",
-        "Test découplage",
-        "Environnement local",
-        "vérif connectiques DC",
-        "vérif serrage AC",
-        "Nettoyage onduleur",
-        "Nettoyage ventilateur",
-        "Présence étiquettes"
-      ], obsKey: 6 },
-      { title: "POINT DE RACCORDEMENT", id: 'check-raccordement', items: [
-        "état visuel logette extérieur",
-        "état visuel logette intérieur",
-        "état des câbles",
-        "vérif paramétrage AGCP",
-        "vérif test différentiel",
-        "vérif serrages"
-      ], obsKey: 7 }
-    ];
-
-    clData.forEach(cl => {
-      if (y > 240) {
-        doc.addPage();
-        addHeader();
-        y = 35;
-      }
-      doc.setFontSize(13);
-      doc.setFont("helvetica", "bold");
-      doc.text(cl.title, 20, y); y += 8;
-      const body = [];
-      cl.items.forEach((desc, i) => {
-        const row = [desc, '', '', '', '', ''];
-        ['bon','acc','mau','ok','ras'].forEach((col, j) => {
-          if (document.getElementById(`${cl.id}-${col}-${i}`)?.checked) row[j+1] = '×';
-        });
-        body.push(row);
-      });
-      doc.autoTable({
-        startY: y,
-        head: [['Description', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
-        body: body,
-        theme: 'grid',
-        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold', halign: 'center' },
-        styles: { fontSize: 9.5, cellPadding: 3.5, lineWidth: 0.1, halign: 'left' },
-        columnStyles: { 0: { cellWidth: 90 } },
-        margin: { left: 20, right: 20 }
-      });
-      y = doc.lastAutoTable.finalY + 12;
-
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "italic");
-      const sectionObs = document.getElementById(`obs${cl.obsKey}`)?.value.trim() || "RAS – Aucun commentaire spécifique";
-      doc.text(`Observation pour ${cl.title} :`, 25, y); y += 6;
-      const obsLines = doc.splitTextToSize(sectionObs, 160);
-      doc.text(obsLines, 30, y);
-      y += obsLines.length * 7 + 10;
-    });
-
-    if (y > 220) {
-      doc.addPage();
-      addHeader();
-      y = 35;
-    }
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("OBSERVATIONS PAR ÉTAPE", 20, y); y += 12;
-
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    for (let n = 1; n <= 8; n++) {
-      const obs = document.getElementById(`obs${n}`)?.value.trim() || "RAS – Aucun point particulier";
-      doc.text(`Étape ${n} :`, 25, y);
-      const lines = doc.splitTextToSize(obs, 160);
-      doc.text(lines, 45, y);
-      y += lines.length * 7 + 5;
-    }
-
-    y += 5;
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("CONCLUSION GLOBALE", 20, y); y += 10;
-    const finalObs = document.getElementById('obsFinal')?.value.trim() || "RAS – Installation conforme aux normes en vigueur.";
-    doc.setFont("helvetica", "normal");
-    const finalLines = doc.splitTextToSize(finalObs, 160);
-    doc.text(finalLines, 25, y);
-
-    if (y > 240) {
-      doc.addPage();
-      addHeader();
-      y = 35;
-    }
-    y = Math.max(y, 260);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text("Technicien", 20, y);
-    doc.text("Client", 140, y); y += 8;
-    doc.setFont("helvetica", "normal");
-    doc.line(20, y, 90, y);
-    doc.line(140, y, 190, y); y += 5;
-    doc.text("Nom & Signature", 20, y);
-    doc.text("Nom & Signature", 140, y);
-
-    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF généré");
-  }
-
-  function generateExcel() {
-    const wb = XLSX.utils.book_new();
-    const infos = [
-      ["Client", clients[currentClientIndex]?.name || "—"],
-      ["Technicien", technicianName],
-      ["Date", document.getElementById('startDate').value],
-      ["Irradiance", document.getElementById('irradiance').value],
-      ["Compteur Production", document.getElementById('releveProd').value || "—"],
-      ["Compteur non-consommation", document.getElementById('releveNonConso').value || "—"],
-      ["Monitoring", document.getElementById('monitoring').value]
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infos), "Infos centrales");
-    XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.xlsx`);
-    toast("Excel généré");
-  }
-
-  // Chargement sécurisé avec try/catch
+  // Chargement sécurisé
   window.onload = function() {
     try {
       renderClientList();
-      const savedHistory = localStorage.getItem('rl_maintenance_history');
-      if (savedHistory) maintenanceHistory = JSON.parse(savedHistory);
-      renderHistory();
-      setInterval(saveToLocalStorage, 30000);
-      console.log("Application chargée avec succès");
+      console.log("Application chargée correctement");
     } catch (e) {
-      console.error("Erreur au chargement :", e);
-      toast("Erreur au démarrage – voir la console (F12)");
+      console.error("Erreur au démarrage :", e);
+      alert("Erreur au chargement – ouvre la console (F12)");
     }
   };
 </script>
