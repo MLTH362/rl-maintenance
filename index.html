@@ -10,7 +10,6 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
     :root {
@@ -55,23 +54,12 @@
     .btn-ok { background:var(--success); color:white; }
     .btn-ok:hover { background:#218838; transform:translateY(-1px); }
     .btn-prev { background:#6c757d; color:white; }
-    .btn-quick { background:#17a2b8; color:white; font-size:0.88rem; padding:0.55rem 1rem; }
 
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
 
-    .checklist-grid { display:grid; grid-template-columns:3fr 1fr 1fr 1fr 1fr 1fr; gap:5px; margin:0.8rem 0; align-items:center; }
-    .checklist-header { font-weight:bold; text-align:center; background:var(--primary); color:white; padding:0.45rem; border-radius:5px; font-size:0.85rem; }
-    .checklist-item { padding:0.45rem; border-bottom:1px solid #eee; font-size:0.92rem; }
-    .checklist-check { text-align:center; }
-    input[type="checkbox"] { width:1.2rem; height:1.2rem; cursor:pointer; accent-color:#28a745; }
-
-    #toast { position:fixed; bottom:1.8rem; left:50%; transform:translateX(-50%); z-index:9999; }
+    #toast { position:fixed; bottom:1.8rem; left:50%; transform:translateX(-50%); z-index:9999; background:transparent; pointer-events:none; }
     .toast-msg { background:var(--success); color:white; padding:0.9rem 2rem; border-radius:50px; box-shadow:0 6px 20px rgba(0,0,0,0.25); animation:toast 2.8s forwards; }
     @keyframes toast { 0%{opacity:0;transform:translateY(20px) translateX(-50%);} 10%{opacity:1;transform:translateY(0) translateX(-50%);} 90%{opacity:1;transform:translateY(0) translateX(-50%);} 100%{opacity:0;transform:translateY(20px) translateX(-50%);} }
-
-    #historyList { margin:1.5rem 0; padding:1rem; background:#f8f9fa; border-radius:8px; max-height:300px; overflow-y:auto; }
-    .history-item { padding:0.8rem; border-bottom:1px solid #ddd; cursor:pointer; }
-    .history-item:hover { background:#e9ecef; }
   </style>
 </head>
 <body>
@@ -209,6 +197,8 @@
 
 </div>
 
+<div id="toast"></div>
+
 <script>
   let currentStep = 0;
   let technicianName = "";
@@ -240,6 +230,7 @@
     raccordement: Array(6).fill({bon:false,acc:false,mau:false,ok:false,ras:false})
   };
 
+  // Une seule déclaration de maintenanceHistory (le doublon a été supprimé)
   let maintenanceHistory = JSON.parse(localStorage.getItem('rl_maintenance_history')) || [];
 
   function renderClientList() {
@@ -342,66 +333,6 @@
     if (confirm("Recommencer ?")) location.reload();
   }
 
-  function addPhoto(n) {
-    const files = document.getElementById(`photo${n}`).files;
-    if (!stepPhotos[n]) stepPhotos[n] = [];
-    for (let file of files) {
-      const reader = new FileReader();
-      reader.onload = e => {
-        stepPhotos[n].push(e.target.result);
-        renderPhotos(n);
-        saveToLocalStorage();
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  function renderPhotos(n) {
-    const grid = document.getElementById(`photos${n}`);
-    grid.innerHTML = '';
-    if (stepPhotos[n]) {
-      stepPhotos[n].forEach((src, idx) => {
-        grid.innerHTML += `
-          <div class="photo-preview">
-            <img src="${src}">
-            <button class="delete-btn" onclick="deletePhoto(${n},${idx})">×</button>
-          </div>
-        `;
-      });
-    }
-  }
-
-  function deletePhoto(n, idx) {
-    stepPhotos[n].splice(idx, 1);
-    renderPhotos(n);
-    saveToLocalStorage();
-  }
-
-  function toggleProcess(n) {
-    const chk = document.getElementById(`chk${n}`);
-    if (chk.checked) {
-      document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté";
-      updateObsPreview(n);
-      saveToLocalStorage();
-    }
-  }
-
-  function updateObsPreview(n) {
-    const textarea = document.getElementById(`obs${n}`);
-    const preview = document.getElementById(`preview${n}`);
-    if (textarea.value.trim()) {
-      preview.style.display = 'block';
-      preview.innerHTML = `<strong>Observation :</strong><br>${textarea.value}`;
-      preview.style.background = '#e6f3ff';
-      preview.style.padding = '0.9rem';
-      preview.style.borderRadius = '6px';
-      preview.style.border = '2px solid #0066cc';
-    } else {
-      preview.style.display = 'none';
-    }
-    saveToLocalStorage();
-  }
-
   function toast(msg) {
     const el = document.createElement('div');
     el.className = 'toast-msg';
@@ -409,8 +340,6 @@
     document.getElementById('toast').appendChild(el);
     setTimeout(() => el.remove(), 3000);
   }
-
-  let maintenanceHistory = JSON.parse(localStorage.getItem('rl_maintenance_history')) || [];
 
   function saveToLocalStorage() {
     const data = {
@@ -680,14 +609,19 @@
     toast("Excel généré");
   }
 
+  // Chargement sécurisé avec try/catch
   window.onload = function() {
-    renderClientList();
-    createSteps();
-    createChecklists();
-    const savedHistory = localStorage.getItem('rl_maintenance_history');
-    if (savedHistory) maintenanceHistory = JSON.parse(savedHistory);
-    renderHistory();
-    setInterval(saveToLocalStorage, 30000);
+    try {
+      renderClientList();
+      const savedHistory = localStorage.getItem('rl_maintenance_history');
+      if (savedHistory) maintenanceHistory = JSON.parse(savedHistory);
+      renderHistory();
+      setInterval(saveToLocalStorage, 30000);
+      console.log("Application chargée avec succès");
+    } catch (e) {
+      console.error("Erreur au chargement :", e);
+      toast("Erreur au démarrage – voir la console (F12)");
+    }
   };
 </script>
 </body>
