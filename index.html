@@ -10,6 +10,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
     :root {
@@ -54,12 +55,26 @@
     .btn-ok { background:var(--success); color:white; }
     .btn-ok:hover { background:#218838; transform:translateY(-1px); }
     .btn-prev { background:#6c757d; color:white; }
+    .btn-quick { background:#17a2b8; color:white; font-size:0.88rem; padding:0.55rem 1rem; }
 
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
+
+    .checklist-grid { display:grid; grid-template-columns:3fr 1fr 1fr 1fr 1fr 1fr; gap:5px; margin:0.8rem 0; align-items:center; }
+    .checklist-header { font-weight:bold; text-align:center; background:var(--primary); color:white; padding:0.45rem; border-radius:5px; font-size:0.85rem; }
+    .checklist-item { padding:0.45rem; border-bottom:1px solid #eee; font-size:0.92rem; }
+    .checklist-check { text-align:center; }
+    input[type="checkbox"] { width:1.2rem; height:1.2rem; cursor:pointer; accent-color:#28a745; }
 
     #toast { position:fixed; bottom:1.8rem; left:50%; transform:translateX(-50%); z-index:9999; background:transparent; pointer-events:none; }
     .toast-msg { background:var(--success); color:white; padding:0.9rem 2rem; border-radius:50px; box-shadow:0 6px 20px rgba(0,0,0,0.25); animation:toast 2.8s forwards; }
     @keyframes toast { 0%{opacity:0;transform:translateY(20px) translateX(-50%);} 10%{opacity:1;transform:translateY(0) translateX(-50%);} 90%{opacity:1;transform:translateY(0) translateX(-50%);} 100%{opacity:0;transform:translateY(20px) translateX(-50%);} }
+
+    #historyList { margin:1.5rem 0; padding:1rem; background:#f8f9fa; border-radius:8px; max-height:300px; overflow-y:auto; }
+    .history-item { padding:0.8rem; border-bottom:1px solid #ddd; cursor:pointer; }
+    .history-item:hover { background:#e9ecef; }
+
+    .step { display:none; padding:1rem; }
+    .step.active { display:block; }
   </style>
 </head>
 <body>
@@ -158,23 +173,43 @@
     </div>
   </div>
 
-  <div id="stepsContainer"></div>
+  <!-- ÉTAPES (maintenant affichées correctement) -->
+  <div id="stepsContainer">
+    <!-- Les étapes seront générées dynamiquement par createSteps() -->
+  </div>
 
-  <!-- HISTORIQUE simplifié -->
+  <!-- HISTORIQUE -->
   <div class="card" style="margin-top:2rem;">
-    <div class="ch">Historique des maintenances</div>
+    <div class="ch">Historique des maintenances enregistrées</div>
     <div class="cb">
-      <button class="btn-big" onclick="alert('Historique à venir (bientôt les anciennes maintenances)')" style="background:#17a2b8;color:white;">
-        <i class="fas fa-history"></i> Voir / Charger historique
+      <button class="btn-big" onclick="showHistory()" style="background:#17a2b8;color:white;">
+        <i class="fas fa-history"></i> Voir / Charger une ancienne maintenance
       </button>
-      <div id="historyList" style="margin-top:1rem;"></div>
+      <div id="historyList"></div>
     </div>
   </div>
 
-  <!-- BOUTONS SAUVEGARDE simplifiés -->
+  <!-- BOUTONS SAUVEGARDE -->
   <div style="text-align:center;margin:2rem 0;">
-    <button class="btn-big" style="background:#6c757d;color:white;" onclick="alert('Sauvegarde manuelle – à développer')">
+    <button class="btn-big" style="background:#6c757d;color:white;" onclick="saveToLocalStorage()">
       <i class="fas fa-save"></i> Sauvegarder maintenant
+    </button>
+    <button class="btn-big" style="background:#28a745;color:white;margin-left:1rem;" onclick="exportJSON()">
+      <i class="fas fa-download"></i> Exporter JSON
+    </button>
+    <button class="btn-big" style="background:#0066cc;color:white;margin-left:1rem;" onclick="document.getElementById('importJsonInput').click()">
+      <i class="fas fa-upload"></i> Importer JSON
+    </button>
+    <input type="file" id="importJsonInput" accept=".json" style="display:none;" onchange="importJSON(event)">
+  </div>
+
+  <!-- EXPORT PDF/EXCEL -->
+  <div style="text-align:center;margin:5rem 0 8rem;">
+    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
+      <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
+    </button>
+    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:2rem;font-size:1.2rem;padding:1.4rem 3rem;" onclick="generateExcel()">
+      <i class="fas fa-file-excel"></i> EXPORTER EXCEL
     </button>
   </div>
 
@@ -188,14 +223,31 @@
   let currentClientIndex = -1;
   let isAdminMode = false;
   const ADMIN_PASSWORD = "admin123";
+  let stepPhotos = {};
 
   const clients = [
-    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"] },
-    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"] },
-    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"] }
+    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"], wiringPlan: null, sitePlan: null },
+    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"], wiringPlan: null, sitePlan: null },
+    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"], wiringPlan: null, sitePlan: null }
   ];
 
-  // Une seule déclaration – pas de doublon
+  const stepsList = [
+    "1 — Drone thermique toiture",
+    "2 — Caméra thermique onduleur AC+DC",
+    "3 — Ouverture coffret AC et onduleur AC+DC",
+    "4 — Coffret de protection électrique local onduleur",
+    "5 — Partie AC (câbles, tests, serrages)",
+    "6 — Partie Onduleur (état visuel, fonctionnement, nettoyage)",
+    "7 — Point de raccordement (logette, câbles, vérifications)",
+    "8 — Vérification des mesures entrées DC + Finalisation"
+  ];
+
+  let checklists = {
+    ac: Array(8).fill({bon:false,acc:false,mau:false,ok:false,ras:false}),
+    onduleur: Array(9).fill({bon:false,acc:false,mau:false,ok:false,ras:false}),
+    raccordement: Array(6).fill({bon:false,acc:false,mau:false,ok:false,ras:false})
+  };
+
   let maintenanceHistory = JSON.parse(localStorage.getItem('rl_maintenance_history')) || [];
 
   function renderClientList() {
@@ -208,7 +260,6 @@
       opt.textContent = c.name;
       sel.appendChild(opt);
     });
-    console.log("Clients affichés :", clients.map(c => c.name));
   }
 
   function loadClientData() {
@@ -236,22 +287,77 @@
     if (document.getElementById('clientSelect').value === "") return alert("Sélectionnez un client");
 
     document.getElementById('infoBlock').style.display = 'none';
+    createSteps();  // On crée les étapes ici
+    document.getElementById('step1').style.display = 'block';
+    currentStep = 1;
+    toast("Maintenance démarrée !");
+  }
 
-    document.getElementById('stepsContainer').innerHTML = `
-      <div class="card">
-        <div class="ch">MAINTENANCE EN COURS</div>
-        <div class="cb" style="text-align:center; padding: 60px 20px;">
-          <h2>Bonjour ${technicianName} !</h2>
-          <p style="font-size:1.3rem; margin:20px 0;">
-            Maintenance démarrée pour le client sélectionné.<br>
-            <strong>Les étapes détaillées arrivent bientôt.</strong>
-          </p>
-          <p>Pour l'instant tout est OK, on continue !</p>
+  function createSteps() {
+    const container = document.getElementById('stepsContainer');
+    container.innerHTML = '';
+    stepsList.forEach((title, i) => {
+      const stepDiv = document.createElement('div');
+      stepDiv.id = `step${i+1}`;
+      stepDiv.className = 'step card';
+      stepDiv.innerHTML = `
+        <div class="ch">${title}</div>
+        <div class="cb">
+          <h3>Observations</h3>
+          <textarea id="obs${i+1}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${i+1})"></textarea>
+          <div id="preview${i+1}" style="margin-top:1rem;padding:1rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:6px;display:none;"></div>
+
+          <h3 style="margin-top:1.5rem;">Photos</h3>
+          <input type="file" id="photo${i+1}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${i+1})">
+          <div id="photos${i+1}" class="photo-grid"></div>
         </div>
-      </div>
-    `;
+      `;
+      container.appendChild(stepDiv);
+    });
+  }
 
-    toast("Maintenance démarrée avec succès !");
+  function addPhoto(n) {
+    const files = document.getElementById(`photo${n}`).files;
+    if (!stepPhotos[n]) stepPhotos[n] = [];
+    for (let file of files) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        stepPhotos[n].push(e.target.result);
+        renderPhotos(n);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function renderPhotos(n) {
+    const grid = document.getElementById(`photos${n}`);
+    grid.innerHTML = '';
+    if (stepPhotos[n]) {
+      stepPhotos[n].forEach((src, idx) => {
+        grid.innerHTML += `
+          <div class="photo-preview">
+            <img src="${src}">
+            <button class="delete-btn" onclick="deletePhoto(${n},${idx})">×</button>
+          </div>
+        `;
+      });
+    }
+  }
+
+  function deletePhoto(n, idx) {
+    stepPhotos[n].splice(idx, 1);
+    renderPhotos(n);
+  }
+
+  function updateObsPreview(n) {
+    const textarea = document.getElementById(`obs${n}`);
+    const preview = document.getElementById(`preview${n}`);
+    if (textarea.value.trim()) {
+      preview.style.display = 'block';
+      preview.innerHTML = `<strong>Observation :</strong><br>${textarea.value}`;
+    } else {
+      preview.style.display = 'none';
+    }
   }
 
   function toast(msg) {
@@ -262,55 +368,8 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  function toggleAdminMode() {
-    const pw = prompt("Mot de passe Admin :");
-    if (pw === ADMIN_PASSWORD) {
-      isAdminMode = true;
-      document.getElementById('adminControls').style.display = 'block';
-      document.getElementById('btnAdmin').style.display = 'none';
-      document.getElementById('btnExitAdmin').style.display = 'inline-block';
-      document.getElementById('installationDetails').readOnly = false;
-      toast("Mode Admin activé");
-    } else {
-      toast("Mot de passe incorrect");
-    }
-  }
-
-  function exitAdminMode() {
-    isAdminMode = false;
-    document.getElementById('adminControls').style.display = 'none';
-    document.getElementById('btnAdmin').style.display = 'inline-block';
-    document.getElementById('btnExitAdmin').style.display = 'none';
-    document.getElementById('installationDetails').readOnly = true;
-    toast("Mode Admin désactivé");
-  }
-
-  function addNewClient() {
-    if (!isAdminMode) return toast("Mode Admin requis");
-    const name = document.getElementById('newClient').value.trim();
-    if (!name) return toast("Nom requis");
-    if (clients.some(c => c.name === name)) return toast("Déjà existant");
-
-    clients.push({ name, details: "", lastMaint: "", oldDates: [], wiringPlan: null, sitePlan: null });
-    renderClientList();
-    document.getElementById('newClient').value = "";
-    toast("Client ajouté");
-  }
-
-  function enableEditDetails() {
-    if (!isAdminMode) return;
-    document.getElementById('installationDetails').readOnly = false;
-  }
-
-  // Chargement sécurisé
   window.onload = function() {
-    try {
-      renderClientList();
-      console.log("Application chargée correctement");
-    } catch (e) {
-      console.error("Erreur au démarrage :", e);
-      alert("Erreur au chargement – ouvre la console (F12)");
-    }
+    renderClientList();
   };
 </script>
 </body>
