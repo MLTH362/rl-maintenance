@@ -244,6 +244,10 @@
 
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
+    if (!sel) {
+      console.error("Le select #clientSelect n'est pas trouvé");
+      return;
+    }
     sel.innerHTML = '<option value="">Sélectionnez un client...</option>';
     clients.forEach((c, i) => {
       const opt = document.createElement('option');
@@ -251,7 +255,7 @@
       opt.textContent = c.name;
       sel.appendChild(opt);
     });
-    console.log("Clients chargés avec succès :", clients.map(c => c.name));
+    console.log("Clients chargés :", clients.map(c => c.name));
   }
 
   function loadClientData() {
@@ -332,11 +336,10 @@
     document.getElementById('infoBlock').style.display = 'none';
     document.getElementById('step1').style.display = 'block';
     currentStep = 1;
-    toast("Maintenance démarrée");
   }
 
   function restartApp() {
-    if (confirm("Recommencer toute la maintenance ?")) location.reload();
+    if (confirm("Recommencer ?")) location.reload();
   }
 
   function addPhoto(n) {
@@ -678,20 +681,13 @@
   }
 
   window.onload = function() {
-    console.log("Début du onload");
-    renderClientList();          // Appel principal
-    setTimeout(renderClientList, 100); // Sécurité supplémentaire
-
+    renderClientList();
     createSteps();
     createChecklists();
-
     const savedHistory = localStorage.getItem('rl_maintenance_history');
     if (savedHistory) maintenanceHistory = JSON.parse(savedHistory);
     renderHistory();
-
     setInterval(saveToLocalStorage, 30000);
-
-    console.log("Fin du onload - Vérifie le menu déroulant");
   };
 </script>
 </body>
