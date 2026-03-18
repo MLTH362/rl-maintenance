@@ -73,8 +73,7 @@
     .history-item { padding:0.8rem; border-bottom:1px solid #ddd; cursor:pointer; }
     .history-item:hover { background:#e9ecef; }
 
-    .step { display:none; padding:1rem; }
-    .step.active { display:block; }
+    .step { display:none; }
   </style>
 </head>
 <body>
@@ -173,12 +172,8 @@
     </div>
   </div>
 
-  <!-- ÉTAPES (maintenant affichées correctement) -->
-  <div id="stepsContainer">
-    <!-- Les étapes seront générées dynamiquement par createSteps() -->
-  </div>
+  <div id="stepsContainer"></div>
 
-  <!-- HISTORIQUE -->
   <div class="card" style="margin-top:2rem;">
     <div class="ch">Historique des maintenances enregistrées</div>
     <div class="cb">
@@ -189,7 +184,6 @@
     </div>
   </div>
 
-  <!-- BOUTONS SAUVEGARDE -->
   <div style="text-align:center;margin:2rem 0;">
     <button class="btn-big" style="background:#6c757d;color:white;" onclick="saveToLocalStorage()">
       <i class="fas fa-save"></i> Sauvegarder maintenant
@@ -203,7 +197,6 @@
     <input type="file" id="importJsonInput" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
 
-  <!-- EXPORT PDF/EXCEL -->
   <div style="text-align:center;margin:5rem 0 8rem;">
     <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
@@ -252,7 +245,6 @@
 
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
-    if (!sel) return console.error("#clientSelect introuvable");
     sel.innerHTML = '<option value="">Sélectionnez un client...</option>';
     clients.forEach((c, i) => {
       const opt = document.createElement('option');
@@ -287,8 +279,8 @@
     if (document.getElementById('clientSelect').value === "") return alert("Sélectionnez un client");
 
     document.getElementById('infoBlock').style.display = 'none';
-    createSteps();  // On crée les étapes ici
-    document.getElementById('step1').style.display = 'block';
+    createSteps();
+    document.getElementById('step1').classList.add('active');
     currentStep = 1;
     toast("Maintenance démarrée !");
   }
