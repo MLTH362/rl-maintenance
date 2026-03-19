@@ -71,7 +71,7 @@
     .step { display:none; }
     .step.active { display:block; }
 
-    #historyList { margin-top:1rem; max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:6px; }
+    #historyList { margin-top:1rem; max-height:300px; overflow-y:auto; }
     .history-item { padding:12px; border-bottom:1px solid #eee; cursor:pointer; }
     .history-item:hover { background:#f0f7ff; }
   </style>
@@ -174,14 +174,14 @@
 
   <div id="stepsContainer"></div>
 
-  <!-- HISTORIQUE -->
+  <!-- HISTORIQUE DES RAPPORTS -->
   <div class="card" style="margin-top:2rem;">
-    <div class="ch">Historique des rapports</div>
+    <div class="ch">Historique des rapports enregistrés</div>
     <div class="cb">
       <button class="btn-big" onclick="refreshHistory()" style="background:#17a2b8;color:white;">
-        <i class="fas fa-history"></i> Voir / Charger anciens rapports
+        <i class="fas fa-history"></i> Rafraîchir / Voir les anciens rapports
       </button>
-      <div id="historyList" style="margin-top:1rem;"></div>
+      <div id="historyList"></div>
     </div>
   </div>
 
@@ -223,8 +223,6 @@
     "7 — Point de raccordement (logette, câbles, vérifications)",
     "8 — Vérification des mesures entrées DC + Finalisation"
   ];
-
-  let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
 
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
@@ -279,27 +277,29 @@
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
-          <h3>Checklist</h3>
-          <div class="checklist-grid">
-            <div class="checklist-header">Description</div>
-            <div class="checklist-header">Bon</div>
-            <div class="checklist-header">Acceptable</div>
-            <div class="checklist-header">Mauvais</div>
-            <div class="checklist-header">OK</div>
-            <div class="checklist-header">RAS</div>
-            ${getChecklistItems(i).map((desc, j) => `
-              <div class="checklist-item">${desc}</div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-bon-${j}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-acc-${j}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-mau-${j}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-ok-${j}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-ras-${j}"></div>
-            `).join('')}
-          </div>
+          ${i >= 4 && i <= 6 ? `
+            <h3>Checklist</h3>
+            <div class="checklist-grid">
+              <div class="checklist-header">Description</div>
+              <div class="checklist-header">Bon</div>
+              <div class="checklist-header">Acceptable</div>
+              <div class="checklist-header">Mauvais</div>
+              <div class="checklist-header">OK</div>
+              <div class="checklist-header">RAS</div>
+              ${getChecklistItems(i).map((desc, j) => `
+                <div class="checklist-item">${desc}</div>
+                <div class="checklist-check"><input type="checkbox" id="chk${i+1}-bon-${j}"></div>
+                <div class="checklist-check"><input type="checkbox" id="chk${i+1}-acc-${j}"></div>
+                <div class="checklist-check"><input type="checkbox" id="chk${i+1}-mau-${j}"></div>
+                <div class="checklist-check"><input type="checkbox" id="chk${i+1}-ok-${j}"></div>
+                <div class="checklist-check"><input type="checkbox" id="chk${i+1}-ras-${j}"></div>
+              `).join('')}
+            </div>
 
-          <button class="btn-big btn-ok" style="margin:15px 0;" onclick="setAllRAS(${i+1})">
-            <i class="fas fa-check-double"></i> TOUS OK / RAS
-          </button>
+            <button class="btn-big btn-ok" style="margin:15px 0;" onclick="setAllRAS(${i+1})">
+              <i class="fas fa-check-double"></i> TOUS OK / RAS
+            </button>
+          ` : ''}
 
           <h3>Observations</h3>
           <textarea id="obs${i+1}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${i+1})"></textarea>
@@ -321,20 +321,41 @@
 
   function getChecklistItems(i) {
     const checklists = {
-      0: ["Observation drone thermique", "Anomalies détectées", "Température max toiture"],
-      1: ["Température onduleur AC", "Température onduleur DC", "Anomalies visuelles"],
-      2: ["État visuel coffret", "Présence poussière", "État câbles"],
-      3: ["État parafoudres", "État disjoncteurs", "État fusibles"],
-      4: ["État visuel câbles onduleur coffret AC", "État visuel câble AC", "Test continuité terre", "Test réseau", "Vérif disjoncteur/fusibles/parafoudre", "Vérif serrages", "Nettoyage coffret AC", "Présence étiquettes"],
-      5: ["État visuel onduleur(s)", "Fonctionnement onduleur(s)", "Test découplage", "Environnement local", "Vérif connectiques DC", "Vérif serrage AC", "Nettoyage onduleur", "Nettoyage ventilateur", "Présence étiquettes"],
-      6: ["État visuel logette extérieur", "État visuel logette intérieur", "État des câbles", "Vérif paramétrage AGCP", "Vérif test différentiel", "Vérif serrages"],
-      7: ["Mesures DC chaîne 1", "Mesures DC chaîne 2", "Mesures DC chaîne 3", "Δ Uoc", "Commentaire final DC"]
+      4: [ // Étape 5 — Partie AC
+        "État visuel câbles onduleur → coffret AC",
+        "État visuel câble AC",
+        "Test continuité terre",
+        "Test réseau",
+        "Vérif disjoncteur / fusibles / parafoudre",
+        "Vérif serrages",
+        "Nettoyage coffret AC",
+        "Présence étiquettes"
+      ],
+      5: [ // Étape 6 — Partie Onduleur
+        "État visuel onduleur(s)",
+        "Fonctionnement onduleur(s)",
+        "Test découplage",
+        "Environnement local",
+        "Vérif connectiques DC",
+        "Vérif serrage AC",
+        "Nettoyage onduleur",
+        "Nettoyage ventilateur",
+        "Présence étiquettes"
+      ],
+      6: [ // Étape 7 — Point de raccordement
+        "État visuel logette extérieur",
+        "État visuel logette intérieur",
+        "État des câbles",
+        "Vérif paramétrage AGCP",
+        "Vérif test différentiel",
+        "Vérif serrages"
+      ]
     };
     return checklists[i] || ["Élément non défini"];
   }
 
   function setAllRAS(n) {
-    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
+    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette partie.";
     updateObsPreview(n);
     toast("Tous OK / RAS appliqué");
   }
@@ -405,11 +426,13 @@
   }
 
   // ───────────────────────────────────────────────
-  // HISTORIQUE + CHARGEMENT ANCIEN RAPPORT
+  // HISTORIQUE DES RAPPORTS
   // ───────────────────────────────────────────────
+  let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
+
   function saveReportToHistory() {
     const reportData = {
-      id: currentReportId || Date.now(),
+      id: currentReportId,
       date: new Date().toLocaleString('fr-FR'),
       client: clients[currentClientIndex]?.name || "—",
       technician: technicianName,
@@ -422,26 +445,28 @@
         releveNonConso: document.getElementById('releveNonConso').value,
         monitoring: document.getElementById('monitoring').value,
         observations: {},
-        checklists: {},
-        photos: stepPhotos
+        checklists: {}
       }
     };
 
-    for (let i = 1; i <= stepsList.length; i++) {
-      reportData.data.observations[i] = document.getElementById(`obs${i}`)?.value || "";
-      reportData.data.checklists[i] = {};
-      getChecklistItems(i-1).forEach((_, j) => {
-        reportData.data.checklists[i][`bon-${j}`] = document.getElementById(`chk${i}-bon-${j}`)?.checked || false;
-        reportData.data.checklists[i][`acc-${j}`] = document.getElementById(`chk${i}-acc-${j}`)?.checked || false;
-        reportData.data.checklists[i][`mau-${j}`] = document.getElementById(`chk${i}-mau-${j}`)?.checked || false;
-        reportData.data.checklists[i][`ok-${j}`] = document.getElementById(`chk${i}-ok-${j}`)?.checked || false;
-        reportData.data.checklists[i][`ras-${j}`] = document.getElementById(`chk${i}-ras-${j}`)?.checked || false;
-      });
-    }
+    stepsList.forEach((_, i) => {
+      const stepNum = i + 1;
+      reportData.data.observations[stepNum] = document.getElementById(`obs${stepNum}`)?.value || "";
+      reportData.data.checklists[stepNum] = {};
+      if (i >= 4 && i <= 6) {
+        getChecklistItems(i).forEach((_, j) => {
+          reportData.data.checklists[stepNum][`bon-${j}`] = document.getElementById(`chk${stepNum}-bon-${j}`)?.checked || false;
+          reportData.data.checklists[stepNum][`acc-${j}`] = document.getElementById(`chk${stepNum}-acc-${j}`)?.checked || false;
+          reportData.data.checklists[stepNum][`mau-${j}`] = document.getElementById(`chk${stepNum}-mau-${j}`)?.checked || false;
+          reportData.data.checklists[stepNum][`ok-${j}`] = document.getElementById(`chk${stepNum}-ok-${j}`)?.checked || false;
+          reportData.data.checklists[stepNum][`ras-${j}`] = document.getElementById(`chk${stepNum}-ras-${j}`)?.checked || false;
+        });
+      }
+    });
 
-    history = history.filter(r => r.id !== reportData.id);
+    history = history.filter(r => r.id !== currentReportId);
     history.unshift(reportData);
-    if (history.length > 30) history.pop();
+    if (history.length > 20) history.pop();
     localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
     refreshHistory();
   }
@@ -452,7 +477,7 @@
     history.forEach(r => {
       const item = document.createElement('div');
       item.className = 'history-item';
-      item.innerHTML = `<strong>${r.date}</strong><br>${r.client} - ${r.technician}`;
+      item.innerHTML = `<strong>${r.date}</strong> - ${r.client} (${r.technician})`;
       item.onclick = () => loadOldReport(r);
       list.appendChild(item);
     });
@@ -461,24 +486,23 @@
   function loadOldReport(report) {
     if (!confirm("Charger cet ancien rapport ? Les données actuelles seront remplacées.")) return;
 
-    currentReportId = report.id;
-    technicianName = report.data.technicianName;
+    technicianName = report.data.technician;
     document.getElementById('technicianName').value = technicianName;
     document.getElementById('clientSelect').value = report.data.clientIndex;
     loadClientData();
 
-    document.getElementById('startDate').value = report.data.startDate || "";
-    document.getElementById('irradiance').value = report.data.irradiance || "Forte";
-    document.getElementById('releveProd').value = report.data.releveProd || "";
-    document.getElementById('releveNonConso').value = report.data.releveNonConso || "";
-    document.getElementById('monitoring').value = report.data.monitoring || "Oui";
+    document.getElementById('startDate').value = report.data.startDate;
+    document.getElementById('irradiance').value = report.data.irradiance;
+    document.getElementById('releveProd').value = report.data.releveProd;
+    document.getElementById('releveNonConso').value = report.data.releveNonConso;
+    document.getElementById('monitoring').value = report.data.monitoring;
 
-    startMaintenance();
+    startMaintenance(); // recréer les étapes
 
     setTimeout(() => {
       Object.keys(report.data.observations).forEach(step => {
-        const ta = document.getElementById(`obs${step}`);
-        if (ta) ta.value = report.data.observations[step];
+        const textarea = document.getElementById(`obs${step}`);
+        if (textarea) textarea.value = report.data.observations[step];
         updateObsPreview(step);
       });
 
@@ -488,21 +512,17 @@
           if (chk) chk.checked = report.data.checklists[step][key];
         });
       });
+    }, 500);
 
-      stepPhotos = report.data.photos || {};
-      for (let i = 1; i <= stepsList.length; i++) {
-        renderPhotos(i);
-      }
-    }, 800);
-
+    currentReportId = report.id;
     toast("Ancien rapport chargé");
   }
 
   // ───────────────────────────────────────────────
-  // RAPPORT PDF (version finale sans page blanche)
+  // RAPPORT PDF AMÉLIORÉ (version finale pro)
   // ───────────────────────────────────────────────
   function generateReport() {
-    saveReportToHistory();
+    saveReportToHistory(); // Sauvegarde auto avant génération
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
@@ -519,9 +539,11 @@
     doc.text("R.L ENERGIE", 105, 85, { align: "center" });
 
     doc.setFontSize(20);
+    doc.setFont("helvetica", "normal");
     doc.text("Spécialiste du Photovoltaïque", 105, 105, { align: "center" });
 
     doc.setFontSize(34);
+    doc.setFont("helvetica", "bold");
     doc.text("RAPPORT DE MAINTENANCE", 105, 155, { align: "center" });
 
     doc.setFontSize(16);
@@ -535,7 +557,9 @@
       doc.rect(0, 0, 210, 20, 'F');
       doc.setTextColor(255);
       doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
       doc.text("R.L ENERGIE – Rapport de Maintenance", 15, 13);
+      doc.setFont("helvetica", "normal");
       doc.text(`Page ${pageNum}`, 195, 13, { align: "right" });
     }
 
@@ -549,49 +573,55 @@
     let y = 35;
 
     doc.setFontSize(16);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
     doc.text("INFORMATIONS CENTRALES", 20, y);
     y += 8;
     doc.line(20, y, 190, y);
     y += 10;
 
     doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+
     const info = [
       ["Client", client.name],
       ["Technicien", technicianName || "—"],
-      ["Date", document.getElementById('startDate').value || "—"],
-      ["Irradiance", document.getElementById('irradiance').value || "—"],
-      ["Prod", (document.getElementById('releveProd').value || "—") + " kWh"],
-      ["Non conso", (document.getElementById('releveNonConso').value || "—") + " kWh"],
-      ["Monitoring", document.getElementById('monitoring').value || "—"]
+      ["Date d'intervention", document.getElementById('startDate').value || "—"],
+      ["Irradiance solaire", document.getElementById('irradiance').value || "—"],
+      ["Relevé compteur Production", (document.getElementById('releveProd').value || "—") + " kWh"],
+      ["Relevé compteur non-consommation", (document.getElementById('releveNonConso').value || "—") + " kWh"],
+      ["Présence monitoring", document.getElementById('monitoring').value || "—"]
     ];
 
-    info.forEach(([l, v]) => {
-      doc.text(l + " :", 30, y);
-      doc.text(v, 85, y);
+    info.forEach(([label, value]) => {
+      doc.text(label + " :", 30, y);
+      doc.text(value, 90, y);
       y += 7;
     });
-    y += 10;
+
+    y += 12;
 
     const sections = [
-      { title: "PARTIE AC", step: 5 },
+      { title: "PARTIE AC – Coffret de protection", step: 5 },
       { title: "PARTIE ONDULEUR", step: 6 },
       { title: "POINT DE RACCORDEMENT", step: 7 }
     ];
 
-    sections.forEach((sec, idx) => {
-      if (y > 240) {
+    sections.forEach((sec, index) => {
+      if (y > 230) {
         addFooter();
         doc.addPage();
-        addHeader(idx + 2);
+        addHeader(index + 2);
         y = 35;
       }
 
       doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
       doc.text(sec.title, 20, y);
       y += 8;
 
-      const body = getChecklistItems(sec.step - 1).map((d, j) => [
-        d,
+      const body = getChecklistItems(sec.step - 1).map((desc, j) => [
+        desc,
         document.getElementById(`chk${sec.step}-bon-${j}`)?.checked ? '×' : '',
         document.getElementById(`chk${sec.step}-acc-${j}`)?.checked ? '×' : '',
         document.getElementById(`chk${sec.step}-mau-${j}`)?.checked ? '×' : '',
@@ -602,23 +632,33 @@
       doc.autoTable({
         startY: y,
         head: [['Description', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
-        body,
+        body: body,
         theme: 'grid',
-        headStyles: { fillColor: [0, 85, 170], textColor: 255, halign: 'center' },
-        styles: { fontSize: 9, cellPadding: 3, overflow: 'linebreak' },
-        columnStyles: { 0: { cellWidth: 85 }, 1: { cellWidth: 21 }, 2: { cellWidth: 21 }, 3: { cellWidth: 21 }, 4: { cellWidth: 21 }, 5: { cellWidth: 21 } },
+        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 9, cellPadding: 3, lineWidth: 0.1, overflow: 'linebreak' },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        columnStyles: {
+          0: { cellWidth: 90, halign: 'left' },
+          1: { cellWidth: 20, halign: 'center' },
+          2: { cellWidth: 20, halign: 'center' },
+          3: { cellWidth: 20, halign: 'center' },
+          4: { cellWidth: 20, halign: 'center' },
+          5: { cellWidth: 20, halign: 'center' }
+        },
         margin: { left: 20, right: 20 }
       });
 
-      y = doc.lastAutoTable.finalY + 10;
+      y = doc.lastAutoTable.finalY + 12;
 
-      const obs = document.getElementById(`obs${sec.step}`)?.value.trim() || "RAS";
+      const obs = document.getElementById(`obs${sec.step}`)?.value.trim() || "RAS – Aucun commentaire particulier.";
       doc.setFontSize(10);
-      doc.text("Observation : " + obs, 25, y, { maxWidth: 160 });
-      y += doc.getTextDimensions(obs, { maxWidth: 160 }).h + 8;
+      doc.setFont("helvetica", "italic");
+      const obsLines = doc.splitTextToSize("Observation : " + obs, 160);
+      doc.text(obsLines, 25, y);
+      y += obsLines.length * 6 + 8;
     });
 
-    if (y > 240) {
+    if (y > 220) {
       addFooter();
       doc.addPage();
       addHeader(sections.length + 2);
@@ -626,37 +666,44 @@
     }
 
     doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
     doc.text("CONCLUSION GLOBALE", 20, y);
     y += 10;
 
-    const final = document.getElementById('obs8')?.value.trim() || "RAS global - Installation conforme.";
     doc.setFontSize(11);
-    const lines = doc.splitTextToSize(final, 160);
-    doc.text(lines, 25, y);
-    y += lines.length * 7 + 15;
+    doc.setFont("helvetica", "normal");
+    const finalObs = document.getElementById('obs8')?.value.trim() || "Installation conforme aux normes en vigueur. Aucun défaut majeur constaté.";
+    const finalLines = doc.splitTextToSize(finalObs, 160);
+    doc.text(finalLines, 25, y);
+    y += finalLines.length * 7 + 20;
 
-    doc.text("Signature Technicien", 30, y);
-    doc.text("Signature Client", 140, y);
+    doc.setFontSize(12);
+    doc.text("Technicien", 30, y);
+    doc.text("Client", 140, y);
     y += 5;
     doc.line(30, y, 90, y);
     doc.line(140, y, 200, y);
+    y += 5;
+    doc.setFontSize(10);
+    doc.text("Nom & Signature", 30, y);
+    doc.text("Nom & Signature", 140, y);
 
     addFooter();
 
-    doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport généré");
+    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
+    toast("Rapport PDF professionnel généré");
   }
 
   function generateExcel() {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([
-      ["R.L ENERGIE - Rapport"],
+      ["R.L ENERGIE - Rapport Maintenance"],
       ["Client", clients[currentClientIndex]?.name || "—"],
       ["Technicien", technicianName],
       ["Date", new Date().toLocaleDateString('fr-FR')],
       [],
       ["PARTIE AC", "Bon", "Acceptable", "Mauvais", "OK", "RAS"],
-      ...getChecklistItems(4).map((d, i) => [d, document.getElementById(`chk5-bon-${i}`)?.checked ? '×' : '', '', '', '', ''])
+      ...getChecklistItems(4).map((desc, i) => [desc, document.getElementById(`chk5-bon-${i}`)?.checked ? '×' : '', "", "", "", ""])
     ]);
     XLSX.utils.book_append_sheet(wb, ws, "Maintenance");
     XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name || 'Client'}.xlsx`);
@@ -665,7 +712,6 @@
 
   window.onload = function() {
     renderClientList();
-    refreshHistory();
   };
 </script>
 </body>
