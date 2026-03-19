@@ -616,18 +616,29 @@
         head: [['Description', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
         body,
         theme: 'grid',
-        headStyles: { fillColor: [0, 85, 170], textColor: 255, halign: 'center', fontSize: 9 },
-        styles: { fontSize: 8.5, cellPadding: 2.5, overflow: 'linebreak', lineWidth: 0.1 },
+        headStyles: { 
+          fillColor: [0, 85, 170], 
+          textColor: 255, 
+          halign: 'center', 
+          fontSize: 9 
+        },
+        styles: { 
+          fontSize: 8.5, 
+          cellPadding: 2.5, 
+          overflow: 'linebreak', 
+          lineWidth: 0.1,
+          halign: 'center'  // Centre le texte dans toutes les cellules
+        },
         alternateRowStyles: { fillColor: [245, 247, 250] },
         columnStyles: {
-          0: { cellWidth: 85, halign: 'left' },
-          1: { cellWidth: 21, halign: 'center' },
-          2: { cellWidth: 21, halign: 'center' },
-          3: { cellWidth: 21, halign: 'center' },
-          4: { cellWidth: 21, halign: 'center' },
-          5: { cellWidth: 21, halign: 'center' }
+          0: { cellWidth: 80, halign: 'left' },   // Description à gauche
+          1: { cellWidth: 22, halign: 'center' },
+          2: { cellWidth: 22, halign: 'center' },
+          3: { cellWidth: 22, halign: 'center' },
+          4: { cellWidth: 22, halign: 'center' },
+          5: { cellWidth: 22, halign: 'center' }
         },
-        margin: { left: 20, right: 20 }
+        margin: { left: 15, right: 15 }  // Marges égales → tableau centré
       });
 
       y = doc.lastAutoTable.finalY + 8;
@@ -640,7 +651,6 @@
       y += obsLines.length * 5.5 + 6;
     });
 
-    // Conclusion (toujours sur la dernière page utile)
     if (y > 240) {
       addFooter();
       doc.addPage();
@@ -670,7 +680,7 @@
     addFooter();
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport généré");
+    toast("Rapport généré (tableaux centrés)");
   }
 
   function generateExcel() {
