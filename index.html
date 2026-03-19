@@ -55,7 +55,6 @@
     .btn-ok { background:var(--success); color:white; }
     .btn-ok:hover { background:#218838; transform:translateY(-1px); }
     .btn-prev { background:#6c757d; color:white; }
-    .btn-quick { background:#17a2b8; color:white; font-size:0.88rem; padding:0.55rem 1rem; }
 
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
 
@@ -68,10 +67,6 @@
     #toast { position:fixed; bottom:1.8rem; left:50%; transform:translateX(-50%); z-index:9999; background:transparent; pointer-events:none; }
     .toast-msg { background:var(--success); color:white; padding:0.9rem 2rem; border-radius:50px; box-shadow:0 6px 20px rgba(0,0,0,0.25); animation:toast 2.8s forwards; }
     @keyframes toast { 0%{opacity:0;transform:translateY(20px) translateX(-50%);} 10%{opacity:1;transform:translateY(0) translateX(-50%);} 90%{opacity:1;transform:translateY(0) translateX(-50%);} 100%{opacity:0;transform:translateY(20px) translateX(-50%);} }
-
-    #historyList { margin:1.5rem 0; padding:1rem; background:#f8f9fa; border-radius:8px; max-height:300px; overflow-y:auto; }
-    .history-item { padding:0.8rem; border-bottom:1px solid #ddd; cursor:pointer; }
-    .history-item:hover { background:#e9ecef; }
 
     .step { display:none; }
     .step.active { display:block; }
@@ -190,10 +185,10 @@
       <i class="fas fa-save"></i> Sauvegarder maintenant
     </button>
     <button class="btn-big" style="background:#28a745;color:white;margin-left:1rem;" onclick="exportJSON()">
-      <i class="fas fa-download"></i> Exporter JSON
+      <i class="fas fa-download"></i> Exporter JSON (vers PC / autre tablette)
     </button>
     <button class="btn-big" style="background:#0066cc;color:white;margin-left:1rem;" onclick="document.getElementById('importJsonInput').click()">
-      <i class="fas fa-upload"></i> Importer JSON
+      <i class="fas fa-upload"></i> Importer JSON (de PC / autre tablette)
     </button>
     <input type="file" id="importJsonInput" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
@@ -290,9 +285,9 @@
   function createSteps() {
     const container = document.getElementById('stepsContainer');
     container.innerHTML = '';
-    stepsList.forEach((title, index) => {
+    stepsList.forEach((title, i) => {
       const stepDiv = document.createElement('div');
-      stepDiv.id = `step${index + 1}`;
+      stepDiv.id = `step${i+1}`;
       stepDiv.className = 'step card';
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
@@ -305,31 +300,31 @@
             <div class="checklist-header">Mauvais</div>
             <div class="checklist-header">OK</div>
             <div class="checklist-header">RAS</div>
-            ${getChecklistItems(index).map((item, i) => `
-              <div class="checklist-item">${item}</div>
-              <div class="checklist-check"><input type="checkbox" id="chk${index+1}-bon-${i}" onchange="toggleProcess(${index+1})"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${index+1}-acc-${i}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${index+1}-mau-${i}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${index+1}-ok-${i}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${index+1}-ras-${i}" onchange="toggleProcess(${index+1})"></div>
+            ${getChecklistItems(i).map((desc, j) => `
+              <div class="checklist-item">${desc}</div>
+              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-bon-${j}"></div>
+              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-acc-${j}"></div>
+              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-mau-${j}"></div>
+              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-ok-${j}"></div>
+              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-ras-${j}" onchange="toggleProcess(${i+1})"></div>
             `).join('')}
           </div>
 
-          <button class="btn-big btn-ok" style="margin-top:1rem;" onclick="setAllRAS(${index+1})">
+          <button class="btn-big btn-ok" style="margin:1rem 0;" onclick="setAllRAS(${i+1})">
             <i class="fas fa-check-double"></i> Tous OK / RAS
           </button>
 
-          <h3 style="margin-top:2rem;">Observations</h3>
-          <textarea id="obs${index + 1}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${index + 1})"></textarea>
-          <div id="preview${index + 1}" style="margin-top:1rem;padding:1rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:6px;display:none;"></div>
+          <h3>Observations</h3>
+          <textarea id="obs${i+1}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${i+1})"></textarea>
+          <div id="preview${i+1}" style="margin-top:1rem;padding:1rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:6px;display:none;"></div>
 
-          <h3 style="margin-top:2rem;">Photos</h3>
-          <input type="file" id="photo${index + 1}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${index + 1})">
-          <div id="photos${index + 1}" class="photo-grid"></div>
+          <h3 style="margin-top:1.5rem;">Photos</h3>
+          <input type="file" id="photo${i+1}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${i+1})">
+          <div id="photos${i+1}" class="photo-grid"></div>
 
           <div class="nav-row" style="margin-top:2rem;">
-            <button class="btn-big btn-prev" onclick="prevStep()" ${index === 0 ? 'disabled' : ''}><i class="fas fa-arrow-left"></i> Précédent</button>
-            <button class="btn-big btn-ok" onclick="nextStep(${index + 1})">Suivant <i class="fas fa-arrow-right"></i></button>
+            <button class="btn-big btn-prev" onclick="prevStep()" ${i === 0 ? 'disabled' : ''}><i class="fas fa-arrow-left"></i> Précédent</button>
+            <button class="btn-big btn-ok" onclick="nextStep(${i+1})">Suivant <i class="fas fa-arrow-right"></i></button>
           </div>
         </div>
       `;
@@ -338,56 +333,50 @@
   }
 
   function getChecklistItems(stepIndex) {
-    if (stepIndex === 4) { // Étape 5 - Partie AC
-      return [
-        "État visuel câbles onduleur → coffret AC",
-        "État visuel câble AC",
+    const items = {
+      4: [ // Étape 5 — Partie AC
+        "état visuel câbles onduleur coffret AC",
+        "état visuel câble AC",
         "Test continuité terre",
         "Test réseau",
-        "Vérif disjoncteur / fusibles / parafoudre",
-        "Vérif serrages",
+        "vérif disjoncteur/fusibles/parafoudre",
+        "vérif serrages",
         "Nettoyage coffret AC",
         "Présence étiquettes"
-      ];
-    }
-    if (stepIndex === 5) { // Étape 6 - Partie Onduleur
-      return [
-        "État visuel onduleur(s)",
+      ],
+      5: [ // Étape 6 — Partie Onduleur
+        "état visuel onduleur(s)",
         "Fonctionnement onduleur(s)",
         "Test découplage",
         "Environnement local",
-        "Vérif connectiques DC",
-        "Vérif serrage AC",
+        "vérif connectiques DC",
+        "vérif serrage AC",
         "Nettoyage onduleur",
         "Nettoyage ventilateur",
         "Présence étiquettes"
-      ];
-    }
-    if (stepIndex === 6) { // Étape 7 - Point de raccordement
-      return [
-        "État visuel logette extérieur",
-        "État visuel logette intérieur",
-        "État des câbles",
-        "Vérif paramétrage AGCP",
-        "Vérif test différentiel",
-        "Vérif serrages"
-      ];
-    }
-    return ["Checklist non définie pour cette étape"];
+      ],
+      6: [ // Étape 7 — Point de raccordement
+        "état visuel logette extérieur",
+        "état visuel logette intérieur",
+        "état des câbles",
+        "vérif paramétrage AGCP",
+        "vérif test différentiel",
+        "vérif serrages"
+      ]
+    };
+    return items[stepIndex] || ["Checklist non définie pour cette étape"];
   }
 
   function setAllRAS(n) {
-    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
+    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté";
     updateObsPreview(n);
-    toast("Tous OK / RAS coché pour l'étape " + n);
+    toast("Tous OK / RAS pour l'étape");
   }
 
   function nextStep(n) {
     document.getElementById(`step${n}`).classList.remove('active');
     currentStep = n + 1;
-    if (currentStep <= stepsList.length) {
-      document.getElementById(`step${currentStep}`).classList.add('active');
-    }
+    if (currentStep <= stepsList.length) document.getElementById(`step${currentStep}`).classList.add('active');
   }
 
   function prevStep() {
@@ -447,6 +436,179 @@
     el.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
     document.getElementById('toast').appendChild(el);
     setTimeout(() => el.remove(), 3000);
+  }
+
+  function toggleAdminMode() {
+    const pw = prompt("Mot de passe Admin :");
+    if (pw === ADMIN_PASSWORD) {
+      isAdminMode = true;
+      document.getElementById('adminControls').style.display = 'block';
+      document.getElementById('btnAdmin').style.display = 'none';
+      document.getElementById('btnExitAdmin').style.display = 'inline-block';
+      document.getElementById('installationDetails').readOnly = false;
+      toast("Mode Admin activé");
+    } else {
+      toast("Mot de passe incorrect");
+    }
+  }
+
+  function exitAdminMode() {
+    isAdminMode = false;
+    document.getElementById('adminControls').style.display = 'none';
+    document.getElementById('btnAdmin').style.display = 'inline-block';
+    document.getElementById('btnExitAdmin').style.display = 'none';
+    document.getElementById('installationDetails').readOnly = true;
+    toast("Mode Admin désactivé");
+  }
+
+  function addNewClient() {
+    if (!isAdminMode) return toast("Mode Admin requis");
+    const name = document.getElementById('newClient').value.trim();
+    if (!name) return toast("Nom requis");
+    if (clients.some(c => c.name === name)) return toast("Déjà existant");
+
+    clients.push({ name, details: "", lastMaint: "", oldDates: [], wiringPlan: null, sitePlan: null });
+    renderClientList();
+    document.getElementById('newClient').value = "";
+    toast("Client ajouté");
+  }
+
+  function enableEditDetails() {
+    if (!isAdminMode) return;
+    document.getElementById('installationDetails').readOnly = false;
+  }
+
+  function uploadPlan(type) {
+    const file = document.getElementById(type + 'PlanInput').files[0];
+    if (!file || currentClientIndex < 0) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      clients[currentClientIndex][type + 'Plan'] = e.target.result;
+      loadClientData();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function generateReport() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+    const client = clients[currentClientIndex] || { name: "—" };
+
+    // Page de couverture
+    doc.setFillColor(4, 64, 128);
+    doc.rect(0, 0, 210, 297, 'F');
+    doc.setTextColor(255);
+    doc.setFontSize(48);
+    doc.text("R.L ENERGIE", 105, 90, { align: "center" });
+    doc.setFontSize(18);
+    doc.text("Spécialiste du Photovoltaïque", 105, 110, { align: "center" });
+    doc.setFontSize(32);
+    doc.text("RAPPORT DE MAINTENANCE", 105, 160, { align: "center" });
+    doc.setFontSize(14);
+    doc.text(new Date().toLocaleDateString('fr-FR'), 105, 180, { align: "center" });
+
+    doc.addPage();
+
+    function addHeader() {
+      doc.setFillColor(4, 64, 128);
+      doc.rect(0, 0, 210, 20, 'F');
+      doc.setTextColor(255);
+      doc.setFontSize(12);
+      doc.text("R.L ENERGIE – Rapport de Maintenance", 15, 13);
+      doc.text(`Client : ${client.name}`, 195, 13, { align: "right" });
+    }
+
+    addHeader();
+
+    let y = 35;
+    doc.setFontSize(16);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text("INFORMATIONS CENTRALES", 20, y); y += 10;
+    doc.line(20, y, 190, y); y += 8;
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Client : ${client.name}`, 25, y); y += 7;
+    doc.text(`Technicien : ${technicianName}`, 25, y); y += 7;
+    doc.text(`Date d'intervention : ${document.getElementById('startDate').value}`, 25, y); y += 7;
+    doc.text(`Irradiance solaire : ${document.getElementById('irradiance').value}`, 25, y); y += 7;
+    doc.text(`Relevé compteur Production : ${document.getElementById('releveProd').value || "—"} kWh`, 25, y); y += 7;
+    doc.text(`Relevé compteur non-consommation : ${document.getElementById('releveNonConso').value || "—"} kWh`, 25, y); y += 7;
+    doc.text(`Présence monitoring : ${document.getElementById('monitoring').value}`, 25, y); y += 18;
+
+    // Tableaux des checklists
+    const clData = [
+      { title: "PARTIE AC — Coffret de protection", items: getChecklistItems(4), obsKey: 5 },
+      { title: "PARTIE ONDULEUR", items: getChecklistItems(5), obsKey: 6 },
+      { title: "POINT DE RACCORDEMENT", items: getChecklistItems(6), obsKey: 7 }
+    ];
+
+    clData.forEach(cl => {
+      if (y > 240) {
+        doc.addPage();
+        addHeader();
+        y = 35;
+      }
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.text(cl.title, 20, y); y += 8;
+
+      const body = cl.items.map((desc, i) => {
+        const row = [desc];
+        ['bon','acc','mau','ok','ras'].forEach(col => {
+          row.push(document.getElementById(`chk${cl.obsKey}-${col}-${i}`)?.checked ? '×' : '');
+        });
+        return row;
+      });
+
+      doc.autoTable({
+        startY: y,
+        head: [['Description', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 9.5, cellPadding: 3.5, lineWidth: 0.1, halign: 'left' },
+        columnStyles: { 0: { cellWidth: 90 } },
+        margin: { left: 20, right: 20 }
+      });
+      y = doc.lastAutoTable.finalY + 12;
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "italic");
+      const obs = document.getElementById(`obs${cl.obsKey}`)?.value.trim() || "RAS – Aucun commentaire";
+      doc.text(`Observation : ${obs}`, 25, y);
+      y += 20;
+    });
+
+    // Conclusion
+    if (y > 220) {
+      doc.addPage();
+      addHeader();
+      y = 35;
+    }
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("CONCLUSION GLOBALE", 20, y); y += 10;
+    const finalObs = document.getElementById('obsFinal')?.value.trim() || "RAS – Installation conforme aux normes en vigueur.";
+    doc.setFont("helvetica", "normal");
+    const finalLines = doc.splitTextToSize(finalObs, 160);
+    doc.text(finalLines, 25, y);
+
+    y = Math.max(y + finalLines.length * 7 + 20, 260);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("Technicien", 20, y);
+    doc.text("Client", 140, y); y += 8;
+    doc.setFont("helvetica", "normal");
+    doc.line(20, y, 90, y);
+    doc.line(140, y, 190, y); y += 5;
+    doc.text("Nom & Signature", 20, y);
+    doc.text("Nom & Signature", 140, y);
+
+    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_') || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
+    toast("Rapport PDF généré");
   }
 
   window.onload = function() {
