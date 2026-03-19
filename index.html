@@ -408,48 +408,109 @@
     setTimeout(() => el.remove(), 3000);
   }
 
+  // ───────────────────────────────────────────────
+  // RAPPORT PDF AMÉLIORÉ (version pro)
+  // ───────────────────────────────────────────────
   function generateReport() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
     const client = clients[currentClientIndex] || { name: "—" };
+    const dateStr = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
     // Page de couverture
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255);
-    doc.setFontSize(48);
-    doc.text("R.L ENERGIE", 105, 90, { align: "center" });
-    doc.setFontSize(18);
-    doc.text("Spécialiste du Photovoltaïque", 105, 110, { align: "center" });
-    doc.setFontSize(32);
-    doc.text("RAPPORT DE MAINTENANCE", 105, 160, { align: "center" });
-    doc.setFontSize(14);
-    doc.text(new Date().toLocaleDateString('fr-FR'), 105, 180, { align: "center" });
+    doc.setFontSize(52);
+    doc.setFont("helvetica", "bold");
+    doc.text("R.L ENERGIE", 105, 85, { align: "center" });
+
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "normal");
+    doc.text("Spécialiste du Photovoltaïque", 105, 105, { align: "center" });
+
+    doc.setFontSize(34);
+    doc.setFont("helvetica", "bold");
+    doc.text("RAPPORT DE MAINTENANCE", 105, 155, { align: "center" });
+
+    doc.setFontSize(16);
+    doc.text(`Client : ${client.name}`, 105, 180, { align: "center" });
+    doc.text(dateStr, 105, 195, { align: "center" });
 
     doc.addPage();
 
+    // En-tête sur chaque page
+    function addHeader(pageNum) {
+      doc.setFillColor(4, 64, 128);
+      doc.rect(0, 0, 210, 20, 'F');
+      doc.setTextColor(255);
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("R.L ENERGIE – Rapport de Maintenance", 15, 13);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Page ${pageNum}`, 195, 13, { align: "right" });
+    }
+
+    // Pied de page
+    function addFooter(pageNum) {
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text(`Généré le ${dateStr} • R.L ENERGIE`, 105, 290, { align: "center" });
+    }
+
+    // Page 1 – Informations centrales
+    addHeader(1);
     let y = 35;
+
     doc.setFontSize(16);
-    doc.text("INFORMATIONS CENTRALES", 20, y); y += 12;
-    doc.line(20, y, 190, y); y += 10;
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text("INFORMATIONS CENTRALES", 20, y);
+    y += 8;
+    doc.setLineWidth(0.5);
+    doc.line(20, y, 190, y);
+    y += 12;
 
     doc.setFontSize(11);
-    doc.text(`Client : ${client.name}`, 25, y); y += 8;
-    doc.text(`Technicien : ${technicianName}`, 25, y); y += 8;
-    doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 25, y); y += 20;
+    doc.setFont("helvetica", "normal");
 
-    // TABLEAUX CHECKLISTS
+    const info = [
+      ["Client", client.name],
+      ["Technicien", technicianName || "—"],
+      ["Date d'intervention", document.getElementById('startDate').value || "—"],
+      ["Irradiance solaire", document.getElementById('irradiance').value || "—"],
+      ["Relevé compteur Production", (document.getElementById('releveProd').value || "—") + " kWh"],
+      ["Relevé compteur non-consommation", (document.getElementById('releveNonConso').value || "—") + " kWh"],
+      ["Présence monitoring", document.getElementById('monitoring').value || "—"]
+    ];
+
+    info.forEach(([label, value]) => {
+      doc.text(label + " :", 30, y);
+      doc.text(value, 90, y);
+      y += 8;
+    });
+
+    y += 15;
+
+    // Tableaux checklists
     const sections = [
-      { title: "PARTIE AC", step: 5 },
+      { title: "PARTIE AC – Coffret de protection", step: 5 },
       { title: "PARTIE ONDULEUR", step: 6 },
       { title: "POINT DE RACCORDEMENT", step: 7 }
     ];
 
-    sections.forEach(sec => {
-      if (y > 220) { doc.addPage(); y = 35; }
-      doc.setFontSize(13);
-      doc.text(sec.title, 20, y); y += 10;
+    sections.forEach((sec, index) => {
+      if (y > 230) {
+        doc.addPage();
+        addHeader(index + 2);
+        y = 35;
+      }
+
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text(sec.title, 20, y);
+      y += 10;
 
       const body = getChecklistItems(sec.step - 1).map((desc, j) => [
         desc,
@@ -465,27 +526,74 @@
         head: [['Description', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
         body: body,
         theme: 'grid',
-        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 9.5, cellPadding: 3.5, halign: 'left' },
-        columnStyles: { 0: { cellWidth: 90 } },
+        headStyles: {
+          fillColor: [0, 85, 170],
+          textColor: 255,
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+          lineColor: [44, 62, 80],
+          lineWidth: 0.1
+        },
+        alternateRowStyles: { fillColor: [240, 248, 255] },
+        columnStyles: {
+          0: { cellWidth: 90, halign: 'left' },
+          1: { cellWidth: 20, halign: 'center' },
+          2: { cellWidth: 20, halign: 'center' },
+          3: { cellWidth: 20, halign: 'center' },
+          4: { cellWidth: 20, halign: 'center' },
+          5: { cellWidth: 20, halign: 'center' }
+        },
         margin: { left: 20, right: 20 }
       });
-      y = doc.lastAutoTable.finalY + 15;
 
-      const obs = document.getElementById(`obs${sec.step}`)?.value.trim() || "RAS";
-      doc.text(`Observation : ${obs}`, 25, y); y += 20;
+      y = doc.lastAutoTable.finalY + 12;
+
+      const obs = document.getElementById(`obs${sec.step}`)?.value.trim() || "RAS – Aucun commentaire particulier.";
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "italic");
+      const obsLines = doc.splitTextToSize("Observation : " + obs, 160);
+      doc.text(obsLines, 25, y);
+      y += obsLines.length * 6 + 10;
     });
 
-    // Conclusion
-    const finalObs = document.getElementById('obs8')?.value.trim() || "Installation conforme aux normes en vigueur.";
-    doc.setFontSize(14);
-    doc.text("CONCLUSION GLOBALE", 20, y); y += 10;
-    doc.setFontSize(11);
-    const lines = doc.splitTextToSize(finalObs, 160);
-    doc.text(lines, 25, y);
+    // Conclusion + signature
+    if (y > 220) {
+      doc.addPage();
+      addHeader(sections.length + 2);
+      y = 35;
+    }
 
-    doc.save(`Rapport_${client.name || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF généré avec tableaux");
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("CONCLUSION GLOBALE", 20, y);
+    y += 10;
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    const finalObs = document.getElementById('obs8')?.value.trim() || "Installation conforme aux normes en vigueur. Aucun défaut majeur constaté.";
+    const finalLines = doc.splitTextToSize(finalObs, 160);
+    doc.text(finalLines, 25, y);
+    y += finalLines.length * 7 + 25;
+
+    doc.setFontSize(12);
+    doc.text("Technicien", 30, y);
+    doc.text("Client", 140, y);
+    y += 5;
+    doc.line(30, y, 90, y);
+    doc.line(140, y, 200, y);
+    y += 5;
+    doc.setFontSize(10);
+    doc.text("Nom & Signature", 30, y);
+    doc.text("Nom & Signature", 140, y);
+
+    addFooter(1); // on peut appeler sur chaque page si tu veux plus tard
+
+    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
+    toast("Rapport PDF professionnel généré");
   }
 
   function generateExcel() {
