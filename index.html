@@ -35,8 +35,9 @@
     .cb { padding:1.4rem 1.8rem; }
 
     label { font-weight:600; color:#1f2d3d; margin-bottom:0.45rem; display:block; font-size:0.95rem; }
-    input, select, textarea { width:100%; padding:0.75rem; border:2px solid var(--border); border-radius:6px; font-size:0.95rem; margin-bottom:1rem; }
-    input[readonly], textarea[readonly] { background:#f8f9fa; cursor:not-allowed; }
+    input, select, textarea { width:100%; padding:0.75rem; border:2px solid var(--border); border-radius:6px; font-size:0.95rem; margin-bottom:1rem; transition:border 0.2s; }
+    input[readonly], textarea[readonly] { background:#f8f9fa; cursor:not-allowed; border-color:#ced4da; }
+    input:focus, textarea:focus, select:focus { border-color:var(--primary-light); outline:none; box-shadow:0 0 0 3px rgba(0,102,204,0.2); }
 
     .photo-upload-btn {
       background: var(--primary-light); color: white; padding: 1.2rem; border-radius: 12px; text-align: center; cursor: pointer;
@@ -55,6 +56,7 @@
     .btn-ok:hover { background:#218838; transform:translateY(-1px); }
     .btn-prev { background:#6c757d; color:white; }
     .btn-clear { background:#dc3545; color:white; }
+    .btn-admin-active { background:#ffc107; color:#1f2d3d; font-weight:bold; }
 
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
 
@@ -74,7 +76,7 @@
     #historyList { margin-top:1rem; max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:6px; }
     .history-item { padding:12px; border-bottom:1px solid #eee; cursor:pointer; }
     .history-item:hover { background:#f0f7ff; }
-    .history-item.loaded { background:#e6ffe6; font-weight:bold; }
+    .history-item.loaded { background:#e6ffe6; font-weight:bold; border-left:4px solid var(--success); }
   </style>
 </head>
 <body>
@@ -82,8 +84,8 @@
 <header>
   <div class="logo">R.L ENERGIE</div>
   <div>
-    <button class="btn-admin" onclick="toggleAdminMode()" id="btnAdmin">Mode Admin</button>
-    <button class="btn-exit-admin" onclick="exitAdminMode()" id="btnExitAdmin" style="display:none;">Quitter mode Admin</button>
+    <button class="btn-big" id="btnAdmin" onclick="toggleAdminMode()">Mode Admin</button>
+    <button class="btn-big btn-clear" id="btnExitAdmin" onclick="exitAdminMode()" style="display:none;">Quitter Admin</button>
   </div>
 </header>
 
@@ -416,6 +418,59 @@
     setTimeout(() => el.remove(), 3000);
   }
 
+  function toggleAdminMode() {
+    const pw = prompt("Mot de passe Admin :", "");
+    if (pw === ADMIN_PASSWORD) {
+      isAdminMode = true;
+      document.getElementById('adminControls').style.display = 'block';
+      document.getElementById('btnAdmin').classList.add('btn-admin-active');
+      document.getElementById('btnExitAdmin').style.display = 'inline-block';
+      document.getElementById('installationDetails').readOnly = false;
+      document.getElementById('editDetailsBtn').style.display = 'inline';
+      toast("Mode Admin activé");
+    } else {
+      toast("Mot de passe incorrect");
+    }
+  }
+
+  function exitAdminMode() {
+    isAdminMode = false;
+    document.getElementById('adminControls').style.display = 'none';
+    document.getElementById('btnAdmin').classList.remove('btn-admin-active');
+    document.getElementById('btnExitAdmin').style.display = 'none';
+    document.getElementById('installationDetails').readOnly = true;
+    document.getElementById('editDetailsBtn').style.display = 'none';
+    toast("Mode Admin désactivé");
+  }
+
+  function addNewClient() {
+    if (!isAdminMode) return toast("Mode Admin requis");
+    const name = document.getElementById('newClient').value.trim();
+    if (!name) return toast("Nom requis");
+    if (clients.some(c => c.name === name)) return toast("Déjà existant");
+
+    clients.push({ name, details: "", lastMaint: "", oldDates: [] });
+    renderClientList();
+    document.getElementById('newClient').value = "";
+    toast("Client ajouté");
+  }
+
+  function enableEditDetails() {
+    if (!isAdminMode) return toast("Mode Admin requis");
+    document.getElementById('installationDetails').readOnly = false;
+  }
+
+  function uploadPlan(type) {
+    const file = document.getElementById(type + 'PlanInput').files[0];
+    if (!file || currentClientIndex < 0) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      clients[currentClientIndex][type + 'Plan'] = e.target.result;
+      loadClientData();
+    };
+    reader.readAsDataURL(file);
+  }
+
   function saveReportToHistory() {
     const reportData = {
       id: currentReportId || Date.now(),
@@ -627,18 +682,18 @@
           cellPadding: 2.5, 
           overflow: 'linebreak', 
           lineWidth: 0.1,
-          halign: 'center'  // Centre le texte dans toutes les cellules
+          halign: 'center'  
         },
         alternateRowStyles: { fillColor: [245, 247, 250] },
         columnStyles: {
-          0: { cellWidth: 80, halign: 'left' },   // Description à gauche
+          0: { cellWidth: 80, halign: 'left' },   
           1: { cellWidth: 22, halign: 'center' },
           2: { cellWidth: 22, halign: 'center' },
           3: { cellWidth: 22, halign: 'center' },
           4: { cellWidth: 22, halign: 'center' },
           5: { cellWidth: 22, halign: 'center' }
         },
-        margin: { left: 15, right: 15 }  // Marges égales → tableau centré
+        margin: { left: 15, right: 15 }  
       });
 
       y = doc.lastAutoTable.finalY + 8;
