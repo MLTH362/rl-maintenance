@@ -55,7 +55,6 @@
     .btn-ok { background:var(--success); color:white; }
     .btn-ok:hover { background:#218838; transform:translateY(-1px); }
     .btn-prev { background:#6c757d; color:white; }
-    .btn-drive { background:#4285F4; color:white; }
 
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
 
@@ -176,10 +175,7 @@
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
     </button>
     <button class="btn-big" style="background:#1e7e34;color:white;margin-left:2rem;font-size:1.2rem;padding:1.4rem 3rem;" onclick="generateExcel()">
-      <i class="fas fa-file-excel"></i> EXPORTER EXCEL MODIFIABLE
-    </button>
-    <button class="btn-big btn-drive" style="margin-left:2rem;font-size:1.2rem;padding:1.4rem 3rem;" onclick="exportToGoogleDrive()">
-      <i class="fab fa-google-drive"></i> EXPORTER VERS GOOGLE DRIVE
+      <i class="fas fa-file-excel"></i> EXPORTER EXCEL
     </button>
   </div>
 
@@ -264,27 +260,29 @@
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
-          <h3>Checklist</h3>
-          <div class="checklist-grid">
-            <div class="checklist-header">Description</div>
-            <div class="checklist-header">Bon</div>
-            <div class="checklist-header">Acceptable</div>
-            <div class="checklist-header">Mauvais</div>
-            <div class="checklist-header">OK</div>
-            <div class="checklist-header">RAS</div>
-            ${getChecklistItems(i).map((desc, j) => `
-              <div class="checklist-item">${desc}</div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-bon-${j}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-acc-${j}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-mau-${j}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-ok-${j}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-ras-${j}"></div>
-            `).join('')}
-          </div>
+          ${i >= 4 && i <= 6 ? `
+            <h3>Checklist</h3>
+            <div class="checklist-grid">
+              <div class="checklist-header">Description</div>
+              <div class="checklist-header">Bon</div>
+              <div class="checklist-header">Acceptable</div>
+              <div class="checklist-header">Mauvais</div>
+              <div class="checklist-header">OK</div>
+              <div class="checklist-header">RAS</div>
+              ${getChecklistItems(i).map((desc, j) => `
+                <div class="checklist-item">${desc}</div>
+                <div class="checklist-check"><input type="checkbox" id="chk${i+1}-bon-${j}"></div>
+                <div class="checklist-check"><input type="checkbox" id="chk${i+1}-acc-${j}"></div>
+                <div class="checklist-check"><input type="checkbox" id="chk${i+1}-mau-${j}"></div>
+                <div class="checklist-check"><input type="checkbox" id="chk${i+1}-ok-${j}"></div>
+                <div class="checklist-check"><input type="checkbox" id="chk${i+1}-ras-${j}"></div>
+              `).join('')}
+            </div>
 
-          <button class="btn-big btn-ok" style="margin:15px 0;" onclick="setAllRAS(${i+1})">
-            <i class="fas fa-check-double"></i> TOUS OK / RAS
-          </button>
+            <button class="btn-big btn-ok" style="margin:15px 0;" onclick="setAllRAS(${i+1})">
+              <i class="fas fa-check-double"></i> TOUS OK / RAS
+            </button>
+          ` : ''}
 
           <h3>Observations</h3>
           <textarea id="obs${i+1}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${i+1})"></textarea>
@@ -305,16 +303,44 @@
   }
 
   function getChecklistItems(i) {
-    if (i === 4) return ["état visuel câbles onduleur coffret AC","état visuel câble AC","Test continuité terre","Test réseau","vérif disjoncteur/fusibles/parafoudre","vérif serrages","Nettoyage coffret AC","Présence étiquettes"];
-    if (i === 5) return ["état visuel onduleur(s)","Fonctionnement onduleur(s)","Test découplage","Environnement local","vérif connectiques DC","vérif serrage AC","Nettoyage onduleur","Nettoyage ventilateur","Présence étiquettes"];
-    if (i === 6) return ["état visuel logette extérieur","état visuel logette intérieur","état des câbles","vérif paramétrage AGCP","vérif test différentiel","vérif serrages"];
-    return ["Item 1","Item 2","Item 3"];
+    const checklists = {
+      4: [ // Étape 5 — Partie AC
+        "État visuel câbles onduleur → coffret AC",
+        "État visuel câble AC",
+        "Test continuité terre",
+        "Test réseau",
+        "Vérif disjoncteur / fusibles / parafoudre",
+        "Vérif serrages",
+        "Nettoyage coffret AC",
+        "Présence étiquettes"
+      ],
+      5: [ // Étape 6 — Partie Onduleur
+        "État visuel onduleur(s)",
+        "Fonctionnement onduleur(s)",
+        "Test découplage",
+        "Environnement local",
+        "Vérif connectiques DC",
+        "Vérif serrage AC",
+        "Nettoyage onduleur",
+        "Nettoyage ventilateur",
+        "Présence étiquettes"
+      ],
+      6: [ // Étape 7 — Point de raccordement
+        "État visuel logette extérieur",
+        "État visuel logette intérieur",
+        "État des câbles",
+        "Vérif paramétrage AGCP",
+        "Vérif test différentiel",
+        "Vérif serrages"
+      ]
+    };
+    return checklists[i] || ["Élément non défini"];
   }
 
   function setAllRAS(n) {
-    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté";
+    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette partie.";
     updateObsPreview(n);
-    toast("Tous OK / RAS pour l'étape");
+    toast("Tous OK / RAS appliqué");
   }
 
   function nextStep(n) {
@@ -382,61 +408,10 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  function toggleAdminMode() {
-    const pw = prompt("Mot de passe Admin :");
-    if (pw === ADMIN_PASSWORD) {
-      isAdminMode = true;
-      document.getElementById('adminControls').style.display = 'block';
-      document.getElementById('btnAdmin').style.display = 'none';
-      document.getElementById('btnExitAdmin').style.display = 'inline-block';
-      document.getElementById('installationDetails').readOnly = false;
-      toast("Mode Admin activé");
-    } else {
-      toast("Mot de passe incorrect");
-    }
-  }
-
-  function exitAdminMode() {
-    isAdminMode = false;
-    document.getElementById('adminControls').style.display = 'none';
-    document.getElementById('btnAdmin').style.display = 'inline-block';
-    document.getElementById('btnExitAdmin').style.display = 'none';
-    document.getElementById('installationDetails').readOnly = true;
-    toast("Mode Admin désactivé");
-  }
-
-  function addNewClient() {
-    if (!isAdminMode) return toast("Mode Admin requis");
-    const name = document.getElementById('newClient').value.trim();
-    if (!name) return toast("Nom requis");
-    if (clients.some(c => c.name === name)) return toast("Déjà existant");
-
-    clients.push({ name, details: "", lastMaint: "", oldDates: [] });
-    renderClientList();
-    document.getElementById('newClient').value = "";
-    toast("Client ajouté");
-  }
-
-  function enableEditDetails() {
-    if (!isAdminMode) return;
-    document.getElementById('installationDetails').readOnly = false;
-  }
-
-  function uploadPlan(type) {
-    const file = document.getElementById(type + 'PlanInput').files[0];
-    if (!file || currentClientIndex < 0) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      clients[currentClientIndex][type + 'Plan'] = e.target.result;
-      loadClientData();
-    };
-    reader.readAsDataURL(file);
-  }
-
-  // ====================== RAPPORT PDF PARFAIT ======================
   function generateReport() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
     const client = clients[currentClientIndex] || { name: "—" };
 
     // Page de couverture
@@ -451,90 +426,66 @@
     doc.text("RAPPORT DE MAINTENANCE", 105, 160, { align: "center" });
     doc.setFontSize(14);
     doc.text(new Date().toLocaleDateString('fr-FR'), 105, 180, { align: "center" });
+
     doc.addPage();
 
     let y = 35;
     doc.setFontSize(16);
-    doc.text("INFORMATIONS CENTRALES", 20, y); y += 10;
+    doc.text("INFORMATIONS CENTRALES", 20, y); y += 12;
     doc.line(20, y, 190, y); y += 10;
 
     doc.setFontSize(11);
-    doc.text(`Client : ${client.name}`, 25, y); y += 7;
-    doc.text(`Technicien : ${technicianName}`, 25, y); y += 7;
-    doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 25, y); y += 7;
-    doc.text(`Irradiance : ${document.getElementById('irradiance').value}`, 25, y); y += 7;
-    doc.text(`Relevé Production : ${document.getElementById('releveProd').value || "—"} kWh`, 25, y); y += 7;
-    doc.text(`Relevé non-consommation : ${document.getElementById('releveNonConso').value || "—"} kWh`, 25, y); y += 20;
+    doc.text(`Client : ${client.name}`, 25, y); y += 8;
+    doc.text(`Technicien : ${technicianName}`, 25, y); y += 8;
+    doc.text(`Date intervention : ${document.getElementById('startDate').value}`, 25, y); y += 20;
 
     // TABLEAUX CHECKLISTS
     const sections = [
-      { title: "PARTIE AC", key: 5 },
-      { title: "PARTIE ONDULEUR", key: 6 },
-      { title: "POINT DE RACCORDEMENT", key: 7 }
+      { title: "PARTIE AC", step: 5 },
+      { title: "PARTIE ONDULEUR", step: 6 },
+      { title: "POINT DE RACCORDEMENT", step: 7 }
     ];
 
-    sections.forEach((sec, idx) => {
+    sections.forEach(sec => {
       if (y > 220) { doc.addPage(); y = 35; }
       doc.setFontSize(13);
-      doc.text(sec.title, 20, y); y += 8;
+      doc.text(sec.title, 20, y); y += 10;
 
-      const body = getChecklistItems(sec.key - 1).map((desc, i) => {
-        return [
-          desc,
-          document.getElementById(`chk${sec.key}-bon-${i}`)?.checked ? '×' : '',
-          document.getElementById(`chk${sec.key}-acc-${i}`)?.checked ? '×' : '',
-          document.getElementById(`chk${sec.key}-mau-${i}`)?.checked ? '×' : '',
-          document.getElementById(`chk${sec.key}-ok-${i}`)?.checked ? '×' : '',
-          document.getElementById(`chk${sec.key}-ras-${i}`)?.checked ? '×' : ''
-        ];
-      });
+      const body = getChecklistItems(sec.step - 1).map((desc, j) => [
+        desc,
+        document.getElementById(`chk${sec.step}-bon-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${sec.step}-acc-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${sec.step}-mau-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${sec.step}-ok-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${sec.step}-ras-${j}`)?.checked ? '×' : ''
+      ]);
 
       doc.autoTable({
         startY: y,
         head: [['Description', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
         body: body,
         theme: 'grid',
-        headStyles: { fillColor: [0, 85, 170], textColor: 255 },
-        styles: { fontSize: 9.5, cellPadding: 3 },
+        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 9.5, cellPadding: 3.5, halign: 'left' },
+        columnStyles: { 0: { cellWidth: 90 } },
         margin: { left: 20, right: 20 }
       });
       y = doc.lastAutoTable.finalY + 15;
 
-      const obs = document.getElementById(`obs${sec.key}`)?.value.trim() || "RAS";
-      doc.text(`Observation : ${obs}`, 25, y); y += 18;
+      const obs = document.getElementById(`obs${sec.step}`)?.value.trim() || "RAS";
+      doc.text(`Observation : ${obs}`, 25, y); y += 20;
     });
 
-    // TABLEAU DC (comme sur ta photo)
-    if (y > 200) { doc.addPage(); y = 35; }
-    doc.setFontSize(13);
-    doc.text("VÉRIFICATION DES MESURES DC", 20, y); y += 10;
+    // Conclusion
+    const finalObs = document.getElementById('obs8')?.value.trim() || "Installation conforme aux normes en vigueur.";
+    doc.setFontSize(14);
+    doc.text("CONCLUSION GLOBALE", 20, y); y += 10;
+    doc.setFontSize(11);
+    const lines = doc.splitTextToSize(finalObs, 160);
+    doc.text(lines, 25, y);
 
-    doc.autoTable({
-      startY: y,
-      head: [['N° CHAINE', 'Nb de PV', 'Icc', 'Uoc mesuré', 'Δ Uoc']],
-      body: [
-        ["1", "18", "9.2", "743.7", "0.4"],
-        ["2", "18", "9.1", "742.8", "0.3"],
-        ["3", "18", "9.3", "744.1", "0.5"]
-      ],
-      theme: 'grid',
-      headStyles: { fillColor: [0, 85, 170], textColor: 255 },
-      styles: { fontSize: 10, halign: 'center' },
-      margin: { left: 20, right: 20 }
-    });
-    y = doc.lastAutoTable.finalY + 20;
-
-    // Conclusion + signature
-    const finalObs = document.getElementById('obs8')?.value.trim() || "Installation conforme – RAS global";
-    doc.text("CONCLUSION : " + finalObs, 25, y); y += 30;
-
-    doc.text("Signature Technicien", 25, y);
-    doc.text("Signature Client", 120, y);
-    doc.line(25, y+5, 85, y+5);
-    doc.line(120, y+5, 180, y+5);
-
-    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
-    toast("Rapport PDF parfait généré");
+    doc.save(`Rapport_${client.name || 'Client'}_${new Date().toISOString().slice(0,10)}.pdf`);
+    toast("Rapport PDF généré avec tableaux");
   }
 
   function generateExcel() {
@@ -552,13 +503,6 @@
     XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name || 'Client'}.xlsx`);
     toast("Excel généré");
   }
-
-  function exportToGoogleDrive() {
-    generateReport(); // génère le PDF
-    toast("PDF prêt ! Ouvrez-le et uploadez-le sur Google Drive (ou partagez le fichier)");
-  }
-
-  function toggleProcess() {} // vide pour éviter erreur
 
   window.onload = function() {
     renderClientList();
