@@ -70,6 +70,10 @@
 
     .step { display:none; }
     .step.active { display:block; }
+
+    #historyList { margin-top:1rem; max-height:300px; overflow-y:auto; }
+    .history-item { padding:12px; border-bottom:1px solid #eee; cursor:pointer; }
+    .history-item:hover { background:#f0f7ff; }
   </style>
 </head>
 <body>
@@ -170,6 +174,17 @@
 
   <div id="stepsContainer"></div>
 
+  <!-- HISTORIQUE DES RAPPORTS -->
+  <div class="card" style="margin-top:2rem;">
+    <div class="ch">Historique des rapports enregistrés</div>
+    <div class="cb">
+      <button class="btn-big" onclick="refreshHistory()" style="background:#17a2b8;color:white;">
+        <i class="fas fa-history"></i> Rafraîchir / Voir les anciens rapports
+      </button>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
   <div style="text-align:center;margin:5rem 0 8rem;">
     <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
@@ -190,6 +205,7 @@
   let isAdminMode = false;
   const ADMIN_PASSWORD = "admin123";
   let stepPhotos = {};
+  let currentReportId = null;
 
   const clients = [
     { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"] },
@@ -247,6 +263,7 @@
     createSteps();
     document.getElementById('step1').classList.add('active');
     currentStep = 1;
+    currentReportId = Date.now();
     toast("Maintenance démarrée");
   }
 
@@ -409,9 +426,104 @@
   }
 
   // ───────────────────────────────────────────────
-  // RAPPORT PDF AMÉLIORÉ (version pro)
+  // HISTORIQUE DES RAPPORTS
+  // ───────────────────────────────────────────────
+  let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
+
+  function saveReportToHistory() {
+    const reportData = {
+      id: currentReportId,
+      date: new Date().toLocaleString('fr-FR'),
+      client: clients[currentClientIndex]?.name || "—",
+      technician: technicianName,
+      data: {
+        technicianName,
+        clientIndex: currentClientIndex,
+        startDate: document.getElementById('startDate').value,
+        irradiance: document.getElementById('irradiance').value,
+        releveProd: document.getElementById('releveProd').value,
+        releveNonConso: document.getElementById('releveNonConso').value,
+        monitoring: document.getElementById('monitoring').value,
+        observations: {},
+        checklists: {}
+      }
+    };
+
+    stepsList.forEach((_, i) => {
+      const stepNum = i + 1;
+      reportData.data.observations[stepNum] = document.getElementById(`obs${stepNum}`)?.value || "";
+      reportData.data.checklists[stepNum] = {};
+      if (i >= 4 && i <= 6) {
+        getChecklistItems(i).forEach((_, j) => {
+          reportData.data.checklists[stepNum][`bon-${j}`] = document.getElementById(`chk${stepNum}-bon-${j}`)?.checked || false;
+          reportData.data.checklists[stepNum][`acc-${j}`] = document.getElementById(`chk${stepNum}-acc-${j}`)?.checked || false;
+          reportData.data.checklists[stepNum][`mau-${j}`] = document.getElementById(`chk${stepNum}-mau-${j}`)?.checked || false;
+          reportData.data.checklists[stepNum][`ok-${j}`] = document.getElementById(`chk${stepNum}-ok-${j}`)?.checked || false;
+          reportData.data.checklists[stepNum][`ras-${j}`] = document.getElementById(`chk${stepNum}-ras-${j}`)?.checked || false;
+        });
+      }
+    });
+
+    history = history.filter(r => r.id !== currentReportId);
+    history.unshift(reportData);
+    if (history.length > 20) history.pop();
+    localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
+    refreshHistory();
+  }
+
+  function refreshHistory() {
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+    history.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.innerHTML = `<strong>${r.date}</strong> - ${r.client} (${r.technician})`;
+      item.onclick = () => loadOldReport(r);
+      list.appendChild(item);
+    });
+  }
+
+  function loadOldReport(report) {
+    if (!confirm("Charger cet ancien rapport ? Les données actuelles seront remplacées.")) return;
+
+    technicianName = report.data.technician;
+    document.getElementById('technicianName').value = technicianName;
+    document.getElementById('clientSelect').value = report.data.clientIndex;
+    loadClientData();
+
+    document.getElementById('startDate').value = report.data.startDate;
+    document.getElementById('irradiance').value = report.data.irradiance;
+    document.getElementById('releveProd').value = report.data.releveProd;
+    document.getElementById('releveNonConso').value = report.data.releveNonConso;
+    document.getElementById('monitoring').value = report.data.monitoring;
+
+    startMaintenance(); // recréer les étapes
+
+    setTimeout(() => {
+      Object.keys(report.data.observations).forEach(step => {
+        const textarea = document.getElementById(`obs${step}`);
+        if (textarea) textarea.value = report.data.observations[step];
+        updateObsPreview(step);
+      });
+
+      Object.keys(report.data.checklists).forEach(step => {
+        Object.keys(report.data.checklists[step]).forEach(key => {
+          const chk = document.getElementById(`chk${step}-${key}`);
+          if (chk) chk.checked = report.data.checklists[step][key];
+        });
+      });
+    }, 500);
+
+    currentReportId = report.id;
+    toast("Ancien rapport chargé");
+  }
+
+  // ───────────────────────────────────────────────
+  // RAPPORT PDF AMÉLIORÉ (version finale pro)
   // ───────────────────────────────────────────────
   function generateReport() {
+    saveReportToHistory(); // Sauvegarde auto avant génération
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
@@ -440,7 +552,6 @@
 
     doc.addPage();
 
-    // En-tête sur chaque page
     function addHeader(pageNum) {
       doc.setFillColor(4, 64, 128);
       doc.rect(0, 0, 210, 20, 'F');
@@ -452,14 +563,12 @@
       doc.text(`Page ${pageNum}`, 195, 13, { align: "right" });
     }
 
-    // Pied de page
-    function addFooter(pageNum) {
+    function addFooter() {
       doc.setFontSize(9);
       doc.setTextColor(100);
       doc.text(`Généré le ${dateStr} • R.L ENERGIE`, 105, 290, { align: "center" });
     }
 
-    // Page 1 – Informations centrales
     addHeader(1);
     let y = 35;
 
@@ -468,9 +577,8 @@
     doc.setFont("helvetica", "bold");
     doc.text("INFORMATIONS CENTRALES", 20, y);
     y += 8;
-    doc.setLineWidth(0.5);
     doc.line(20, y, 190, y);
-    y += 12;
+    y += 10;
 
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
@@ -488,12 +596,11 @@
     info.forEach(([label, value]) => {
       doc.text(label + " :", 30, y);
       doc.text(value, 90, y);
-      y += 8;
+      y += 7;
     });
 
-    y += 15;
+    y += 12;
 
-    // Tableaux checklists
     const sections = [
       { title: "PARTIE AC – Coffret de protection", step: 5 },
       { title: "PARTIE ONDULEUR", step: 6 },
@@ -502,6 +609,7 @@
 
     sections.forEach((sec, index) => {
       if (y > 230) {
+        addFooter();
         doc.addPage();
         addHeader(index + 2);
         y = 35;
@@ -510,7 +618,7 @@
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
       doc.text(sec.title, 20, y);
-      y += 10;
+      y += 8;
 
       const body = getChecklistItems(sec.step - 1).map((desc, j) => [
         desc,
@@ -526,19 +634,9 @@
         head: [['Description', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
         body: body,
         theme: 'grid',
-        headStyles: {
-          fillColor: [0, 85, 170],
-          textColor: 255,
-          fontStyle: 'bold',
-          halign: 'center'
-        },
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          lineColor: [44, 62, 80],
-          lineWidth: 0.1
-        },
-        alternateRowStyles: { fillColor: [240, 248, 255] },
+        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 9, cellPadding: 3, lineWidth: 0.1, overflow: 'linebreak' },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
         columnStyles: {
           0: { cellWidth: 90, halign: 'left' },
           1: { cellWidth: 20, halign: 'center' },
@@ -557,11 +655,11 @@
       doc.setFont("helvetica", "italic");
       const obsLines = doc.splitTextToSize("Observation : " + obs, 160);
       doc.text(obsLines, 25, y);
-      y += obsLines.length * 6 + 10;
+      y += obsLines.length * 6 + 8;
     });
 
-    // Conclusion + signature
     if (y > 220) {
+      addFooter();
       doc.addPage();
       addHeader(sections.length + 2);
       y = 35;
@@ -577,7 +675,7 @@
     const finalObs = document.getElementById('obs8')?.value.trim() || "Installation conforme aux normes en vigueur. Aucun défaut majeur constaté.";
     const finalLines = doc.splitTextToSize(finalObs, 160);
     doc.text(finalLines, 25, y);
-    y += finalLines.length * 7 + 25;
+    y += finalLines.length * 7 + 20;
 
     doc.setFontSize(12);
     doc.text("Technicien", 30, y);
@@ -590,7 +688,7 @@
     doc.text("Nom & Signature", 30, y);
     doc.text("Nom & Signature", 140, y);
 
-    addFooter(1); // on peut appeler sur chaque page si tu veux plus tard
+    addFooter();
 
     doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
     toast("Rapport PDF professionnel généré");
@@ -605,7 +703,7 @@
       ["Date", new Date().toLocaleDateString('fr-FR')],
       [],
       ["PARTIE AC", "Bon", "Acceptable", "Mauvais", "OK", "RAS"],
-      ...getChecklistItems(4).map((desc, i) => [desc, "×", "", "", "", ""])
+      ...getChecklistItems(4).map((desc, i) => [desc, document.getElementById(`chk5-bon-${i}`)?.checked ? '×' : '', "", "", "", ""])
     ]);
     XLSX.utils.book_append_sheet(wb, ws, "Maintenance");
     XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name || 'Client'}.xlsx`);
