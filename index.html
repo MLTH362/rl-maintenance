@@ -56,7 +56,6 @@
     .btn-ok:hover { background:#218838; transform:translateY(-1px); }
     .btn-prev { background:#6c757d; color:white; }
     .btn-clear { background:#dc3545; color:white; }
-    .btn-admin-active { background:#ffc107; color:#1f2d3d; font-weight:bold; }
 
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
 
@@ -296,18 +295,18 @@
           <h3>Checklist</h3>
           <div class="checklist-grid">
             <div class="checklist-header">Description</div>
-            <div class="checklist-header">Bon</div>
-            <div class="checklist-header">Acceptable</div>
-            <div class="checklist-header">Mauvais</div>
-            <div class="checklist-header">OK</div>
+            <div class="checklist-header">Conforme</div>
+            <div class="checklist-header">Correct</div>
+            <div class="checklist-header">Défaut constaté</div>
+            <div class="checklist-header">Non contrôlé</div>
             <div class="checklist-header">RAS</div>
             ${getChecklistItems(i).map((desc, j) => `
               <div class="checklist-item">${desc}</div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-bon-${j}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-acc-${j}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-mau-${j}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-ok-${j}"></div>
-              <div class="checklist-check"><input type="checkbox" id="chk${i+1}-ras-${j}"></div>
+              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-conforme-${j}" onchange="exclusiveCheck(this)"></div>
+              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-correct-${j}" onchange="exclusiveCheck(this)"></div>
+              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-defaut-${j}" onchange="exclusiveCheck(this)"></div>
+              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-noncontrole-${j}" onchange="exclusiveCheck(this)"></div>
+              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-ras-${j}" onchange="exclusiveCheck(this)"></div>
             `).join('')}
           </div>
 
@@ -330,6 +329,15 @@
         </div>
       `;
       container.appendChild(stepDiv);
+    });
+  }
+
+  // Fonction pour qu'une seule case soit cochée par ligne
+  function exclusiveCheck(checkbox) {
+    if (!checkbox.checked) return;
+    const line = checkbox.getAttribute('data-line');
+    document.querySelectorAll(`input.chk-line[data-line="${line}"]`).forEach(chk => {
+      if (chk !== checkbox) chk.checked = false;
     });
   }
 
@@ -495,10 +503,10 @@
       reportData.data.observations[i] = document.getElementById(`obs${i}`)?.value || "";
       reportData.data.checklists[i] = {};
       getChecklistItems(i-1).forEach((_, j) => {
-        reportData.data.checklists[i][`bon-${j}`] = document.getElementById(`chk${i}-bon-${j}`)?.checked || false;
-        reportData.data.checklists[i][`acc-${j}`] = document.getElementById(`chk${i}-acc-${j}`)?.checked || false;
-        reportData.data.checklists[i][`mau-${j}`] = document.getElementById(`chk${i}-mau-${j}`)?.checked || false;
-        reportData.data.checklists[i][`ok-${j}`] = document.getElementById(`chk${i}-ok-${j}`)?.checked || false;
+        reportData.data.checklists[i][`conforme-${j}`] = document.getElementById(`chk${i}-conforme-${j}`)?.checked || false;
+        reportData.data.checklists[i][`correct-${j}`] = document.getElementById(`chk${i}-correct-${j}`)?.checked || false;
+        reportData.data.checklists[i][`defaut-${j}`] = document.getElementById(`chk${i}-defaut-${j}`)?.checked || false;
+        reportData.data.checklists[i][`noncontrole-${j}`] = document.getElementById(`chk${i}-noncontrole-${j}`)?.checked || false;
         reportData.data.checklists[i][`ras-${j}`] = document.getElementById(`chk${i}-ras-${j}`)?.checked || false;
       });
     }
@@ -659,16 +667,16 @@
 
       const body = getChecklistItems(sec.step - 1).map((d, j) => [
         d,
-        document.getElementById(`chk${sec.step}-bon-${j}`)?.checked ? '×' : '',
-        document.getElementById(`chk${sec.step}-acc-${j}`)?.checked ? '×' : '',
-        document.getElementById(`chk${sec.step}-mau-${j}`)?.checked ? '×' : '',
-        document.getElementById(`chk${sec.step}-ok-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${sec.step}-conforme-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${sec.step}-correct-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${sec.step}-defaut-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${sec.step}-noncontrole-${j}`)?.checked ? '×' : '',
         document.getElementById(`chk${sec.step}-ras-${j}`)?.checked ? '×' : ''
       ]);
 
       doc.autoTable({
         startY: y,
-        head: [['Description', 'Bon', 'Acceptable', 'Mauvais', 'OK', 'RAS']],
+        head: [['Description', 'Conforme', 'Correct', 'Défaut constaté', 'Non contrôlé', 'RAS']],
         body,
         theme: 'grid',
         headStyles: { 
@@ -735,7 +743,7 @@
     addFooter();
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport généré (tableaux centrés)");
+    toast("Rapport généré");
   }
 
   function generateExcel() {
@@ -746,8 +754,8 @@
       ["Technicien", technicianName],
       ["Date", new Date().toLocaleDateString('fr-FR')],
       [],
-      ["PARTIE AC", "Bon", "Acceptable", "Mauvais", "OK", "RAS"],
-      ...getChecklistItems(4).map((d, i) => [d, document.getElementById(`chk5-bon-${i}`)?.checked ? '×' : '', '', '', '', ''])
+      ["PARTIE AC", "Conforme", "Correct", "Défaut constaté", "Non contrôlé", "RAS"],
+      ...getChecklistItems(4).map((d, i) => [d, document.getElementById(`chk5-conforme-${i}`)?.checked ? '×' : '', '', '', '', ''])
     ]);
     XLSX.utils.book_append_sheet(wb, ws, "Maintenance");
     XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name || 'Client'}.xlsx`);
