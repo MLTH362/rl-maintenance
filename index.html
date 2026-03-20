@@ -568,7 +568,6 @@
 
     const dateStr = report.date.split(',')[0];
 
-    // Page de couverture
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255);
@@ -655,10 +654,10 @@
 
       const body = getChecklistItems(sec.step - 1).map((d, j) => [
         d,
-        report.data.checklists[sec.step]?.[`conforme-${j}`] ? '✅' : '',
-        report.data.checklists[sec.step]?.[`correct-${j}`] ? '✅' : '',
-        report.data.checklists[sec.step]?.[`defaut-${j}`] ? '✅' : '',
-        report.data.checklists[sec.step]?.[`noncontrole-${j}`] ? '✅' : ''
+        report.data.checklists[sec.step]?.[`conforme-${j}`] ? '×' : '',
+        report.data.checklists[sec.step]?.[`correct-${j}`] ? '×' : '',
+        report.data.checklists[sec.step]?.[`defaut-${j}`] ? '×' : '',
+        report.data.checklists[sec.step]?.[`noncontrole-${j}`] ? '×' : ''
       ]);
 
       doc.autoTable({
@@ -722,7 +721,6 @@
     const client = clients[currentClientIndex] || { name: "—" };
     const dateStr = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-    // Page de couverture
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255);
@@ -809,10 +807,10 @@
 
       const body = getChecklistItems(sec.step - 1).map((d, j) => [
         d,
-        document.getElementById(`chk${sec.step}-conforme-${j}`)?.checked ? '✅' : '',
-        document.getElementById(`chk${sec.step}-correct-${j}`)?.checked ? '✅' : '',
-        document.getElementById(`chk${sec.step}-defaut-${j}`)?.checked ? '✅' : '',
-        document.getElementById(`chk${sec.step}-noncontrole-${j}`)?.checked ? '✅' : ''
+        document.getElementById(`chk${sec.step}-conforme-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${sec.step}-correct-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${sec.step}-defaut-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${sec.step}-noncontrole-${j}`)?.checked ? '×' : ''
       ]);
 
       doc.autoTable({
@@ -864,10 +862,25 @@
     addFooter();
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport généré !");
+    toast("Rapport généré avec ×");
 
-    // On affiche le bouton pour recommencer
     document.getElementById('finishButtons').style.display = 'block';
+  }
+
+  function generateExcel() {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["R.L ENERGIE - Rapport"],
+      ["Client", clients[currentClientIndex]?.name || "—"],
+      ["Technicien", technicianName],
+      ["Date", new Date().toLocaleDateString('fr-FR')],
+      [],
+      ["PARTIE AC", "Conforme", "Correct", "Défaut constaté", "Non contrôlé"],
+      ...getChecklistItems(4).map((d, i) => [d, document.getElementById(`chk5-conforme-${i}`)?.checked ? '×' : '', '', '', ''])
+    ]);
+    XLSX.utils.book_append_sheet(wb, ws, "Maintenance");
+    XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name || 'Client'}.xlsx`);
+    toast("Excel généré");
   }
 
   window.onload = function() {
