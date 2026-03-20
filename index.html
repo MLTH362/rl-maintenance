@@ -56,7 +56,7 @@
     .btn-ok:hover { background:#218838; transform:translateY(-1px); }
     .btn-prev { background:#6c757d; color:white; }
     .btn-clear { background:#dc3545; color:white; }
-    .btn-restart { background:#ff6b6b; color:white; }
+    .btn-restart { background:#ff6b6b; color:white; font-size:1.4rem; padding:1.6rem 4rem; }
 
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
 
@@ -79,6 +79,8 @@
     .history-item.loaded { background:#e6ffe6; font-weight:bold; border-left:4px solid var(--success); }
 
     #searchHistory { width:100%; padding:10px; margin-bottom:10px; font-size:16px; border:1px solid #ccc; border-radius:6px; }
+
+    #finishButtons { display:none; margin:5rem 0 8rem; text-align:center; }
   </style>
 </head>
 <body>
@@ -193,7 +195,7 @@
     </div>
   </div>
 
-  <div style="text-align:center;margin:5rem 0 8rem; display:flex; justify-content:center; gap:2rem; flex-wrap:wrap;">
+  <div id="actionButtons" style="text-align:center;margin:5rem 0 3rem; display:flex; justify-content:center; gap:2rem; flex-wrap:wrap;">
     <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
     </button>
@@ -203,8 +205,12 @@
     <button class="btn-big" style="background:#6c757d;color:white;font-size:1.2rem;padding:1.4rem 3rem;" onclick="saveReportToHistory()">
       <i class="fas fa-save"></i> Sauvegarder maintenant
     </button>
-    <button class="btn-big btn-restart" onclick="location.reload()" style="font-size:1.2rem;padding:1.4rem 3rem;">
-      <i class="fas fa-redo"></i> Recommencer la maintenance
+  </div>
+
+  <div id="finishButtons" style="display:none; margin:5rem 0 8rem; text-align:center;">
+    <h2 style="margin-bottom:2rem;color:var(--success);">Maintenance terminée !</h2>
+    <button class="btn-big btn-restart" onclick="location.reload()">
+      <i class="fas fa-redo"></i> Nouvelle maintenance
     </button>
   </div>
 
@@ -858,23 +864,10 @@
     addFooter();
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport généré – vous êtes toujours sur la page");
-  }
+    toast("Rapport généré !");
 
-  function generateExcel() {
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([
-      ["R.L ENERGIE - Rapport"],
-      ["Client", clients[currentClientIndex]?.name || "—"],
-      ["Technicien", technicianName],
-      ["Date", new Date().toLocaleDateString('fr-FR')],
-      [],
-      ["PARTIE AC", "Conforme", "Correct", "Défaut constaté", "Non contrôlé"],
-      ...getChecklistItems(4).map((d, i) => [d, document.getElementById(`chk5-conforme-${i}`)?.checked ? '✅' : '', '', '', ''])
-    ]);
-    XLSX.utils.book_append_sheet(wb, ws, "Maintenance");
-    XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name || 'Client'}.xlsx`);
-    toast("Excel généré");
+    // On affiche le bouton pour recommencer
+    document.getElementById('finishButtons').style.display = 'block';
   }
 
   window.onload = function() {
