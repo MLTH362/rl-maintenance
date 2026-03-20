@@ -56,6 +56,7 @@
     .btn-ok:hover { background:#218838; transform:translateY(-1px); }
     .btn-prev { background:#6c757d; color:white; }
     .btn-clear { background:#dc3545; color:white; }
+    .btn-restart { background:#ff6b6b; color:white; }
 
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
 
@@ -77,7 +78,7 @@
     .history-item:hover { background:#f0f7ff; }
     .history-item.loaded { background:#e6ffe6; font-weight:bold; border-left:4px solid var(--success); }
 
-    #searchHistory { width:100%; padding:10px; margin-bottom:10px; font-size:16px; }
+    #searchHistory { width:100%; padding:10px; margin-bottom:10px; font-size:16px; border:1px solid #ccc; border-radius:6px; }
   </style>
 </head>
 <body>
@@ -192,15 +193,18 @@
     </div>
   </div>
 
-  <div style="text-align:center;margin:5rem 0 8rem;">
+  <div style="text-align:center;margin:5rem 0 8rem; display:flex; justify-content:center; gap:2rem; flex-wrap:wrap;">
     <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
     </button>
-    <button class="btn-big" style="background:#1e7e34;color:white;margin-left:2rem;font-size:1.2rem;padding:1.4rem 3rem;" onclick="generateExcel()">
+    <button class="btn-big" style="background:#1e7e34;color:white;font-size:1.2rem;padding:1.4rem 3rem;" onclick="generateExcel()">
       <i class="fas fa-file-excel"></i> EXPORTER EXCEL
     </button>
-    <button class="btn-big" style="background:#6c757d;color:white;margin-left:2rem;" onclick="saveReportToHistory()">
+    <button class="btn-big" style="background:#6c757d;color:white;font-size:1.2rem;padding:1.4rem 3rem;" onclick="saveReportToHistory()">
       <i class="fas fa-save"></i> Sauvegarder maintenant
+    </button>
+    <button class="btn-big btn-restart" onclick="location.reload()" style="font-size:1.2rem;padding:1.4rem 3rem;">
+      <i class="fas fa-redo"></i> Recommencer la maintenance
     </button>
   </div>
 
@@ -545,7 +549,7 @@
       if (r.id === currentReportId) item.classList.add('loaded');
       list.appendChild(item);
     });
-    filterHistory(); // applique le filtre si déjà tapé
+    filterHistory();
   }
 
   function downloadOldReport(report) {
@@ -854,7 +858,7 @@
     addFooter();
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport généré");
+    toast("Rapport généré – vous êtes toujours sur la page");
   }
 
   function generateExcel() {
