@@ -76,6 +76,8 @@
     .history-item { padding:12px; border-bottom:1px solid #eee; cursor:pointer; }
     .history-item:hover { background:#f0f7ff; }
     .history-item.loaded { background:#e6ffe6; font-weight:bold; border-left:4px solid var(--success); }
+
+    #searchHistory { width:100%; padding:10px; margin-bottom:10px; font-size:16px; }
   </style>
 </head>
 <body>
@@ -182,8 +184,9 @@
   <div class="card" style="margin-top:2rem;">
     <div class="ch">Historique des rapports enregistrés</div>
     <div class="cb">
-      <button class="btn-big" onclick="refreshHistory()" style="background:#17a2b8;color:white;">
-        <i class="fas fa-history"></i> Voir / Télécharger anciens rapports
+      <input type="text" id="searchHistory" placeholder="Rechercher client, technicien ou date..." oninput="filterHistory()">
+      <button class="btn-big" onclick="refreshHistory()" style="background:#17a2b8;color:white;margin-top:10px;">
+        <i class="fas fa-history"></i> Rafraîchir liste
       </button>
       <div id="historyList" style="margin-top:1rem;"></div>
     </div>
@@ -308,8 +311,8 @@
             `).join('')}
           </div>
 
-          <button class="btn-big btn-ok" style="margin:15px 0;" onclick="setAllRAS(${i+1})">
-            <i class="fas fa-check-double"></i> TOUS OK
+          <button class="btn-big btn-ok" style="margin:15px 0;" onclick="setAllConforme(${i+1})">
+            <i class="fas fa-check-double"></i> TOUS CONFORME
           </button>
 
           <h3>Observations</h3>
@@ -330,13 +333,26 @@
     });
   }
 
-  // Une seule case cochée par ligne
   function exclusiveCheck(checkbox) {
     if (!checkbox.checked) return;
     const line = checkbox.getAttribute('data-line');
     document.querySelectorAll(`input.chk-line[data-line="${line}"]`).forEach(chk => {
       if (chk !== checkbox) chk.checked = false;
     });
+  }
+
+  function setAllConforme(n) {
+    const lineCount = getChecklistItems(n-1).length;
+    for (let j = 0; j < lineCount; j++) {
+      const conformeChk = document.getElementById(`chk${n}-conforme-${j}`);
+      if (conformeChk) {
+        conformeChk.checked = true;
+        exclusiveCheck(conformeChk);
+      }
+    }
+    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
+    updateObsPreview(n);
+    toast("Tous Conforme + RAS appliqué");
   }
 
   function getChecklistItems(i) {
@@ -351,12 +367,6 @@
       7: ["Mesures DC chaîne 1", "Mesures DC chaîne 2", "Mesures DC chaîne 3", "Δ Uoc", "Commentaire final DC"]
     };
     return checklists[i] || ["Élément non défini"];
-  }
-
-  function setAllRAS(n) {
-    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
-    updateObsPreview(n);
-    toast("Tous OK appliqué");
   }
 
   function nextStep(n) {
@@ -515,6 +525,15 @@
     refreshHistory();
   }
 
+  function filterHistory() {
+    const search = document.getElementById('searchHistory').value.toLowerCase();
+    const items = document.querySelectorAll('.history-item');
+    items.forEach(item => {
+      const text = item.textContent.toLowerCase();
+      item.style.display = text.includes(search) ? '' : 'none';
+    });
+  }
+
   function refreshHistory() {
     const list = document.getElementById('historyList');
     list.innerHTML = '';
@@ -526,9 +545,9 @@
       if (r.id === currentReportId) item.classList.add('loaded');
       list.appendChild(item);
     });
+    filterHistory(); // applique le filtre si déjà tapé
   }
 
-  // Télécharge le PDF de l'ancien rapport au lieu de charger dans l'interface
   function downloadOldReport(report) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
@@ -537,7 +556,7 @@
       ? clients[report.data.clientIndex].name 
       : report.client || "—";
 
-    const dateStr = report.date.split(',')[0]; // juste la date
+    const dateStr = report.date.split(',')[0];
 
     // Page de couverture
     doc.setFillColor(4, 64, 128);
@@ -626,10 +645,10 @@
 
       const body = getChecklistItems(sec.step - 1).map((d, j) => [
         d,
-        report.data.checklists[sec.step]?.[`conforme-${j}`] ? '×' : '',
-        report.data.checklists[sec.step]?.[`correct-${j}`] ? '×' : '',
-        report.data.checklists[sec.step]?.[`defaut-${j}`] ? '×' : '',
-        report.data.checklists[sec.step]?.[`noncontrole-${j}`] ? '×' : ''
+        report.data.checklists[sec.step]?.[`conforme-${j}`] ? '✅' : '',
+        report.data.checklists[sec.step]?.[`correct-${j}`] ? '✅' : '',
+        report.data.checklists[sec.step]?.[`defaut-${j}`] ? '✅' : '',
+        report.data.checklists[sec.step]?.[`noncontrole-${j}`] ? '✅' : ''
       ]);
 
       doc.autoTable({
@@ -780,10 +799,10 @@
 
       const body = getChecklistItems(sec.step - 1).map((d, j) => [
         d,
-        document.getElementById(`chk${sec.step}-conforme-${j}`)?.checked ? '×' : '',
-        document.getElementById(`chk${sec.step}-correct-${j}`)?.checked ? '×' : '',
-        document.getElementById(`chk${sec.step}-defaut-${j}`)?.checked ? '×' : '',
-        document.getElementById(`chk${sec.step}-noncontrole-${j}`)?.checked ? '×' : ''
+        document.getElementById(`chk${sec.step}-conforme-${j}`)?.checked ? '✅' : '',
+        document.getElementById(`chk${sec.step}-correct-${j}`)?.checked ? '✅' : '',
+        document.getElementById(`chk${sec.step}-defaut-${j}`)?.checked ? '✅' : '',
+        document.getElementById(`chk${sec.step}-noncontrole-${j}`)?.checked ? '✅' : ''
       ]);
 
       doc.autoTable({
@@ -847,7 +866,7 @@
       ["Date", new Date().toLocaleDateString('fr-FR')],
       [],
       ["PARTIE AC", "Conforme", "Correct", "Défaut constaté", "Non contrôlé"],
-      ...getChecklistItems(4).map((d, i) => [d, document.getElementById(`chk5-conforme-${i}`)?.checked ? '×' : '', '', '', ''])
+      ...getChecklistItems(4).map((d, i) => [d, document.getElementById(`chk5-conforme-${i}`)?.checked ? '✅' : '', '', '', ''])
     ]);
     XLSX.utils.book_append_sheet(wb, ws, "Maintenance");
     XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name || 'Client'}.xlsx`);
