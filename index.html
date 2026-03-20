@@ -229,7 +229,7 @@
     "5 — Partie AC (câbles, tests, serrages)",
     "6 — Partie Onduleur (état visuel, fonctionnement, nettoyage)",
     "7 — Point de raccordement (logette, câbles, vérifications)",
-    "8 — Vérification des mesures entrées DC + Finalisation"
+    "8 — Vérification des mesures entrées DC"
   ];
 
   function renderClientList() {
@@ -332,7 +332,7 @@
     });
   }
 
-  // Fonction pour qu'une seule case soit cochée par ligne
+  // Une seule case cochée par ligne
   function exclusiveCheck(checkbox) {
     if (!checkbox.checked) return;
     const line = checkbox.getAttribute('data-line');
