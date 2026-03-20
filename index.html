@@ -59,7 +59,7 @@
 
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
 
-    .checklist-grid { display:grid; grid-template-columns:3fr 1fr 1fr 1fr 1fr 1fr; gap:5px; margin:0.8rem 0; align-items:center; }
+    .checklist-grid { display:grid; grid-template-columns:3fr 1fr 1fr 1fr 1fr; gap:5px; margin:0.8rem 0; align-items:center; }
     .checklist-header { font-weight:bold; text-align:center; background:var(--primary); color:white; padding:0.45rem; border-radius:5px; font-size:0.85rem; }
     .checklist-item { padding:0.45rem; border-bottom:1px solid #eee; font-size:0.92rem; }
     .checklist-check { text-align:center; }
@@ -183,7 +183,7 @@
     <div class="ch">Historique des rapports enregistrés</div>
     <div class="cb">
       <button class="btn-big" onclick="refreshHistory()" style="background:#17a2b8;color:white;">
-        <i class="fas fa-history"></i> Voir / Charger anciens rapports
+        <i class="fas fa-history"></i> Voir / Télécharger anciens rapports
       </button>
       <div id="historyList" style="margin-top:1rem;"></div>
     </div>
@@ -299,19 +299,17 @@
             <div class="checklist-header">Correct</div>
             <div class="checklist-header">Défaut constaté</div>
             <div class="checklist-header">Non contrôlé</div>
-            <div class="checklist-header">RAS</div>
             ${getChecklistItems(i).map((desc, j) => `
               <div class="checklist-item">${desc}</div>
               <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-conforme-${j}" onchange="exclusiveCheck(this)"></div>
               <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-correct-${j}" onchange="exclusiveCheck(this)"></div>
               <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-defaut-${j}" onchange="exclusiveCheck(this)"></div>
               <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-noncontrole-${j}" onchange="exclusiveCheck(this)"></div>
-              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-ras-${j}" onchange="exclusiveCheck(this)"></div>
             `).join('')}
           </div>
 
           <button class="btn-big btn-ok" style="margin:15px 0;" onclick="setAllRAS(${i+1})">
-            <i class="fas fa-check-double"></i> TOUS OK / RAS
+            <i class="fas fa-check-double"></i> TOUS OK
           </button>
 
           <h3>Observations</h3>
@@ -358,7 +356,7 @@
   function setAllRAS(n) {
     document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
     updateObsPreview(n);
-    toast("Tous OK / RAS appliqué");
+    toast("Tous OK appliqué");
   }
 
   function nextStep(n) {
@@ -507,7 +505,6 @@
         reportData.data.checklists[i][`correct-${j}`] = document.getElementById(`chk${i}-correct-${j}`)?.checked || false;
         reportData.data.checklists[i][`defaut-${j}`] = document.getElementById(`chk${i}-defaut-${j}`)?.checked || false;
         reportData.data.checklists[i][`noncontrole-${j}`] = document.getElementById(`chk${i}-noncontrole-${j}`)?.checked || false;
-        reportData.data.checklists[i][`ras-${j}`] = document.getElementById(`chk${i}-ras-${j}`)?.checked || false;
       });
     }
 
@@ -525,50 +522,166 @@
       const item = document.createElement('div');
       item.className = 'history-item';
       item.innerHTML = `<strong>${r.date}</strong><br>${r.client} - ${r.technician}`;
-      item.onclick = () => loadOldReport(r);
+      item.onclick = () => downloadOldReport(r);
       if (r.id === currentReportId) item.classList.add('loaded');
       list.appendChild(item);
     });
   }
 
-  function loadOldReport(report) {
-    if (!confirm("Charger cet ancien rapport ? Les données actuelles seront remplacées.")) return;
+  // Télécharge le PDF de l'ancien rapport au lieu de charger dans l'interface
+  function downloadOldReport(report) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
-    currentReportId = report.id;
-    technicianName = report.data.technicianName;
-    document.getElementById('technicianName').value = technicianName;
-    document.getElementById('clientSelect').value = report.data.clientIndex;
-    loadClientData();
+    const clientName = report.data.clientIndex !== undefined && clients[report.data.clientIndex] 
+      ? clients[report.data.clientIndex].name 
+      : report.client || "—";
 
-    document.getElementById('startDate').value = report.data.startDate || "";
-    document.getElementById('irradiance').value = report.data.irradiance || "Forte";
-    document.getElementById('releveProd').value = report.data.releveProd || "";
-    document.getElementById('releveNonConso').value = report.data.releveNonConso || "";
-    document.getElementById('monitoring').value = report.data.monitoring || "Oui";
+    const dateStr = report.date.split(',')[0]; // juste la date
 
-    startMaintenance();
+    // Page de couverture
+    doc.setFillColor(4, 64, 128);
+    doc.rect(0, 0, 210, 297, 'F');
+    doc.setTextColor(255);
+    doc.setFontSize(52);
+    doc.setFont("helvetica", "bold");
+    doc.text("R.L ENERGIE", 105, 85, { align: "center" });
 
-    setTimeout(() => {
-      Object.keys(report.data.observations).forEach(step => {
-        const ta = document.getElementById(`obs${step}`);
-        if (ta) ta.value = report.data.observations[step];
-        updateObsPreview(step);
-      });
+    doc.setFontSize(20);
+    doc.text("Spécialiste du Photovoltaïque", 105, 105, { align: "center" });
 
-      Object.keys(report.data.checklists).forEach(step => {
-        Object.keys(report.data.checklists[step]).forEach(key => {
-          const chk = document.getElementById(`chk${step}-${key}`);
-          if (chk) chk.checked = report.data.checklists[step][key];
-        });
-      });
+    doc.setFontSize(34);
+    doc.text("RAPPORT DE MAINTENANCE", 105, 155, { align: "center" });
 
-      stepPhotos = report.data.photos || {};
-      for (let i = 1; i <= stepsList.length; i++) {
-        renderPhotos(i);
+    doc.setFontSize(16);
+    doc.text(`Client : ${clientName}`, 105, 180, { align: "center" });
+    doc.text(dateStr, 105, 195, { align: "center" });
+
+    doc.addPage();
+
+    function addHeader(pageNum) {
+      doc.setFillColor(4, 64, 128);
+      doc.rect(0, 0, 210, 20, 'F');
+      doc.setTextColor(255);
+      doc.setFontSize(12);
+      doc.text("R.L ENERGIE – Rapport de Maintenance", 15, 13);
+      doc.text(`Page ${pageNum}`, 195, 13, { align: "right" });
+    }
+
+    function addFooter() {
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text(`Généré le ${dateStr} • R.L ENERGIE`, 105, 290, { align: "center" });
+    }
+
+    addHeader(1);
+    let y = 32;
+
+    doc.setFontSize(15);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text("INFORMATIONS CENTRALES", 20, y);
+    y += 6;
+    doc.line(20, y, 190, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+
+    const info = [
+      ["Client", clientName],
+      ["Technicien", report.technician || "—"],
+      ["Date", report.data.startDate || report.date.split(',')[0] || "—"],
+      ["Irradiance", report.data.irradiance || "—"],
+      ["Prod", (report.data.releveProd || "—") + " kWh"],
+      ["Non conso", (report.data.releveNonConso || "—") + " kWh"],
+      ["Monitoring", report.data.monitoring || "—"]
+    ];
+
+    info.forEach(([l, v]) => {
+      doc.text(l + " :", 30, y);
+      doc.text(v, 80, y);
+      y += 6;
+    });
+    y += 8;
+
+    const sections = [
+      { title: "PARTIE AC – Coffret de protection", step: 5 },
+      { title: "PARTIE ONDULEUR", step: 6 },
+      { title: "POINT DE RACCORDEMENT", step: 7 }
+    ];
+
+    sections.forEach((sec, idx) => {
+      if (y > 245) {
+        addFooter();
+        doc.addPage();
+        addHeader(idx + 2);
+        y = 32;
       }
-    }, 800);
 
-    toast("Ancien rapport chargé");
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.text(sec.title, 20, y);
+      y += 6;
+
+      const body = getChecklistItems(sec.step - 1).map((d, j) => [
+        d,
+        report.data.checklists[sec.step]?.[`conforme-${j}`] ? '×' : '',
+        report.data.checklists[sec.step]?.[`correct-${j}`] ? '×' : '',
+        report.data.checklists[sec.step]?.[`defaut-${j}`] ? '×' : '',
+        report.data.checklists[sec.step]?.[`noncontrole-${j}`] ? '×' : ''
+      ]);
+
+      doc.autoTable({
+        startY: y,
+        head: [['Description', 'Conforme', 'Correct', 'Défaut constaté', 'Non contrôlé']],
+        body,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 85, 170], textColor: 255, halign: 'center', fontSize: 9 },
+        styles: { fontSize: 8.5, cellPadding: 2.5, overflow: 'linebreak', lineWidth: 0.1, halign: 'center' },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        columnStyles: {
+          0: { cellWidth: 90, halign: 'left' },
+          1: { cellWidth: 24, halign: 'center' },
+          2: { cellWidth: 24, halign: 'center' },
+          3: { cellWidth: 24, halign: 'center' },
+          4: { cellWidth: 24, halign: 'center' }
+        },
+        margin: { left: 15, right: 15 }
+      });
+
+      y = doc.lastAutoTable.finalY + 8;
+
+      const obs = report.data.observations[sec.step] || "RAS";
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "italic");
+      const obsLines = doc.splitTextToSize("Observation : " + obs, 160);
+      doc.text(obsLines, 25, y);
+      y += obsLines.length * 5.5 + 6;
+    });
+
+    if (y > 240) {
+      addFooter();
+      doc.addPage();
+      addHeader(sections.length + 2);
+      y = 32;
+    }
+
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("CONCLUSION GLOBALE", 20, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const final = report.data.observations[8] || "RAS global - Installation conforme.";
+    const finalLines = doc.splitTextToSize(final, 160);
+    doc.text(finalLines, 25, y);
+
+    addFooter();
+
+    doc.save(`Rapport_Archive_${clientName.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
+    toast("Ancien rapport téléchargé");
   }
 
   function generateReport() {
@@ -670,38 +783,25 @@
         document.getElementById(`chk${sec.step}-conforme-${j}`)?.checked ? '×' : '',
         document.getElementById(`chk${sec.step}-correct-${j}`)?.checked ? '×' : '',
         document.getElementById(`chk${sec.step}-defaut-${j}`)?.checked ? '×' : '',
-        document.getElementById(`chk${sec.step}-noncontrole-${j}`)?.checked ? '×' : '',
-        document.getElementById(`chk${sec.step}-ras-${j}`)?.checked ? '×' : ''
+        document.getElementById(`chk${sec.step}-noncontrole-${j}`)?.checked ? '×' : ''
       ]);
 
       doc.autoTable({
         startY: y,
-        head: [['Description', 'Conforme', 'Correct', 'Défaut constaté', 'Non contrôlé', 'RAS']],
+        head: [['Description', 'Conforme', 'Correct', 'Défaut constaté', 'Non contrôlé']],
         body,
         theme: 'grid',
-        headStyles: { 
-          fillColor: [0, 85, 170], 
-          textColor: 255, 
-          halign: 'center', 
-          fontSize: 9 
-        },
-        styles: { 
-          fontSize: 8.5, 
-          cellPadding: 2.5, 
-          overflow: 'linebreak', 
-          lineWidth: 0.1,
-          halign: 'center'  
-        },
+        headStyles: { fillColor: [0, 85, 170], textColor: 255, halign: 'center', fontSize: 9 },
+        styles: { fontSize: 8.5, cellPadding: 2.5, overflow: 'linebreak', lineWidth: 0.1, halign: 'center' },
         alternateRowStyles: { fillColor: [245, 247, 250] },
         columnStyles: {
-          0: { cellWidth: 80, halign: 'left' },   
-          1: { cellWidth: 22, halign: 'center' },
-          2: { cellWidth: 22, halign: 'center' },
-          3: { cellWidth: 22, halign: 'center' },
-          4: { cellWidth: 22, halign: 'center' },
-          5: { cellWidth: 22, halign: 'center' }
+          0: { cellWidth: 90, halign: 'left' },
+          1: { cellWidth: 24, halign: 'center' },
+          2: { cellWidth: 24, halign: 'center' },
+          3: { cellWidth: 24, halign: 'center' },
+          4: { cellWidth: 24, halign: 'center' }
         },
-        margin: { left: 15, right: 15 }  
+        margin: { left: 15, right: 15 }
       });
 
       y = doc.lastAutoTable.finalY + 8;
@@ -731,14 +831,6 @@
     const final = document.getElementById('obs8')?.value.trim() || "RAS global - Installation conforme.";
     const finalLines = doc.splitTextToSize(final, 160);
     doc.text(finalLines, 25, y);
-    y += finalLines.length * 6 + 12;
-
-    doc.setFontSize(11);
-    doc.text("Signature Technicien", 30, y);
-    doc.text("Signature Client", 140, y);
-    y += 5;
-    doc.line(30, y, 90, y);
-    doc.line(140, y, 200, y);
 
     addFooter();
 
@@ -754,8 +846,8 @@
       ["Technicien", technicianName],
       ["Date", new Date().toLocaleDateString('fr-FR')],
       [],
-      ["PARTIE AC", "Conforme", "Correct", "Défaut constaté", "Non contrôlé", "RAS"],
-      ...getChecklistItems(4).map((d, i) => [d, document.getElementById(`chk5-conforme-${i}`)?.checked ? '×' : '', '', '', '', ''])
+      ["PARTIE AC", "Conforme", "Correct", "Défaut constaté", "Non contrôlé"],
+      ...getChecklistItems(4).map((d, i) => [d, document.getElementById(`chk5-conforme-${i}`)?.checked ? '×' : '', '', '', ''])
     ]);
     XLSX.utils.book_append_sheet(wb, ws, "Maintenance");
     XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex]?.name || 'Client'}.xlsx`);
