@@ -4,10 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>R.L ENERGIE — Maintenance</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
   <style>
     :root {
       --primary: #004080;
@@ -22,53 +25,67 @@
     }
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
     body { background:var(--bg); color:var(--dark); min-height:100vh; line-height:1.45; font-size:15px; }
+
     header { background:var(--primary); color:white; padding:1.4rem 2rem; text-align:center; box-shadow:0 3px 10px rgba(0,0,0,0.15); }
     .logo { font-size:2.2rem; font-weight:800; letter-spacing:1px; }
+
     .main-content { max-width:1080px; margin:1.6rem auto; padding:0 1rem; }
+
     .card { background:white; border-radius:var(--radius); box-shadow:0 4px 14px rgba(0,0,0,0.07); margin-bottom:1.8rem; overflow:hidden; border:1px solid var(--border); }
     .ch { background:var(--primary); color:white; padding:0.95rem; font-size:1.3rem; font-weight:700; text-align:center; border-bottom:3px solid var(--primary-light); }
     .cb { padding:1.4rem 1.8rem; }
+
     label { font-weight:600; color:#1f2d3d; margin-bottom:0.45rem; display:block; font-size:0.95rem; }
     input, select, textarea { width:100%; padding:0.75rem; border:2px solid var(--border); border-radius:6px; font-size:0.95rem; margin-bottom:1rem; transition:border 0.2s; }
     input[readonly], textarea[readonly] { background:#f8f9fa; cursor:not-allowed; border-color:#ced4da; }
     input:focus, textarea:focus, select:focus { border-color:var(--primary-light); outline:none; box-shadow:0 0 0 3px rgba(0,102,204,0.2); }
+
     .photo-upload-btn {
       background: var(--primary-light); color: white; padding: 1.2rem; border-radius: 12px; text-align: center; cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.15rem; font-weight: 600;
       border: none; margin: 1rem 0; transition: all 0.2s;
     }
     .photo-upload-btn:hover { background: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
     .photo-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:1rem; margin:1.2rem 0; }
     .photo-preview { position:relative; border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
     .photo-preview img { width:100%; height:130px; object-fit:cover; }
     .delete-btn { position:absolute; top:6px; right:6px; background:#dc3545; color:white; width:28px; height:28px; border-radius:50%; border:none; font-size:1.2rem; cursor:pointer; }
+
     .btn-big { padding:0.9rem 1.6rem; border:none; border-radius:8px; font-size:1rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; margin:0.7rem 0; transition:all 0.2s; }
     .btn-ok { background:var(--success); color:white; }
     .btn-ok:hover { background:#218838; transform:translateY(-1px); }
     .btn-prev { background:#6c757d; color:white; }
     .btn-clear { background:#dc3545; color:white; }
     .btn-restart { background:#ff6b6b; color:white; }
+
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
+
     .checklist-grid { display:grid; grid-template-columns:3fr 1fr 1fr 1fr 1fr; gap:5px; margin:0.8rem 0; align-items:center; }
     .checklist-header { font-weight:bold; text-align:center; background:var(--primary); color:white; padding:0.45rem; border-radius:5px; font-size:0.85rem; }
     .checklist-item { padding:0.45rem; border-bottom:1px solid #eee; font-size:0.92rem; }
     .checklist-check { text-align:center; }
     input[type="checkbox"] { width:1.2rem; height:1.2rem; cursor:pointer; accent-color:#28a745; }
+
     #toast { position:fixed; bottom:1.8rem; left:50%; transform:translateX(-50%); z-index:9999; pointer-events:all; }
     .toast-msg { padding:1.5rem 2.5rem; border-radius:12px; box-shadow:0 8px 25px rgba(0,0,0,0.5); font-weight:700; font-size:1.2rem; display:flex; flex-direction:column; align-items:center; gap:20px; text-align:center; max-width:90%; background:var(--danger); color:white; border:3px solid #fff; }
     .toast-icon { font-size:2.5rem; }
     .toast-btn { background:#fff; color:var(--danger); border:none; padding:0.8rem 2rem; border-radius:8px; font-weight:700; cursor:pointer; font-size:1.1rem; transition:0.2s; }
     .toast-btn:hover { background:#f8d7da; transform:scale(1.05); }
+
     .step { display:none; }
     .step.active { display:block; }
+
     #historyList { margin-top:1rem; max-height:300px; overflow-y:auto; border:1px solid #ddd; border-radius:6px; }
     .history-item { padding:12px; border-bottom:1px solid #eee; cursor:pointer; }
     .history-item:hover { background:#f0f7ff; }
     .history-item.loaded { background:#e6ffe6; font-weight:bold; border-left:4px solid var(--success); }
+
     #searchHistory { width:100%; padding:10px; margin-bottom:10px; font-size:16px; border:1px solid #ccc; border-radius:6px; }
   </style>
 </head>
 <body>
+
 <header>
   <div class="logo">R.L ENERGIE</div>
   <div>
@@ -76,7 +93,9 @@
     <button class="btn-big btn-clear" id="btnExitAdmin" onclick="exitAdminMode()" style="display:none;">Quitter Admin</button>
   </div>
 </header>
+
 <div class="main-content">
+
   <div id="infoBlock" class="card block active">
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
     <div class="cb">
@@ -87,17 +106,22 @@
           <button class="btn-big btn-ok" style="width:auto;padding:0 1.6rem;" onclick="addNewClient()">Ajouter</button>
         </div>
       </div>
+
       <label>Nom du technicien (obligatoire)</label>
       <input type="text" id="technicianName" placeholder="Ex: Jean Dupont"/>
+
       <label>Client / Installation</label>
       <select id="clientSelect" onchange="loadClientData()">
         <option value="">Sélectionnez un client...</option>
       </select>
+
       <div id="clientDetails" style="display:none;margin-top:1.6rem;">
         <label>Détails de l’installation <span id="editDetailsBtn" style="display:none;color:var(--primary);cursor:pointer;" onclick="enableEditDetails()">✏️ Modifier (Admin)</span></label>
         <textarea id="installationDetails" readonly rows="3"></textarea>
+
         <label style="margin-top:1.2rem;">Anciennes dates de maintenance (rappel)</label>
         <div id="oldDatesDisplay" style="padding:0.9rem;border:1px solid #dee2e6;border-radius:6px;background:#f8f9fa;min-height:60px;line-height:1.6;"></div>
+
         <div class="grid-2" style="margin-top:1.4rem;">
           <div>
             <label>Date dernière maintenance</label>
@@ -108,6 +132,7 @@
             <input type="text" id="startDate" readonly value=""/>
           </div>
         </div>
+
         <div class="grid-2">
           <div>
             <label>Irradiance solaire</label>
@@ -128,12 +153,14 @@
             <select id="monitoring"><option>Oui</option><option>Non</option></select>
           </div>
         </div>
+
         <label style="margin-top:1.2rem;">Plan de câblage</label>
         <div class="photo-upload-btn" onclick="document.getElementById('wiringPlanInput').click()">
           <i class="fas fa-camera"></i> Ajouter plan de câblage
         </div>
         <input type="file" id="wiringPlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('wiring')"/>
         <div id="wiringPreview" style="margin-top:0.6rem;"></div>
+
         <label style="margin-top:1.2rem;">Plan du site</label>
         <div class="photo-upload-btn" onclick="document.getElementById('sitePlanInput').click()">
           <i class="fas fa-camera"></i> Ajouter plan du site
@@ -141,6 +168,7 @@
         <input type="file" id="sitePlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('site')"/>
         <div id="sitePreview" style="margin-top:0.6rem;"></div>
       </div>
+
       <div style="display:flex; gap:1rem; margin-top:2rem;">
         <button id="startBtn" class="btn-big btn-ok" onclick="startMaintenance()" style="flex:1;font-size:1.12rem;">
           <i class="fas fa-play"></i> COMMENCER LA MAINTENANCE
@@ -154,7 +182,9 @@
       </div>
     </div>
   </div>
+
   <div id="stepsContainer"></div>
+
   <div class="card" style="margin-top:2rem;">
     <div class="ch">Historique des rapports enregistrés</div>
     <div class="cb">
@@ -165,6 +195,7 @@
       <div id="historyList" style="margin-top:1rem;"></div>
     </div>
   </div>
+
   <div style="text-align:center;margin:5rem 0 8rem; display:flex; justify-content:center; gap:2rem; flex-wrap:wrap;">
     <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
@@ -176,7 +207,9 @@
       <i class="fas fa-save"></i> Sauvegarder maintenant
     </button>
   </div>
+
 </div>
+
 <div id="toast"></div>
 
 <script>
@@ -188,11 +221,13 @@
   let stepPhotos = {};
   let currentReportId = null;
   let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
+
   const clients = [
     { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"] },
     { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"] },
     { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"] }
   ];
+
   const stepsList = [
     "1 — Drone thermique toiture",
     "2 — Caméra thermique onduleur AC+DC",
@@ -203,15 +238,12 @@
     "7 — Point de raccordement (logette, câbles, vérifications)",
     "8 — Vérification des mesures entrées DC"
   ];
+
+  // Étapes à risque électrique
   const highVoltageSteps = [3, 4, 5, 6, 7, 8];
 
-  // Flag pour n'afficher la notif danger qu'une seule fois par étape
-  const warningShown = {};
-
-  function showSafetyWarning(stepNum) {
-    if (warningShown[stepNum]) return; // déjà affiché pour cette étape
-    warningShown[stepNum] = true;
-
+  function showSafetyWarning() {
+    // Supprime les anciennes notifs danger pour éviter les doublons
     const existing = document.querySelector('.toast-danger');
     if (existing) existing.remove();
 
@@ -250,10 +282,12 @@
     currentClientIndex = idx;
     const c = clients[idx];
     document.getElementById('clientDetails').style.display = 'block';
+
     document.getElementById('installationDetails').value = c.details || "";
     document.getElementById('oldDatesDisplay').innerHTML = c.oldDates?.length
       ? c.oldDates.map(d => `<div>• ${d}</div>`).join('')
       : 'Aucune date enregistrée';
+
     document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
   }
@@ -262,6 +296,7 @@
     technicianName = document.getElementById('technicianName').value.trim();
     if (!technicianName) return toast("Nom technicien requis");
     if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
+
     document.getElementById('infoBlock').style.display = 'none';
     createSteps();
     document.getElementById('step1').classList.add('active');
@@ -297,15 +332,19 @@
               <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-noncontrole-${j}" onchange="exclusiveCheck(this)"></div>
             `).join('')}
           </div>
+
           <button class="btn-big btn-ok" style="margin:15px 0;" onclick="setAllConforme(${stepNum})">
             <i class="fas fa-check-double"></i> TOUS CONFORME
           </button>
+
           <h3>Observations</h3>
           <textarea id="obs${stepNum}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${stepNum})"></textarea>
           <div id="preview${stepNum}" style="margin-top:1rem;padding:1rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:6px;display:none;"></div>
+
           <h3 style="margin-top:1.5rem;">Photos</h3>
           <input type="file" id="photo${stepNum}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${stepNum})">
           <div id="photos${stepNum}" class="photo-grid"></div>
+
           <div class="nav-row" style="margin-top:2rem;">
             <button class="btn-big btn-prev" onclick="prevStep()" ${stepNum === 1 ? 'disabled' : ''}><i class="fas fa-arrow-left"></i> Précédent</button>
             <button class="btn-big btn-ok" onclick="nextStep(${stepNum})">Suivant <i class="fas fa-arrow-right"></i></button>
@@ -313,10 +352,13 @@
         </div>
       `;
       container.appendChild(stepDiv);
+
+      // Notification sécurité sur les étapes à risque
       if (highVoltageSteps.includes(stepNum)) {
         stepDiv.addEventListener('transitionend', function handler(e) {
           if (stepDiv.classList.contains('active')) {
-            showSafetyWarning(stepNum);
+            showSafetyWarning();
+            stepDiv.removeEventListener('transitionend', handler);
           }
         });
       }
@@ -454,6 +496,7 @@
     const name = document.getElementById('newClient').value.trim();
     if (!name) return toast("Nom requis");
     if (clients.some(c => c.name === name)) return toast("Déjà existant");
+
     clients.push({ name, details: "", lastMaint: "", oldDates: [] });
     renderClientList();
     document.getElementById('newClient').value = "";
@@ -495,6 +538,7 @@
         photos: stepPhotos
       }
     };
+
     for (let i = 1; i <= stepsList.length; i++) {
       reportData.data.observations[i] = document.getElementById(`obs${i}`)?.value || "";
       reportData.data.checklists[i] = {};
@@ -505,6 +549,7 @@
         reportData.data.checklists[i][`noncontrole-${j}`] = document.getElementById(`chk${i}-noncontrole-${j}`)?.checked || false;
       });
     }
+
     history = history.filter(r => r.id !== reportData.id);
     history.unshift(reportData);
     if (history.length > 30) history.pop();
@@ -538,24 +583,32 @@
   function downloadOldReport(report) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-    const clientName = report.data.clientIndex !== undefined && clients[report.data.clientIndex]
-      ? clients[report.data.clientIndex].name
+
+    const clientName = report.data.clientIndex !== undefined && clients[report.data.clientIndex] 
+      ? clients[report.data.clientIndex].name 
       : report.client || "—";
+
     const dateStr = report.date.split(',')[0];
+
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255);
     doc.setFontSize(52);
     doc.setFont("helvetica", "bold");
     doc.text("R.L ENERGIE", 105, 85, { align: "center" });
+
     doc.setFontSize(20);
     doc.text("Spécialiste du Photovoltaïque", 105, 105, { align: "center" });
+
     doc.setFontSize(34);
     doc.text("RAPPORT DE MAINTENANCE", 105, 155, { align: "center" });
+
     doc.setFontSize(16);
     doc.text(`Client : ${clientName}`, 105, 180, { align: "center" });
     doc.text(dateStr, 105, 195, { align: "center" });
+
     doc.addPage();
+
     function addHeader(pageNum) {
       doc.setFillColor(4, 64, 128);
       doc.rect(0, 0, 210, 20, 'F');
@@ -564,13 +617,16 @@
       doc.text("R.L ENERGIE – Rapport de Maintenance", 15, 13);
       doc.text(`Page ${pageNum}`, 195, 13, { align: "right" });
     }
+
     function addFooter() {
       doc.setFontSize(9);
       doc.setTextColor(100);
       doc.text(`Généré le ${dateStr} • R.L ENERGIE`, 105, 290, { align: "center" });
     }
+
     addHeader(1);
     let y = 32;
+
     doc.setFontSize(15);
     doc.setTextColor(0);
     doc.setFont("helvetica", "bold");
@@ -578,8 +634,10 @@
     y += 6;
     doc.line(20, y, 190, y);
     y += 8;
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
+
     const info = [
       ["Client", clientName],
       ["Technicien", report.technician || "—"],
@@ -589,17 +647,20 @@
       ["Non conso", (report.data.releveNonConso || "—") + " kWh"],
       ["Monitoring", report.data.monitoring || "—"]
     ];
+
     info.forEach(([l, v]) => {
       doc.text(l + " :", 30, y);
       doc.text(v, 80, y);
       y += 6;
     });
     y += 8;
+
     const sections = [
       { title: "PARTIE AC – Coffret de protection", step: 5 },
       { title: "PARTIE ONDULEUR", step: 6 },
       { title: "POINT DE RACCORDEMENT", step: 7 }
     ];
+
     sections.forEach((sec, idx) => {
       if (y > 245) {
         addFooter();
@@ -607,10 +668,12 @@
         addHeader(idx + 2);
         y = 32;
       }
+
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
       doc.text(sec.title, 20, y);
       y += 6;
+
       const body = getChecklistItems(sec.step - 1).map((d, j) => [
         d,
         report.data.checklists[sec.step]?.[`conforme-${j}`] ? '×' : '',
@@ -618,6 +681,7 @@
         report.data.checklists[sec.step]?.[`defaut-${j}`] ? '×' : '',
         report.data.checklists[sec.step]?.[`noncontrole-${j}`] ? '×' : ''
       ]);
+
       doc.autoTable({
         startY: y,
         head: [['Description', 'Conforme', 'Correct', 'Défaut constaté', 'Non contrôlé']],
@@ -635,7 +699,9 @@
         },
         margin: { left: 15, right: 15 }
       });
+
       y = doc.lastAutoTable.finalY + 8;
+
       const obs = report.data.observations[sec.step] || "RAS";
       doc.setFontSize(9);
       doc.setFont("helvetica", "italic");
@@ -643,46 +709,59 @@
       doc.text(obsLines, 25, y);
       y += obsLines.length * 5.5 + 6;
     });
+
     if (y > 240) {
       addFooter();
       doc.addPage();
       addHeader(sections.length + 2);
       y = 32;
     }
+
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text("CONCLUSION GLOBALE", 20, y);
     y += 8;
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     const final = report.data.observations[8] || "RAS global - Installation conforme.";
     const finalLines = doc.splitTextToSize(final, 160);
     doc.text(finalLines, 25, y);
+
     addFooter();
+
     doc.save(`Rapport_Archive_${clientName.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
     toast("Ancien rapport téléchargé");
   }
 
   function generateReport() {
     saveReportToHistory();
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
     const client = clients[currentClientIndex] || { name: "—" };
     const dateStr = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255);
     doc.setFontSize(52);
     doc.setFont("helvetica", "bold");
     doc.text("R.L ENERGIE", 105, 85, { align: "center" });
+
     doc.setFontSize(20);
     doc.text("Spécialiste du Photovoltaïque", 105, 105, { align: "center" });
+
     doc.setFontSize(34);
     doc.text("RAPPORT DE MAINTENANCE", 105, 155, { align: "center" });
+
     doc.setFontSize(16);
     doc.text(`Client : ${client.name}`, 105, 180, { align: "center" });
     doc.text(dateStr, 105, 195, { align: "center" });
+
     doc.addPage();
+
     function addHeader(pageNum) {
       doc.setFillColor(4, 64, 128);
       doc.rect(0, 0, 210, 20, 'F');
@@ -691,13 +770,16 @@
       doc.text("R.L ENERGIE – Rapport de Maintenance", 15, 13);
       doc.text(`Page ${pageNum}`, 195, 13, { align: "right" });
     }
+
     function addFooter() {
       doc.setFontSize(9);
       doc.setTextColor(100);
       doc.text(`Généré le ${dateStr} • R.L ENERGIE`, 105, 290, { align: "center" });
     }
+
     addHeader(1);
     let y = 32;
+
     doc.setFontSize(15);
     doc.setTextColor(0);
     doc.setFont("helvetica", "bold");
@@ -705,8 +787,10 @@
     y += 6;
     doc.line(20, y, 190, y);
     y += 8;
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
+
     const info = [
       ["Client", client.name],
       ["Technicien", technicianName || "—"],
@@ -716,17 +800,20 @@
       ["Non conso", (document.getElementById('releveNonConso').value || "—") + " kWh"],
       ["Monitoring", document.getElementById('monitoring').value || "—"]
     ];
+
     info.forEach(([l, v]) => {
       doc.text(l + " :", 30, y);
       doc.text(v, 80, y);
       y += 6;
     });
     y += 8;
+
     const sections = [
       { title: "PARTIE AC – Coffret de protection", step: 5 },
       { title: "PARTIE ONDULEUR", step: 6 },
       { title: "POINT DE RACCORDEMENT", step: 7 }
     ];
+
     sections.forEach((sec, idx) => {
       if (y > 245) {
         addFooter();
@@ -734,10 +821,12 @@
         addHeader(idx + 2);
         y = 32;
       }
+
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
       doc.text(sec.title, 20, y);
       y += 6;
+
       const body = getChecklistItems(sec.step - 1).map((d, j) => [
         d,
         document.getElementById(`chk${sec.step}-conforme-${j}`)?.checked ? '×' : '',
@@ -745,6 +834,7 @@
         document.getElementById(`chk${sec.step}-defaut-${j}`)?.checked ? '×' : '',
         document.getElementById(`chk${sec.step}-noncontrole-${j}`)?.checked ? '×' : ''
       ]);
+
       doc.autoTable({
         startY: y,
         head: [['Description', 'Conforme', 'Correct', 'Défaut constaté', 'Non contrôlé']],
@@ -762,7 +852,9 @@
         },
         margin: { left: 15, right: 15 }
       });
+
       y = doc.lastAutoTable.finalY + 8;
+
       const obs = document.getElementById(`obs${sec.step}`)?.value.trim() || "RAS";
       doc.setFontSize(9);
       doc.setFont("helvetica", "italic");
@@ -770,24 +862,30 @@
       doc.text(obsLines, 25, y);
       y += obsLines.length * 5.5 + 6;
     });
+
     if (y > 240) {
       addFooter();
       doc.addPage();
       addHeader(sections.length + 2);
       y = 32;
     }
+
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text("CONCLUSION GLOBALE", 20, y);
     y += 8;
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     const final = document.getElementById('obs8')?.value.trim() || "RAS global - Installation conforme.";
     const finalLines = doc.splitTextToSize(final, 160);
     doc.text(finalLines, 25, y);
+
     addFooter();
+
     doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
     toast("Rapport généré avec ×");
+
     document.getElementById('finishButtons').style.display = 'block';
   }
 
