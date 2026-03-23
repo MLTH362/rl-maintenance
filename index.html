@@ -67,12 +67,11 @@
     .checklist-check { text-align:center; }
     input[type="checkbox"] { width:1.2rem; height:1.2rem; cursor:pointer; accent-color:#28a745; }
 
-    #toast { position:fixed; bottom:1.8rem; left:50%; transform:translateX(-50%); z-index:9999; pointer-events:none; }
-    .toast-msg { padding:1.2rem 2.5rem; border-radius:12px; box-shadow:0 8px 25px rgba(0,0,0,0.4); font-weight:700; font-size:1.15rem; display:flex; flex-direction:column; align-items:center; gap:15px; text-align:center; max-width:90%; }
-    .toast-success { background:var(--success); color:white; }
-    .toast-danger  { background:var(--danger);  color:white; border:3px solid #fff; }
-    .toast-btn { background:#fff; color:#dc3545; border:none; padding:0.6rem 1.5rem; border-radius:8px; font-weight:700; cursor:pointer; font-size:1rem; transition:0.2s; }
-    .toast-btn:hover { background:#f8d7da; }
+    #toast { position:fixed; bottom:1.8rem; left:50%; transform:translateX(-50%); z-index:9999; pointer-events:all; }
+    .toast-msg { padding:1.5rem 2.5rem; border-radius:12px; box-shadow:0 8px 25px rgba(0,0,0,0.5); font-weight:700; font-size:1.2rem; display:flex; flex-direction:column; align-items:center; gap:20px; text-align:center; max-width:90%; background:var(--danger); color:white; border:3px solid #fff; }
+    .toast-icon { font-size:2.5rem; }
+    .toast-btn { background:#fff; color:var(--danger); border:none; padding:0.8rem 2rem; border-radius:8px; font-weight:700; cursor:pointer; font-size:1.1rem; transition:0.2s; }
+    .toast-btn:hover { background:#f8d7da; transform:scale(1.05); }
 
     .step { display:none; }
     .step.active { display:block; }
@@ -244,20 +243,23 @@
   const highVoltageSteps = [3, 4, 5, 6, 7, 8];
 
   function showSafetyWarning() {
-    const toastContainer = document.getElementById('toast');
-    const existing = toastContainer.querySelector('.toast-danger');
-    if (existing) existing.remove(); // on évite les doublons
+    // Supprime les anciennes notifs danger pour éviter les doublons
+    const existing = document.querySelector('.toast-danger');
+    if (existing) existing.remove();
 
     const el = document.createElement('div');
     el.className = 'toast-msg toast-danger';
     el.innerHTML = `
-      <div style="font-size:1.4rem; margin-bottom:10px;">
-        <i class="fas fa-exclamation-triangle fa-2x"></i> ⚠️ ATTENTION – TRAVAIL SOUS TENSION
+      <div class="toast-icon">
+        <i class="fas fa-exclamation-triangle fa-3x"></i>
       </div>
-      <div>VÉRIFIEZ CONSIGNES DE SÉCURITÉ AVANT TOUTE INTERVENTION</div>
+      <div style="margin:10px 0; line-height:1.4;">
+        ⚠️ ATTENTION – TRAVAIL SOUS TENSION<br>
+        VÉRIFIEZ CONSIGNES DE SÉCURITÉ AVANT TOUTE INTERVENTION
+      </div>
       <button class="toast-btn" onclick="this.parentElement.remove()">OK</button>
     `;
-    toastContainer.appendChild(el);
+    document.getElementById('toast').appendChild(el);
   }
 
   function renderClientList() {
@@ -356,7 +358,6 @@
         stepDiv.addEventListener('transitionend', function handler(e) {
           if (stepDiv.classList.contains('active')) {
             showSafetyWarning();
-            // On enlève l'écouteur après la première apparition
             stepDiv.removeEventListener('transitionend', handler);
           }
         });
