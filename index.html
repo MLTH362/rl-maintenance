@@ -178,6 +178,7 @@
   </div>
 </div>
 <div id="toast"></div>
+
 <script>
   let currentStep = 0;
   let technicianName = "";
@@ -202,10 +203,9 @@
     "7 — Point de raccordement (logette, câbles, vérifications)",
     "8 — Vérification des mesures entrées DC"
   ];
-  // Étapes à risque électrique
   const highVoltageSteps = [3, 4, 5, 6, 7, 8];
+
   function showSafetyWarning() {
-    // Supprime les anciennes notifs danger pour éviter les doublons
     const existing = document.querySelector('.toast-danger');
     if (existing) existing.remove();
     const el = document.createElement('div');
@@ -222,6 +222,7 @@
     `;
     document.getElementById('toast').appendChild(el);
   }
+
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
     sel.innerHTML = '<option value="">Sélectionnez un client...</option>';
@@ -232,6 +233,7 @@
       sel.appendChild(opt);
     });
   }
+
   function loadClientData() {
     const idx = +document.getElementById('clientSelect').value;
     if (isNaN(idx) || idx < 0) {
@@ -248,6 +250,7 @@
     document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
   }
+
   function startMaintenance() {
     technicianName = document.getElementById('technicianName').value.trim();
     if (!technicianName) return toast("Nom technicien requis");
@@ -260,6 +263,7 @@
     stepPhotos = {};
     toast("Maintenance démarrée");
   }
+
   function createSteps() {
     const container = document.getElementById('stepsContainer');
     container.innerHTML = '';
@@ -302,7 +306,6 @@
         </div>
       `;
       container.appendChild(stepDiv);
-      // Notification sécurité sur les étapes à risque
       if (highVoltageSteps.includes(stepNum)) {
         stepDiv.addEventListener('transitionend', function handler(e) {
           if (stepDiv.classList.contains('active')) {
@@ -313,6 +316,7 @@
       }
     });
   }
+
   function exclusiveCheck(checkbox) {
     if (!checkbox.checked) return;
     const line = checkbox.getAttribute('data-line');
@@ -320,6 +324,7 @@
       if (chk !== checkbox) chk.checked = false;
     });
   }
+
   function setAllConforme(n) {
     const lineCount = getChecklistItems(n-1).length;
     for (let j = 0; j < lineCount; j++) {
@@ -329,10 +334,11 @@
         exclusiveCheck(conformeChk);
       }
     }
-    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
     updateObsPreview(n);
-    toast("Tous Conforme + RAS appliqué");
+    // PAS de texte RAS automatique
+    // PAS de toast
   }
+
   function getChecklistItems(i) {
     const checklists = {
       0: ["Observation drone thermique", "Anomalies détectées", "Température max toiture"],
@@ -346,17 +352,20 @@
     };
     return checklists[i] || ["Élément non défini"];
   }
+
   function nextStep(n) {
     document.getElementById(`step${n}`).classList.remove('active');
     currentStep = n + 1;
     if (currentStep <= stepsList.length) document.getElementById(`step${currentStep}`).classList.add('active');
   }
+
   function prevStep() {
     if (currentStep <= 1) return;
     document.getElementById(`step${currentStep}`).classList.remove('active');
     currentStep--;
     document.getElementById(`step${currentStep}`).classList.add('active');
   }
+
   function addPhoto(n) {
     const files = document.getElementById(`photo${n}`).files;
     if (!stepPhotos[n]) stepPhotos[n] = [];
@@ -369,6 +378,7 @@
       reader.readAsDataURL(file);
     }
   }
+
   function renderPhotos(n) {
     const grid = document.getElementById(`photos${n}`);
     grid.innerHTML = '';
@@ -383,10 +393,12 @@
       });
     }
   }
+
   function deletePhoto(n, idx) {
     stepPhotos[n].splice(idx, 1);
     renderPhotos(n);
   }
+
   function updateObsPreview(n) {
     const textarea = document.getElementById(`obs${n}`);
     const preview = document.getElementById(`preview${n}`);
@@ -397,6 +409,7 @@
       preview.style.display = 'none';
     }
   }
+
   function toast(msg, type = 'success') {
     const el = document.createElement('div');
     el.className = `toast-msg toast-${type}`;
@@ -404,6 +417,7 @@
     document.getElementById('toast').appendChild(el);
     setTimeout(() => el.remove(), 3000);
   }
+
   function toggleAdminMode() {
     const pw = prompt("Mot de passe Admin :", "");
     if (pw === ADMIN_PASSWORD) {
@@ -418,6 +432,7 @@
       toast("Mot de passe incorrect");
     }
   }
+
   function exitAdminMode() {
     isAdminMode = false;
     document.getElementById('adminControls').style.display = 'none';
@@ -427,6 +442,7 @@
     document.getElementById('editDetailsBtn').style.display = 'none';
     toast("Mode Admin désactivé");
   }
+
   function addNewClient() {
     if (!isAdminMode) return toast("Mode Admin requis");
     const name = document.getElementById('newClient').value.trim();
@@ -437,10 +453,12 @@
     document.getElementById('newClient').value = "";
     toast("Client ajouté");
   }
+
   function enableEditDetails() {
     if (!isAdminMode) return toast("Mode Admin requis");
     document.getElementById('installationDetails').readOnly = false;
   }
+
   function uploadPlan(type) {
     const file = document.getElementById(type + 'PlanInput').files[0];
     if (!file || currentClientIndex < 0) return;
@@ -451,6 +469,7 @@
     };
     reader.readAsDataURL(file);
   }
+
   function saveReportToHistory() {
     const reportData = {
       id: currentReportId || Date.now(),
@@ -486,6 +505,7 @@
     localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
     refreshHistory();
   }
+
   function filterHistory() {
     const search = document.getElementById('searchHistory').value.toLowerCase();
     const items = document.querySelectorAll('.history-item');
@@ -494,6 +514,7 @@
       item.style.display = text.includes(search) ? '' : 'none';
     });
   }
+
   function refreshHistory() {
     const list = document.getElementById('historyList');
     list.innerHTML = '';
@@ -507,6 +528,7 @@
     });
     filterHistory();
   }
+
   function downloadOldReport(report) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
@@ -608,7 +630,7 @@
         margin: { left: 15, right: 15 }
       });
       y = doc.lastAutoTable.finalY + 8;
-      const obs = report.data.observations[sec.step] || "RAS";
+      const obs = report.data.observations[sec.step] || "";
       doc.setFontSize(9);
       doc.setFont("helvetica", "italic");
       const obsLines = doc.splitTextToSize("Observation : " + obs, 160);
@@ -627,13 +649,14 @@
     y += 8;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const final = report.data.observations[8] || "RAS global - Installation conforme.";
+    const final = report.data.observations[8] || "";
     const finalLines = doc.splitTextToSize(final, 160);
     doc.text(finalLines, 25, y);
     addFooter();
     doc.save(`Rapport_Archive_${clientName.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
     toast("Ancien rapport téléchargé");
   }
+
   function generateReport() {
     saveReportToHistory();
     const { jsPDF } = window.jspdf;
@@ -734,7 +757,7 @@
         margin: { left: 15, right: 15 }
       });
       y = doc.lastAutoTable.finalY + 8;
-      const obs = document.getElementById(`obs${sec.step}`)?.value.trim() || "RAS";
+      const obs = document.getElementById(`obs${sec.step}`)?.value.trim() || "";
       doc.setFontSize(9);
       doc.setFont("helvetica", "italic");
       const obsLines = doc.splitTextToSize("Observation : " + obs, 160);
@@ -753,14 +776,15 @@
     y += 8;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const final = document.getElementById('obs8')?.value.trim() || "RAS global - Installation conforme.";
+    const final = document.getElementById('obs8')?.value.trim() || "";
     const finalLines = doc.splitTextToSize(final, 160);
     doc.text(finalLines, 25, y);
     addFooter();
     doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
     toast("Rapport généré avec ×");
-    document.getElementById('finishButtons').style.display = 'block';
+    // document.getElementById('finishButtons').style.display = 'block';  ← commenté car l'élément n'existe pas dans le HTML
   }
+
   window.onload = function() {
     renderClientList();
     refreshHistory();
