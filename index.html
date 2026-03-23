@@ -178,6 +178,7 @@
   </div>
 </div>
 <div id="toast"></div>
+
 <script>
   let currentStep = 0;
   let technicianName = "";
@@ -204,10 +205,16 @@
   ];
   const highVoltageSteps = [3, 4, 5, 6, 7, 8];
 
-  // SEULE NOTIFICATION AUTORISÉE : danger sur les étapes à risque
-  function showSafetyWarning() {
+  // Flag pour n'afficher la notif danger qu'une seule fois par étape
+  const warningShown = {};
+
+  function showSafetyWarning(stepNum) {
+    if (warningShown[stepNum]) return; // déjà affiché pour cette étape
+    warningShown[stepNum] = true;
+
     const existing = document.querySelector('.toast-danger');
     if (existing) existing.remove();
+
     const el = document.createElement('div');
     el.className = 'toast-msg toast-danger';
     el.innerHTML = `
@@ -253,15 +260,15 @@
 
   function startMaintenance() {
     technicianName = document.getElementById('technicianName').value.trim();
-    if (!technicianName) return;
-    if (document.getElementById('clientSelect').value === "") return;
+    if (!technicianName) return toast("Nom technicien requis");
+    if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
     document.getElementById('infoBlock').style.display = 'none';
     createSteps();
     document.getElementById('step1').classList.add('active');
     currentStep = 1;
     currentReportId = Date.now();
     stepPhotos = {};
-    // PLUS DE TOAST ICI
+    toast("Maintenance démarrée");
   }
 
   function createSteps() {
@@ -309,8 +316,7 @@
       if (highVoltageSteps.includes(stepNum)) {
         stepDiv.addEventListener('transitionend', function handler(e) {
           if (stepDiv.classList.contains('active')) {
-            showSafetyWarning();
-            stepDiv.removeEventListener('transitionend', handler);
+            showSafetyWarning(stepNum);
           }
         });
       }
@@ -334,9 +340,9 @@
         exclusiveCheck(conformeChk);
       }
     }
+    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
     updateObsPreview(n);
-    // PLUS DE TEXTE RAS AUTOMATIQUE
-    // PLUS DE TOAST
+    toast("Tous Conforme + RAS appliqué");
   }
 
   function getChecklistItems(i) {
@@ -418,9 +424,6 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  // TOUTES LES AUTRES FONCTIONS (admin, save, PDF, etc.) restent identiques
-  // mais sans aucun toast automatique sauf le danger sur les étapes à risque
-
   function toggleAdminMode() {
     const pw = prompt("Mot de passe Admin :", "");
     if (pw === ADMIN_PASSWORD) {
@@ -430,9 +433,9 @@
       document.getElementById('btnExitAdmin').style.display = 'inline-block';
       document.getElementById('installationDetails').readOnly = false;
       document.getElementById('editDetailsBtn').style.display = 'inline';
-      // PLUS DE TOAST
+      toast("Mode Admin activé");
     } else {
-      // PLUS DE TOAST
+      toast("Mot de passe incorrect");
     }
   }
 
@@ -443,22 +446,22 @@
     document.getElementById('btnExitAdmin').style.display = 'none';
     document.getElementById('installationDetails').readOnly = true;
     document.getElementById('editDetailsBtn').style.display = 'none';
-    // PLUS DE TOAST
+    toast("Mode Admin désactivé");
   }
 
   function addNewClient() {
-    if (!isAdminMode) return;
+    if (!isAdminMode) return toast("Mode Admin requis");
     const name = document.getElementById('newClient').value.trim();
-    if (!name) return;
-    if (clients.some(c => c.name === name)) return;
+    if (!name) return toast("Nom requis");
+    if (clients.some(c => c.name === name)) return toast("Déjà existant");
     clients.push({ name, details: "", lastMaint: "", oldDates: [] });
     renderClientList();
     document.getElementById('newClient').value = "";
-    // PLUS DE TOAST
+    toast("Client ajouté");
   }
 
   function enableEditDetails() {
-    if (!isAdminMode) return;
+    if (!isAdminMode) return toast("Mode Admin requis");
     document.getElementById('installationDetails').readOnly = false;
   }
 
@@ -633,7 +636,7 @@
         margin: { left: 15, right: 15 }
       });
       y = doc.lastAutoTable.finalY + 8;
-      const obs = report.data.observations[sec.step] || "";
+      const obs = report.data.observations[sec.step] || "RAS";
       doc.setFontSize(9);
       doc.setFont("helvetica", "italic");
       const obsLines = doc.splitTextToSize("Observation : " + obs, 160);
@@ -652,12 +655,12 @@
     y += 8;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const final = report.data.observations[8] || "";
+    const final = report.data.observations[8] || "RAS global - Installation conforme.";
     const finalLines = doc.splitTextToSize(final, 160);
     doc.text(finalLines, 25, y);
     addFooter();
     doc.save(`Rapport_Archive_${clientName.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
-    // PLUS DE TOAST ICI
+    toast("Ancien rapport téléchargé");
   }
 
   function generateReport() {
@@ -760,7 +763,7 @@
         margin: { left: 15, right: 15 }
       });
       y = doc.lastAutoTable.finalY + 8;
-      const obs = document.getElementById(`obs${sec.step}`)?.value.trim() || "";
+      const obs = document.getElementById(`obs${sec.step}`)?.value.trim() || "RAS";
       doc.setFontSize(9);
       doc.setFont("helvetica", "italic");
       const obsLines = doc.splitTextToSize("Observation : " + obs, 160);
@@ -779,12 +782,13 @@
     y += 8;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const final = document.getElementById('obs8')?.value.trim() || "";
+    const final = document.getElementById('obs8')?.value.trim() || "RAS global - Installation conforme.";
     const finalLines = doc.splitTextToSize(final, 160);
     doc.text(finalLines, 25, y);
     addFooter();
     doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
-    // PLUS DE TOAST ICI
+    toast("Rapport généré avec ×");
+    document.getElementById('finishButtons').style.display = 'block';
   }
 
   window.onload = function() {
