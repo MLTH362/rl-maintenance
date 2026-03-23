@@ -178,7 +178,6 @@
   </div>
 </div>
 <div id="toast"></div>
-
 <script>
   let currentStep = 0;
   let technicianName = "";
@@ -205,6 +204,7 @@
   ];
   const highVoltageSteps = [3, 4, 5, 6, 7, 8];
 
+  // SEULE NOTIFICATION AUTORISÉE : danger sur les étapes à risque
   function showSafetyWarning() {
     const existing = document.querySelector('.toast-danger');
     if (existing) existing.remove();
@@ -253,15 +253,15 @@
 
   function startMaintenance() {
     technicianName = document.getElementById('technicianName').value.trim();
-    if (!technicianName) return toast("Nom technicien requis");
-    if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
+    if (!technicianName) return;
+    if (document.getElementById('clientSelect').value === "") return;
     document.getElementById('infoBlock').style.display = 'none';
     createSteps();
     document.getElementById('step1').classList.add('active');
     currentStep = 1;
     currentReportId = Date.now();
     stepPhotos = {};
-    toast("Maintenance démarrée");
+    // PLUS DE TOAST ICI
   }
 
   function createSteps() {
@@ -335,8 +335,8 @@
       }
     }
     updateObsPreview(n);
-    // PAS de texte RAS automatique
-    // PAS de toast
+    // PLUS DE TEXTE RAS AUTOMATIQUE
+    // PLUS DE TOAST
   }
 
   function getChecklistItems(i) {
@@ -418,6 +418,9 @@
     setTimeout(() => el.remove(), 3000);
   }
 
+  // TOUTES LES AUTRES FONCTIONS (admin, save, PDF, etc.) restent identiques
+  // mais sans aucun toast automatique sauf le danger sur les étapes à risque
+
   function toggleAdminMode() {
     const pw = prompt("Mot de passe Admin :", "");
     if (pw === ADMIN_PASSWORD) {
@@ -427,9 +430,9 @@
       document.getElementById('btnExitAdmin').style.display = 'inline-block';
       document.getElementById('installationDetails').readOnly = false;
       document.getElementById('editDetailsBtn').style.display = 'inline';
-      toast("Mode Admin activé");
+      // PLUS DE TOAST
     } else {
-      toast("Mot de passe incorrect");
+      // PLUS DE TOAST
     }
   }
 
@@ -440,22 +443,22 @@
     document.getElementById('btnExitAdmin').style.display = 'none';
     document.getElementById('installationDetails').readOnly = true;
     document.getElementById('editDetailsBtn').style.display = 'none';
-    toast("Mode Admin désactivé");
+    // PLUS DE TOAST
   }
 
   function addNewClient() {
-    if (!isAdminMode) return toast("Mode Admin requis");
+    if (!isAdminMode) return;
     const name = document.getElementById('newClient').value.trim();
-    if (!name) return toast("Nom requis");
-    if (clients.some(c => c.name === name)) return toast("Déjà existant");
+    if (!name) return;
+    if (clients.some(c => c.name === name)) return;
     clients.push({ name, details: "", lastMaint: "", oldDates: [] });
     renderClientList();
     document.getElementById('newClient').value = "";
-    toast("Client ajouté");
+    // PLUS DE TOAST
   }
 
   function enableEditDetails() {
-    if (!isAdminMode) return toast("Mode Admin requis");
+    if (!isAdminMode) return;
     document.getElementById('installationDetails').readOnly = false;
   }
 
@@ -654,7 +657,7 @@
     doc.text(finalLines, 25, y);
     addFooter();
     doc.save(`Rapport_Archive_${clientName.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Ancien rapport téléchargé");
+    // PLUS DE TOAST ICI
   }
 
   function generateReport() {
@@ -781,8 +784,7 @@
     doc.text(finalLines, 25, y);
     addFooter();
     doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport généré avec ×");
-    // document.getElementById('finishButtons').style.display = 'block';  ← commenté car l'élément n'existe pas dans le HTML
+    // PLUS DE TOAST ICI
   }
 
   window.onload = function() {
