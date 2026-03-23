@@ -47,9 +47,8 @@
     .btn-ok:hover { background:#218838; transform:translateY(-1px); }
     .btn-prev { background:#6c757d; color:white; }
     .btn-clear { background:#dc3545; color:white; }
-    .btn-restart { background:#ff6b6b; color:white; }
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
-    .checklist-grid { display:grid; grid-template-columns:3fr 1fr 1fr 1fr 1fr; gap:5px; margin:0.8rem 0; align-items:center; }
+    .checklist-grid { display:grid; grid-template-columns:3fr 1fr 1fr 1fr; gap:5px; margin:0.8rem 0; align-items:center; }
     .checklist-header { font-weight:bold; text-align:center; background:var(--primary); color:white; padding:0.45rem; border-radius:5px; font-size:0.85rem; }
     .checklist-item { padding:0.45rem; border-bottom:1px solid #eee; font-size:0.92rem; }
     .checklist-check { text-align:center; }
@@ -69,6 +68,7 @@
   </style>
 </head>
 <body>
+
 <header>
   <div class="logo">R.L ENERGIE</div>
   <div>
@@ -76,6 +76,7 @@
     <button class="btn-big btn-clear" id="btnExitAdmin" onclick="exitAdminMode()" style="display:none;">Quitter Admin</button>
   </div>
 </header>
+
 <div class="main-content">
   <div id="infoBlock" class="card block active">
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
@@ -87,17 +88,22 @@
           <button class="btn-big btn-ok" style="width:auto;padding:0 1.6rem;" onclick="addNewClient()">Ajouter</button>
         </div>
       </div>
+
       <label>Nom du technicien (obligatoire)</label>
       <input type="text" id="technicianName" placeholder="Ex: Jean Dupont"/>
+
       <label>Client / Installation</label>
       <select id="clientSelect" onchange="loadClientData()">
         <option value="">Sélectionnez un client...</option>
       </select>
+
       <div id="clientDetails" style="display:none;margin-top:1.6rem;">
         <label>Détails de l’installation <span id="editDetailsBtn" style="display:none;color:var(--primary);cursor:pointer;" onclick="enableEditDetails()">✏️ Modifier (Admin)</span></label>
         <textarea id="installationDetails" readonly rows="3"></textarea>
+
         <label style="margin-top:1.2rem;">Anciennes dates de maintenance (rappel)</label>
         <div id="oldDatesDisplay" style="padding:0.9rem;border:1px solid #dee2e6;border-radius:6px;background:#f8f9fa;min-height:60px;line-height:1.6;"></div>
+
         <div class="grid-2" style="margin-top:1.4rem;">
           <div>
             <label>Date dernière maintenance</label>
@@ -108,7 +114,23 @@
             <input type="text" id="startDate" readonly value=""/>
           </div>
         </div>
+
+        <!-- Plan de câblage et plan du site déplacés ici (admin peut modifier) -->
+        <label style="margin-top:1.2rem;">Plan de câblage</label>
+        <div class="photo-upload-btn" onclick="document.getElementById('wiringPlanInput').click()">
+          <i class="fas fa-camera"></i> Ajouter / Modifier plan de câblage
+        </div>
+        <input type="file" id="wiringPlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('wiring')"/>
+        <div id="wiringPreview" style="margin-top:0.6rem;"></div>
+
+        <label style="margin-top:1.2rem;">Plan du site</label>
+        <div class="photo-upload-btn" onclick="document.getElementById('sitePlanInput').click()">
+          <i class="fas fa-camera"></i> Ajouter / Modifier plan du site
+        </div>
+        <input type="file" id="sitePlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('site')"/>
+        <div id="sitePreview" style="margin-top:0.6rem;"></div>
       </div>
+
       <div style="display:flex; gap:1rem; margin-top:2rem;">
         <button id="startBtn" class="btn-big btn-ok" onclick="startMaintenance()" style="flex:1;font-size:1.12rem;">
           <i class="fas fa-play"></i> COMMENCER LA MAINTENANCE
@@ -122,7 +144,9 @@
       </div>
     </div>
   </div>
+
   <div id="stepsContainer"></div>
+
   <div class="card" style="margin-top:2rem;">
     <div class="ch">Historique des rapports enregistrés</div>
     <div class="cb">
@@ -133,6 +157,7 @@
       <div id="historyList" style="margin-top:1rem;"></div>
     </div>
   </div>
+
   <div style="text-align:center;margin:5rem 0 8rem; display:flex; justify-content:center; gap:2rem; flex-wrap:wrap;">
     <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
@@ -140,11 +165,15 @@
     <button class="btn-big" style="background:#1e7e34;color:white;font-size:1.2rem;padding:1.4rem 3rem;" onclick="generateExcel()">
       <i class="fas fa-file-excel"></i> EXPORTER EXCEL
     </button>
+    <button class="btn-big" style="background:#0d6efd;color:white;font-size:1.2rem;padding:1.4rem 3rem;" onclick="generateWord()">
+      <i class="fas fa-file-word"></i> EXPORTER WORD
+    </button>
     <button class="btn-big" style="background:#6c757d;color:white;font-size:1.2rem;padding:1.4rem 3rem;" onclick="saveReportToHistory()">
       <i class="fas fa-save"></i> Sauvegarder maintenant
     </button>
   </div>
 </div>
+
 <div id="toast"></div>
 
 <script>
@@ -171,13 +200,12 @@
     "7 — Point de raccordement (logette, câbles, vérifications)",
     "8 — Vérification des mesures entrées DC"
   ];
-  const highVoltageSteps = [3, 4, 5, 6, 7, 8];
+  const highVoltageSteps = [3,4,5,6,7,8];
 
-  // Flag pour n'afficher la notif danger qu'une seule fois par étape
   const warningShown = {};
 
   function showSafetyWarning(stepNum) {
-    if (warningShown[stepNum]) return; // déjà montré pour cette étape
+    if (warningShown[stepNum]) return;
     warningShown[stepNum] = true;
 
     const existing = document.querySelector('.toast-danger');
@@ -186,9 +214,7 @@
     const el = document.createElement('div');
     el.className = 'toast-msg toast-danger';
     el.innerHTML = `
-      <div class="toast-icon">
-        <i class="fas fa-exclamation-triangle fa-3x"></i>
-      </div>
+      <div class="toast-icon"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
       <div style="margin:10px 0; line-height:1.4;">
         ⚠️ ATTENTION – TRAVAIL SOUS TENSION<br>
         VÉRIFIEZ CONSIGNES DE SÉCURITÉ AVANT TOUTE INTERVENTION
@@ -230,6 +256,7 @@
     technicianName = document.getElementById('technicianName').value.trim();
     if (!technicianName) return toast("Nom technicien requis");
     if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
+
     document.getElementById('infoBlock').style.display = 'none';
     createSteps();
     document.getElementById('step1').classList.add('active');
@@ -253,26 +280,48 @@
           <div class="checklist-grid">
             <div class="checklist-header">Description</div>
             <div class="checklist-header">Conforme</div>
-            <div class="checklist-header">Correct</div>
             <div class="checklist-header">Défaut constaté</div>
             <div class="checklist-header">Non contrôlé</div>
             ${getChecklistItems(i).map((desc, j) => `
               <div class="checklist-item">${desc}</div>
               <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-conforme-${j}" onchange="exclusiveCheck(this)"></div>
-              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-correct-${j}" onchange="exclusiveCheck(this)"></div>
               <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-defaut-${j}" onchange="exclusiveCheck(this)"></div>
               <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-noncontrole-${j}" onchange="exclusiveCheck(this)"></div>
             `).join('')}
           </div>
+
           <button class="btn-big btn-ok" style="margin:15px 0;" onclick="setAllConforme(${stepNum})">
             <i class="fas fa-check-double"></i> TOUS CONFORME
           </button>
+
           <h3>Observations</h3>
           <textarea id="obs${stepNum}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${stepNum})"></textarea>
           <div id="preview${stepNum}" style="margin-top:1rem;padding:1rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:6px;display:none;"></div>
+
+          <!-- Irradiance et relevés déplacés ici (dans chaque maintenance) -->
+          <div style="margin-top:1.5rem; display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div>
+              <label>Irradiance solaire</label>
+              <input type="text" id="irradiance_${stepNum}" value="Forte"/>
+            </div>
+            <div>
+              <label>Relevé compteur Production (kWh)</label>
+              <input type="text" id="releveProd_${stepNum}"/>
+            </div>
+            <div>
+              <label>Relevé compteur non-consommation (kWh)</label>
+              <input type="text" id="releveNonConso_${stepNum}"/>
+            </div>
+            <div>
+              <label>Présence du monitoring</label>
+              <select id="monitoring_${stepNum}"><option>Oui</option><option>Non</option></select>
+            </div>
+          </div>
+
           <h3 style="margin-top:1.5rem;">Photos</h3>
           <input type="file" id="photo${stepNum}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${stepNum})">
           <div id="photos${stepNum}" class="photo-grid"></div>
+
           <div class="nav-row" style="margin-top:2rem;">
             <button class="btn-big btn-prev" onclick="prevStep()" ${stepNum === 1 ? 'disabled' : ''}><i class="fas fa-arrow-left"></i> Précédent</button>
             <button class="btn-big btn-ok" onclick="nextStep(${stepNum})">Suivant <i class="fas fa-arrow-right"></i></button>
@@ -280,6 +329,7 @@
         </div>
       `;
       container.appendChild(stepDiv);
+
       if (highVoltageSteps.includes(stepNum)) {
         stepDiv.addEventListener('transitionend', function handler(e) {
           if (stepDiv.classList.contains('active')) {
@@ -287,14 +337,6 @@
           }
         });
       }
-    });
-  }
-
-  function exclusiveCheck(checkbox) {
-    if (!checkbox.checked) return;
-    const line = checkbox.getAttribute('data-line');
-    document.querySelectorAll(`input.chk-line[data-line="${line}"]`).forEach(chk => {
-      if (chk !== checkbox) chk.checked = false;
     });
   }
 
@@ -310,6 +352,14 @@
     document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
     updateObsPreview(n);
     toast("Tous Conforme + RAS appliqué");
+  }
+
+  function exclusiveCheck(checkbox) {
+    if (!checkbox.checked) return;
+    const line = checkbox.getAttribute('data-line');
+    document.querySelectorAll(`input.chk-line[data-line="${line}"]`).forEach(chk => {
+      if (chk !== checkbox) chk.checked = false;
+    });
   }
 
   function getChecklistItems(i) {
@@ -438,6 +488,47 @@
     reader.readAsDataURL(file);
   }
 
+  function generateWord() {
+    let content = `
+      <h1 style="text-align:center;">R.L ENERGIE - Rapport de Maintenance</h1>
+      <p><strong>Client :</strong> ${clients[currentClientIndex]?.name || '—'}</p>
+      <p><strong>Technicien :</strong> ${technicianName || '—'}</p>
+      <p><strong>Date :</strong> ${new Date().toLocaleDateString('fr-FR')}</p>
+      <hr>
+    `;
+
+    for (let step = 1; step <= stepsList.length; step++) {
+      content += `<h2>Étape ${step} — ${stepsList[step-1]}</h2>`;
+      content += '<table border="1" style="width:100%; border-collapse:collapse;">';
+      content += '<tr><th>Description</th><th>Conforme</th><th>Défaut constaté</th><th>Non contrôlé</th></tr>';
+
+      const items = getChecklistItems(step-1);
+      items.forEach((desc, j) => {
+        const conforme = document.getElementById(`chk${step}-conforme-${j}`)?.checked ? 'Oui' : '';
+        const defaut = document.getElementById(`chk${step}-defaut-${j}`)?.checked ? 'Oui' : '';
+        const noncontrole = document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? 'Oui' : '';
+        content += `<tr><td>${desc}</td><td>${conforme}</td><td>${defaut}</td><td>${noncontrole}</td></tr>`;
+      });
+      content += '</table>';
+
+      const obs = document.getElementById(`obs${step}`)?.value.trim() || '';
+      if (obs) content += `<p><strong>Observation :</strong> ${obs}</p>`;
+      content += '<br><hr><br>';
+    }
+
+    const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Rapport_Maintenance_${clients[currentClientIndex]?.name.replace(/ /g,'_') || 'Client'}_${new Date().toLocaleDateString('fr-FR').replace(/\//g,'-')}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast("Fichier Word généré");
+  }
+
   function saveReportToHistory() {
     const reportData = {
       id: currentReportId || Date.now(),
@@ -448,10 +539,6 @@
         technicianName,
         clientIndex: currentClientIndex,
         startDate: document.getElementById('startDate').value,
-        irradiance: document.getElementById('irradiance').value,
-        releveProd: document.getElementById('releveProd').value,
-        releveNonConso: document.getElementById('releveNonConso').value,
-        monitoring: document.getElementById('monitoring').value,
         observations: {},
         checklists: {},
         photos: stepPhotos
@@ -462,7 +549,6 @@
       reportData.data.checklists[i] = {};
       getChecklistItems(i-1).forEach((_, j) => {
         reportData.data.checklists[i][`conforme-${j}`] = document.getElementById(`chk${i}-conforme-${j}`)?.checked || false;
-        reportData.data.checklists[i][`correct-${j}`] = document.getElementById(`chk${i}-correct-${j}`)?.checked || false;
         reportData.data.checklists[i][`defaut-${j}`] = document.getElementById(`chk${i}-defaut-${j}`)?.checked || false;
         reportData.data.checklists[i][`noncontrole-${j}`] = document.getElementById(`chk${i}-noncontrole-${j}`)?.checked || false;
       });
@@ -546,10 +632,6 @@
       ["Client", clientName],
       ["Technicien", report.technician || "—"],
       ["Date", report.data.startDate || report.date.split(',')[0] || "—"],
-      ["Irradiance", report.data.irradiance || "—"],
-      ["Prod", (report.data.releveProd || "—") + " kWh"],
-      ["Non conso", (report.data.releveNonConso || "—") + " kWh"],
-      ["Monitoring", report.data.monitoring || "—"]
     ];
     info.forEach(([l, v]) => {
       doc.text(l + " :", 30, y);
@@ -576,13 +658,12 @@
       const body = getChecklistItems(sec.step - 1).map((d, j) => [
         d,
         report.data.checklists[sec.step]?.[`conforme-${j}`] ? '×' : '',
-        report.data.checklists[sec.step]?.[`correct-${j}`] ? '×' : '',
         report.data.checklists[sec.step]?.[`defaut-${j}`] ? '×' : '',
         report.data.checklists[sec.step]?.[`noncontrole-${j}`] ? '×' : ''
       ]);
       doc.autoTable({
         startY: y,
-        head: [['Description', 'Conforme', 'Correct', 'Défaut constaté', 'Non contrôlé']],
+        head: [['Description', 'Conforme', 'Défaut constaté', 'Non contrôlé']],
         body,
         theme: 'grid',
         headStyles: { fillColor: [0, 85, 170], textColor: 255, halign: 'center', fontSize: 9 },
@@ -592,8 +673,7 @@
           0: { cellWidth: 90, halign: 'left' },
           1: { cellWidth: 24, halign: 'center' },
           2: { cellWidth: 24, halign: 'center' },
-          3: { cellWidth: 24, halign: 'center' },
-          4: { cellWidth: 24, halign: 'center' }
+          3: { cellWidth: 24, halign: 'center' }
         },
         margin: { left: 15, right: 15 }
       });
@@ -672,10 +752,6 @@
       ["Client", client.name],
       ["Technicien", technicianName || "—"],
       ["Date", document.getElementById('startDate').value || "—"],
-      ["Irradiance", document.getElementById('irradiance').value || "—"],
-      ["Prod", (document.getElementById('releveProd').value || "—") + " kWh"],
-      ["Non conso", (document.getElementById('releveNonConso').value || "—") + " kWh"],
-      ["Monitoring", document.getElementById('monitoring').value || "—"]
     ];
     info.forEach(([l, v]) => {
       doc.text(l + " :", 30, y);
@@ -702,13 +778,12 @@
       const body = getChecklistItems(sec.step - 1).map((d, j) => [
         d,
         document.getElementById(`chk${sec.step}-conforme-${j}`)?.checked ? '×' : '',
-        document.getElementById(`chk${sec.step}-correct-${j}`)?.checked ? '×' : '',
         document.getElementById(`chk${sec.step}-defaut-${j}`)?.checked ? '×' : '',
         document.getElementById(`chk${sec.step}-noncontrole-${j}`)?.checked ? '×' : ''
       ]);
       doc.autoTable({
         startY: y,
-        head: [['Description', 'Conforme', 'Correct', 'Défaut constaté', 'Non contrôlé']],
+        head: [['Description', 'Conforme', 'Défaut constaté', 'Non contrôlé']],
         body,
         theme: 'grid',
         headStyles: { fillColor: [0, 85, 170], textColor: 255, halign: 'center', fontSize: 9 },
@@ -718,8 +793,7 @@
           0: { cellWidth: 90, halign: 'left' },
           1: { cellWidth: 24, halign: 'center' },
           2: { cellWidth: 24, halign: 'center' },
-          3: { cellWidth: 24, halign: 'center' },
-          4: { cellWidth: 24, halign: 'center' }
+          3: { cellWidth: 24, halign: 'center' }
         },
         margin: { left: 15, right: 15 }
       });
