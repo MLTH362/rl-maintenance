@@ -178,7 +178,6 @@
   </div>
 </div>
 <div id="toast"></div>
-
 <script>
   let currentStep = 0;
   let technicianName = "";
@@ -203,9 +202,10 @@
     "7 — Point de raccordement (logette, câbles, vérifications)",
     "8 — Vérification des mesures entrées DC"
   ];
+  // Étapes à risque électrique
   const highVoltageSteps = [3, 4, 5, 6, 7, 8];
-
   function showSafetyWarning() {
+    // Supprime les anciennes notifs danger pour éviter les doublons
     const existing = document.querySelector('.toast-danger');
     if (existing) existing.remove();
     const el = document.createElement('div');
@@ -222,7 +222,6 @@
     `;
     document.getElementById('toast').appendChild(el);
   }
-
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
     sel.innerHTML = '<option value="">Sélectionnez un client...</option>';
@@ -233,7 +232,6 @@
       sel.appendChild(opt);
     });
   }
-
   function loadClientData() {
     const idx = +document.getElementById('clientSelect').value;
     if (isNaN(idx) || idx < 0) {
@@ -250,7 +248,6 @@
     document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
   }
-
   function startMaintenance() {
     technicianName = document.getElementById('technicianName').value.trim();
     if (!technicianName) return toast("Nom technicien requis");
@@ -263,7 +260,6 @@
     stepPhotos = {};
     toast("Maintenance démarrée");
   }
-
   function createSteps() {
     const container = document.getElementById('stepsContainer');
     container.innerHTML = '';
@@ -272,12 +268,6 @@
       const stepDiv = document.createElement('div');
       stepDiv.id = `step${stepNum}`;
       stepDiv.className = 'step card';
-
-      // Ajout du dataset pour les étapes à risque électrique
-      if (highVoltageSteps.includes(stepNum)) {
-        stepDiv.dataset.highVoltage = "true";
-      }
-
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
@@ -296,6 +286,9 @@
               <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-noncontrole-${j}" onchange="exclusiveCheck(this)"></div>
             `).join('')}
           </div>
+          <button class="btn-big btn-ok" style="margin:15px 0;" onclick="setAllConforme(${stepNum})">
+            <i class="fas fa-check-double"></i> TOUS CONFORME
+          </button>
           <h3>Observations</h3>
           <textarea id="obs${stepNum}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${stepNum})"></textarea>
           <div id="preview${stepNum}" style="margin-top:1rem;padding:1rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:6px;display:none;"></div>
@@ -309,9 +302,17 @@
         </div>
       `;
       container.appendChild(stepDiv);
+      // Notification sécurité sur les étapes à risque
+      if (highVoltageSteps.includes(stepNum)) {
+        stepDiv.addEventListener('transitionend', function handler(e) {
+          if (stepDiv.classList.contains('active')) {
+            showSafetyWarning();
+            stepDiv.removeEventListener('transitionend', handler);
+          }
+        });
+      }
     });
   }
-
   function exclusiveCheck(checkbox) {
     if (!checkbox.checked) return;
     const line = checkbox.getAttribute('data-line');
@@ -319,7 +320,19 @@
       if (chk !== checkbox) chk.checked = false;
     });
   }
-
+  function setAllConforme(n) {
+    const lineCount = getChecklistItems(n-1).length;
+    for (let j = 0; j < lineCount; j++) {
+      const conformeChk = document.getElementById(`chk${n}-conforme-${j}`);
+      if (conformeChk) {
+        conformeChk.checked = true;
+        exclusiveCheck(conformeChk);
+      }
+    }
+    document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
+    updateObsPreview(n);
+    toast("Tous Conforme + RAS appliqué");
+  }
   function getChecklistItems(i) {
     const checklists = {
       0: ["Observation drone thermique", "Anomalies détectées", "Température max toiture"],
@@ -333,29 +346,17 @@
     };
     return checklists[i] || ["Élément non défini"];
   }
-
   function nextStep(n) {
     document.getElementById(`step${n}`).classList.remove('active');
     currentStep = n + 1;
-    if (currentStep > stepsList.length) return;
-    const nextEl = document.getElementById(`step${currentStep}`);
-    nextEl.classList.add('active');
-    if (nextEl.dataset.highVoltage === "true") {
-      showSafetyWarning();
-    }
+    if (currentStep <= stepsList.length) document.getElementById(`step${currentStep}`).classList.add('active');
   }
-
   function prevStep() {
     if (currentStep <= 1) return;
     document.getElementById(`step${currentStep}`).classList.remove('active');
     currentStep--;
-    const prevEl = document.getElementById(`step${currentStep}`);
-    prevEl.classList.add('active');
-    if (prevEl.dataset.highVoltage === "true") {
-      showSafetyWarning();
-    }
+    document.getElementById(`step${currentStep}`).classList.add('active');
   }
-
   function addPhoto(n) {
     const files = document.getElementById(`photo${n}`).files;
     if (!stepPhotos[n]) stepPhotos[n] = [];
@@ -368,7 +369,6 @@
       reader.readAsDataURL(file);
     }
   }
-
   function renderPhotos(n) {
     const grid = document.getElementById(`photos${n}`);
     grid.innerHTML = '';
@@ -383,12 +383,10 @@
       });
     }
   }
-
   function deletePhoto(n, idx) {
     stepPhotos[n].splice(idx, 1);
     renderPhotos(n);
   }
-
   function updateObsPreview(n) {
     const textarea = document.getElementById(`obs${n}`);
     const preview = document.getElementById(`preview${n}`);
@@ -399,7 +397,6 @@
       preview.style.display = 'none';
     }
   }
-
   function toast(msg, type = 'success') {
     const el = document.createElement('div');
     el.className = `toast-msg toast-${type}`;
@@ -407,7 +404,6 @@
     document.getElementById('toast').appendChild(el);
     setTimeout(() => el.remove(), 3000);
   }
-
   function toggleAdminMode() {
     const pw = prompt("Mot de passe Admin :", "");
     if (pw === ADMIN_PASSWORD) {
@@ -422,7 +418,6 @@
       toast("Mot de passe incorrect");
     }
   }
-
   function exitAdminMode() {
     isAdminMode = false;
     document.getElementById('adminControls').style.display = 'none';
@@ -432,7 +427,6 @@
     document.getElementById('editDetailsBtn').style.display = 'none';
     toast("Mode Admin désactivé");
   }
-
   function addNewClient() {
     if (!isAdminMode) return toast("Mode Admin requis");
     const name = document.getElementById('newClient').value.trim();
@@ -443,12 +437,10 @@
     document.getElementById('newClient').value = "";
     toast("Client ajouté");
   }
-
   function enableEditDetails() {
     if (!isAdminMode) return toast("Mode Admin requis");
     document.getElementById('installationDetails').readOnly = false;
   }
-
   function uploadPlan(type) {
     const file = document.getElementById(type + 'PlanInput').files[0];
     if (!file || currentClientIndex < 0) return;
@@ -459,7 +451,6 @@
     };
     reader.readAsDataURL(file);
   }
-
   function saveReportToHistory() {
     const reportData = {
       id: currentReportId || Date.now(),
@@ -495,7 +486,6 @@
     localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
     refreshHistory();
   }
-
   function filterHistory() {
     const search = document.getElementById('searchHistory').value.toLowerCase();
     const items = document.querySelectorAll('.history-item');
@@ -504,7 +494,6 @@
       item.style.display = text.includes(search) ? '' : 'none';
     });
   }
-
   function refreshHistory() {
     const list = document.getElementById('historyList');
     list.innerHTML = '';
@@ -518,7 +507,6 @@
     });
     filterHistory();
   }
-
   function downloadOldReport(report) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
@@ -540,7 +528,6 @@
     doc.text(`Client : ${clientName}`, 105, 180, { align: "center" });
     doc.text(dateStr, 105, 195, { align: "center" });
     doc.addPage();
-
     function addHeader(pageNum) {
       doc.setFillColor(4, 64, 128);
       doc.rect(0, 0, 210, 20, 'F');
@@ -549,13 +536,11 @@
       doc.text("R.L ENERGIE – Rapport de Maintenance", 15, 13);
       doc.text(`Page ${pageNum}`, 195, 13, { align: "right" });
     }
-
     function addFooter() {
       doc.setFontSize(9);
       doc.setTextColor(100);
       doc.text(`Généré le ${dateStr} • R.L ENERGIE`, 105, 290, { align: "center" });
     }
-
     addHeader(1);
     let y = 32;
     doc.setFontSize(15);
@@ -582,13 +567,11 @@
       y += 6;
     });
     y += 8;
-
     const sections = [
       { title: "PARTIE AC – Coffret de protection", step: 5 },
       { title: "PARTIE ONDULEUR", step: 6 },
       { title: "POINT DE RACCORDEMENT", step: 7 }
     ];
-
     sections.forEach((sec, idx) => {
       if (y > 245) {
         addFooter();
@@ -625,35 +608,32 @@
         margin: { left: 15, right: 15 }
       });
       y = doc.lastAutoTable.finalY + 8;
-      const obs = report.data.observations[sec.step] || "";
+      const obs = report.data.observations[sec.step] || "RAS";
       doc.setFontSize(9);
       doc.setFont("helvetica", "italic");
       const obsLines = doc.splitTextToSize("Observation : " + obs, 160);
       doc.text(obsLines, 25, y);
       y += obsLines.length * 5.5 + 6;
     });
-
     if (y > 240) {
       addFooter();
       doc.addPage();
       addHeader(sections.length + 2);
       y = 32;
     }
-
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text("CONCLUSION GLOBALE", 20, y);
     y += 8;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const final = report.data.observations[8] || "";
+    const final = report.data.observations[8] || "RAS global - Installation conforme.";
     const finalLines = doc.splitTextToSize(final, 160);
     doc.text(finalLines, 25, y);
     addFooter();
     doc.save(`Rapport_Archive_${clientName.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
     toast("Ancien rapport téléchargé");
   }
-
   function generateReport() {
     saveReportToHistory();
     const { jsPDF } = window.jspdf;
@@ -674,7 +654,6 @@
     doc.text(`Client : ${client.name}`, 105, 180, { align: "center" });
     doc.text(dateStr, 105, 195, { align: "center" });
     doc.addPage();
-
     function addHeader(pageNum) {
       doc.setFillColor(4, 64, 128);
       doc.rect(0, 0, 210, 20, 'F');
@@ -683,13 +662,11 @@
       doc.text("R.L ENERGIE – Rapport de Maintenance", 15, 13);
       doc.text(`Page ${pageNum}`, 195, 13, { align: "right" });
     }
-
     function addFooter() {
       doc.setFontSize(9);
       doc.setTextColor(100);
       doc.text(`Généré le ${dateStr} • R.L ENERGIE`, 105, 290, { align: "center" });
     }
-
     addHeader(1);
     let y = 32;
     doc.setFontSize(15);
@@ -716,13 +693,11 @@
       y += 6;
     });
     y += 8;
-
     const sections = [
       { title: "PARTIE AC – Coffret de protection", step: 5 },
       { title: "PARTIE ONDULEUR", step: 6 },
       { title: "POINT DE RACCORDEMENT", step: 7 }
     ];
-
     sections.forEach((sec, idx) => {
       if (y > 245) {
         addFooter();
@@ -759,35 +734,33 @@
         margin: { left: 15, right: 15 }
       });
       y = doc.lastAutoTable.finalY + 8;
-      const obs = document.getElementById(`obs${sec.step}`)?.value.trim() || "";
+      const obs = document.getElementById(`obs${sec.step}`)?.value.trim() || "RAS";
       doc.setFontSize(9);
       doc.setFont("helvetica", "italic");
       const obsLines = doc.splitTextToSize("Observation : " + obs, 160);
       doc.text(obsLines, 25, y);
       y += obsLines.length * 5.5 + 6;
     });
-
     if (y > 240) {
       addFooter();
       doc.addPage();
       addHeader(sections.length + 2);
       y = 32;
     }
-
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text("CONCLUSION GLOBALE", 20, y);
     y += 8;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const final = document.getElementById('obs8')?.value.trim() || "";
+    const final = document.getElementById('obs8')?.value.trim() || "RAS global - Installation conforme.";
     const finalLines = doc.splitTextToSize(final, 160);
     doc.text(finalLines, 25, y);
     addFooter();
     doc.save(`Rapport_${client.name.replace(/ /g,'_') || 'Client'}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport généré");
+    toast("Rapport généré avec ×");
+    document.getElementById('finishButtons').style.display = 'block';
   }
-
   window.onload = function() {
     renderClientList();
     refreshHistory();
