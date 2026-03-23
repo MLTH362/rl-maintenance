@@ -170,6 +170,8 @@
   let stepPhotos = {};
   let currentReportId = null;
   let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
+  let safetyWarningShown = false; // ← Ajouté pour n'afficher le message sécurité qu'une seule fois
+
   const clients = [
     { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"] },
     { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"] },
@@ -189,8 +191,9 @@
   const warningShown = {};
 
   function showSafetyWarning(stepNum) {
-    if (warningShown[stepNum]) return;
-    warningShown[stepNum] = true;
+    if (safetyWarningShown) return; // ← N'apparaît qu'une seule fois par maintenance
+    safetyWarningShown = true;
+
     const existing = document.querySelector('.toast-danger');
     if (existing) existing.remove();
     const el = document.createElement('div');
@@ -244,6 +247,7 @@
     currentStep = 1;
     currentReportId = Date.now();
     stepPhotos = {};
+    safetyWarningShown = false; // Reset pour la nouvelle intervention
   }
 
   function createSteps() {
@@ -295,12 +299,12 @@
       }
     });
 
-    // Bloc final unique
+    // Bloc final unique (irradiance + relevés + monitoring)
     const finalDiv = document.createElement('div');
     finalDiv.id = 'finalStep';
     finalDiv.className = 'step card';
     finalDiv.innerHTML = `
-      <div class="ch">RELEVÉS GLOBAUX & CONCLUSION FINALE</div>
+      <div class="ch">RELEVÉS GLOBAUX & CONCLUSION</div>
       <div class="cb">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
           <div>
@@ -321,7 +325,7 @@
           </div>
         </div>
         <h3 style="margin-top:1.5rem;">Conclusion générale</h3>
-        <textarea id="obs_conclusion" rows="4" placeholder="Synthèse globale, points critiques, recommandations..."></textarea>
+        <textarea id="obs_conclusion" rows="4" placeholder="Synthèse globale, anomalies majeures, recommandations..."></textarea>
         <div class="nav-row" style="margin-top:2rem;">
           <button class="btn-big btn-prev" onclick="prevStep()"><i class="fas fa-arrow-left"></i> Précédent</button>
           <button class="btn-big btn-ok" onclick="finishMaintenance()">TERMINER</button>
@@ -332,7 +336,7 @@
   }
 
   function finishMaintenance() {
-    toast("Intervention terminée – vous pouvez générer le rapport");
+    toast("Intervention terminée – vous pouvez générer le rapport maintenant");
   }
 
   function setAllConforme(n) {
@@ -374,11 +378,8 @@
   function nextStep(n) {
     document.getElementById(`step${n}`).classList.remove('active');
     currentStep = n + 1;
-    if (currentStep <= stepsList.length) {
-      document.getElementById(`step${currentStep}`).classList.add('active');
-    } else if (currentStep === stepsList.length + 1) {
-      document.getElementById('finalStep').classList.add('active');
-    }
+    if (currentStep <= stepsList.length) document.getElementById(`step${currentStep}`).classList.add('active');
+    else if (currentStep === stepsList.length + 1) document.getElementById('finalStep').classList.add('active');
   }
 
   function prevStep() {
