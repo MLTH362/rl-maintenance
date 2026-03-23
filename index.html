@@ -16,6 +16,7 @@
       --primary: #004080;
       --primary-light: #0066cc;
       --success: #28a745;
+      --danger: #dc3545;
       --light: #f8f9fa;
       --dark: #1f2d3d;
       --bg: #f6f9fc;
@@ -56,7 +57,7 @@
     .btn-ok:hover { background:#218838; transform:translateY(-1px); }
     .btn-prev { background:#6c757d; color:white; }
     .btn-clear { background:#dc3545; color:white; }
-    .btn-restart { background:#ff6b6b; color:white; font-size:1.4rem; padding:1.6rem 4rem; }
+    .btn-restart { background:#ff6b6b; color:white; }
 
     .nav-row { display:flex; justify-content:space-between; margin-top:2.2rem; gap:1rem; }
 
@@ -66,9 +67,11 @@
     .checklist-check { text-align:center; }
     input[type="checkbox"] { width:1.2rem; height:1.2rem; cursor:pointer; accent-color:#28a745; }
 
-    #toast { position:fixed; bottom:1.8rem; left:50%; transform:translateX(-50%); z-index:9999; }
-    .toast-msg { background:var(--success); color:white; padding:0.9rem 2rem; border-radius:50px; box-shadow:0 6px 20px rgba(0,0,0,0.25); animation:toast 2.8s forwards; }
-    @keyframes toast { 0%{opacity:0;transform:translateY(20px) translateX(-50%);} 10%{opacity:1;transform:translateY(0) translateX(-50%);} 90%{opacity:1;transform:translateY(0) translateX(-50%);} 100%{opacity:0;transform:translateY(20px) translateX(-50%);} }
+    #toast { position:fixed; bottom:1.8rem; left:50%; transform:translateX(-50%); z-index:9999; pointer-events:none; }
+    .toast-msg { padding:1rem 2rem; border-radius:50px; box-shadow:0 6px 20px rgba(0,0,0,0.4); animation:toast 5s forwards; font-weight:700; font-size:1.1rem; display:flex; align-items:center; gap:12px; }
+    .toast-success { background:var(--success); color:white; }
+    .toast-danger  { background:var(--danger);  color:white; border:2px solid #fff; }
+    @keyframes toast { 0%{opacity:0;transform:translateY(30px) translateX(-50%);} 10%{opacity:1;transform:translateY(0) translateX(-50%);} 90%{opacity:1;transform:translateY(0) translateX(-50%);} 100%{opacity:0;transform:translateY(30px) translateX(-50%);} }
 
     .step { display:none; }
     .step.active { display:block; }
@@ -79,8 +82,6 @@
     .history-item.loaded { background:#e6ffe6; font-weight:bold; border-left:4px solid var(--success); }
 
     #searchHistory { width:100%; padding:10px; margin-bottom:10px; font-size:16px; border:1px solid #ccc; border-radius:6px; }
-
-    #finishButtons { display:none; margin:5rem 0 8rem; text-align:center; }
   </style>
 </head>
 <body>
@@ -172,7 +173,7 @@
         <button id="startBtn" class="btn-big btn-ok" onclick="startMaintenance()" style="flex:1;font-size:1.12rem;">
           <i class="fas fa-play"></i> COMMENCER LA MAINTENANCE
         </button>
-        <button id="restartBtn" class="btn-big" style="background:#6c757d;color:white;flex:1;" onclick="location.reload()">
+        <button class="btn-big" style="background:#6c757d;color:white;flex:1;" onclick="location.reload()">
           <i class="fas fa-redo"></i> Recommencer
         </button>
         <button class="btn-big btn-clear" onclick="clearAll()" style="margin-left:1rem;">
@@ -195,7 +196,7 @@
     </div>
   </div>
 
-  <div id="actionButtons" style="text-align:center;margin:5rem 0 3rem; display:flex; justify-content:center; gap:2rem; flex-wrap:wrap;">
+  <div style="text-align:center;margin:5rem 0 8rem; display:flex; justify-content:center; gap:2rem; flex-wrap:wrap;">
     <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
       <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
     </button>
@@ -204,13 +205,6 @@
     </button>
     <button class="btn-big" style="background:#6c757d;color:white;font-size:1.2rem;padding:1.4rem 3rem;" onclick="saveReportToHistory()">
       <i class="fas fa-save"></i> Sauvegarder maintenant
-    </button>
-  </div>
-
-  <div id="finishButtons" style="display:none; margin:5rem 0 8rem; text-align:center;">
-    <h2 style="margin-bottom:2rem;color:var(--success);">Maintenance terminée !</h2>
-    <button class="btn-big btn-restart" onclick="location.reload()">
-      <i class="fas fa-redo"></i> Nouvelle maintenance
     </button>
   </div>
 
@@ -244,6 +238,17 @@
     "7 — Point de raccordement (logette, câbles, vérifications)",
     "8 — Vérification des mesures entrées DC"
   ];
+
+  // Étapes à risque électrique (ouvertures coffrets, onduleur, raccordement, mesures DC)
+  const highVoltageSteps = [3, 4, 5, 6, 7, 8];
+
+  function showSafetyWarning() {
+    const el = document.createElement('div');
+    el.className = 'toast-msg toast-danger';
+    el.innerHTML = `<i class="fas fa-exclamation-triangle fa-2x"></i> ⚠️ ATTENTION – TRAVAIL SOUS TENSION – VÉRIFIEZ LOTO / CONSIGNES DE SÉCURITÉ`;
+    document.getElementById('toast').appendChild(el);
+    setTimeout(() => el.remove(), 5000);
+  }
 
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
@@ -289,18 +294,13 @@
     toast("Maintenance démarrée");
   }
 
-  function clearAll() {
-    if (!confirm("Tout effacer ?")) return;
-    localStorage.removeItem('rl_maintenance_reports');
-    location.reload();
-  }
-
   function createSteps() {
     const container = document.getElementById('stepsContainer');
     container.innerHTML = '';
     stepsList.forEach((title, i) => {
+      const stepNum = i+1;
       const stepDiv = document.createElement('div');
-      stepDiv.id = `step${i+1}`;
+      stepDiv.id = `step${stepNum}`;
       stepDiv.className = 'step card';
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
@@ -314,32 +314,43 @@
             <div class="checklist-header">Non contrôlé</div>
             ${getChecklistItems(i).map((desc, j) => `
               <div class="checklist-item">${desc}</div>
-              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-conforme-${j}" onchange="exclusiveCheck(this)"></div>
-              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-correct-${j}" onchange="exclusiveCheck(this)"></div>
-              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-defaut-${j}" onchange="exclusiveCheck(this)"></div>
-              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${i+1}-${j}" id="chk${i+1}-noncontrole-${j}" onchange="exclusiveCheck(this)"></div>
+              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-conforme-${j}" onchange="exclusiveCheck(this)"></div>
+              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-correct-${j}" onchange="exclusiveCheck(this)"></div>
+              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-defaut-${j}" onchange="exclusiveCheck(this)"></div>
+              <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-noncontrole-${j}" onchange="exclusiveCheck(this)"></div>
             `).join('')}
           </div>
 
-          <button class="btn-big btn-ok" style="margin:15px 0;" onclick="setAllConforme(${i+1})">
+          <button class="btn-big btn-ok" style="margin:15px 0;" onclick="setAllConforme(${stepNum})">
             <i class="fas fa-check-double"></i> TOUS CONFORME
           </button>
 
           <h3>Observations</h3>
-          <textarea id="obs${i+1}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${i+1})"></textarea>
-          <div id="preview${i+1}" style="margin-top:1rem;padding:1rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:6px;display:none;"></div>
+          <textarea id="obs${stepNum}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${stepNum})"></textarea>
+          <div id="preview${stepNum}" style="margin-top:1rem;padding:1rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:6px;display:none;"></div>
 
           <h3 style="margin-top:1.5rem;">Photos</h3>
-          <input type="file" id="photo${i+1}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${i+1})">
-          <div id="photos${i+1}" class="photo-grid"></div>
+          <input type="file" id="photo${stepNum}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${stepNum})">
+          <div id="photos${stepNum}" class="photo-grid"></div>
 
           <div class="nav-row" style="margin-top:2rem;">
-            <button class="btn-big btn-prev" onclick="prevStep()" ${i === 0 ? 'disabled' : ''}><i class="fas fa-arrow-left"></i> Précédent</button>
-            <button class="btn-big btn-ok" onclick="nextStep(${i+1})">Suivant <i class="fas fa-arrow-right"></i></button>
+            <button class="btn-big btn-prev" onclick="prevStep()" ${stepNum === 1 ? 'disabled' : ''}><i class="fas fa-arrow-left"></i> Précédent</button>
+            <button class="btn-big btn-ok" onclick="nextStep(${stepNum})">Suivant <i class="fas fa-arrow-right"></i></button>
           </div>
         </div>
       `;
       container.appendChild(stepDiv);
+
+      // Notification de sécurité sur les étapes à risque
+      if (highVoltageSteps.includes(stepNum)) {
+        stepDiv.addEventListener('transitionend', function handler(e) {
+          if (stepDiv.classList.contains('active')) {
+            showSafetyWarning();
+            // On enlève l'écouteur pour ne pas répéter
+            stepDiv.removeEventListener('transitionend', handler);
+          }
+        });
+      }
     });
   }
 
@@ -382,7 +393,9 @@
   function nextStep(n) {
     document.getElementById(`step${n}`).classList.remove('active');
     currentStep = n + 1;
-    if (currentStep <= stepsList.length) document.getElementById(`step${currentStep}`).classList.add('active');
+    if (currentStep <= stepsList.length) {
+      document.getElementById(`step${currentStep}`).classList.add('active');
+    }
   }
 
   function prevStep() {
@@ -436,10 +449,10 @@
     }
   }
 
-  function toast(msg) {
+  function toast(msg, type = 'success') {
     const el = document.createElement('div');
-    el.className = 'toast-msg';
-    el.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
+    el.className = `toast-msg toast-${type}`;
+    el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i> ${msg}`;
     document.getElementById('toast').appendChild(el);
     setTimeout(() => el.remove(), 3000);
   }
