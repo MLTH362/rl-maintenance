@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
     :root {
@@ -188,7 +189,6 @@
     { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"] }
   ];
 
-  // 13 étapes exactement comme tes notes
   const stepsList = [
     "1. Observation drone thermique",
     "2. Observation thermique onduleur AC et DC",
@@ -210,7 +210,6 @@
   function showSafetyWarning() {
     if (safetyWarningShown) return;
     safetyWarningShown = true;
-
     const el = document.createElement('div');
     el.className = 'toast-msg toast-danger';
     el.innerHTML = `
@@ -328,19 +327,19 @@
 
   function getChecklistItems(i) {
     const checklists = [
-      ["Observation drone thermique"],                                      // 1
-      ["Observation thermique onduleur AC et DC"],                          // 2
-      ["État visuel coffret AC (câbles, appareils, coffret)"],              // 3
-      ["État visuel onduleurs","Câbles","Chemin de câble","Attache câble","Capot","Connectiques DC","Environnement local onduleur","Présence des étiquettes","Nettoyage onduleur et coffret AC","Test de continuité"], // 4
-      ["Observation thermique coffret AC"],                                 // 5
-      ["Observation thermique (point de raccordement) - PDC"],              // 6
-      ["Test différentiel","Paramétrage AGCP"],                             // 7
-      ["Coupure du sectionneur"],                                           // 8
-      ["Observation serrage PDC"],                                          // 9
-      ["Observation local onduleur"],                                       // 10
-      ["Observation nettoyage ventilateur onduleurs"],                      // 11
-      ["Remise en tension local onduleur + PDC","Relevé de compteur (production + non consommation)"], // 12
-      ["Observation redémarrage"]                                           // 13
+      ["Observation drone thermique"],
+      ["Observation thermique onduleur AC et DC"],
+      ["État visuel coffret AC (câbles, appareils, coffret)"],
+      ["État visuel onduleurs","Câbles","Chemin de câble","Attache câble","Capot","Connectiques DC","Environnement local onduleur","Présence des étiquettes","Nettoyage onduleur et coffret AC","Test de continuité"],
+      ["Observation thermique coffret AC"],
+      ["Observation thermique (point de raccordement) - PDC"],
+      ["Test différentiel","Paramétrage AGCP"],
+      ["Coupure du sectionneur"],
+      ["Observation serrage PDC"],
+      ["Observation local onduleur"],
+      ["Observation nettoyage ventilateur onduleurs"],
+      ["Remise en tension local onduleur + PDC","Relevé de compteur (production + non consommation)"],
+      ["Observation redémarrage"]
     ];
     return checklists[i] || ["Point à vérifier"];
   }
@@ -423,6 +422,7 @@
     setTimeout(() => el.remove(), 4000);
   }
 
+  // ====================== ADMIN ======================
   function toggleAdminMode() {
     const pw = prompt("Mot de passe Admin :", "");
     if (pw === ADMIN_PASSWORD) {
@@ -468,10 +468,168 @@
     reader.readAsDataURL(file);
   }
 
-  function generateReport() { toast("Rapport PDF généré avec les 13 étapes"); }
-  function generateExcel() { toast("Export Excel"); }
-  function generateWord() { toast("Export Word"); }
-  function saveReportToHistory() { toast("Rapport sauvegardé dans l'historique"); }
+  // ====================== EXPORTS FONCTIONNELS ======================
+  function generateReport() {
+    if (!currentClientIndex && currentClientIndex !== 0) return toast("Sélectionnez un client", "danger");
+    saveReportToHistory();
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const client = clients[currentClientIndex] || { name: "—" };
+    const dateStr = new Date().toLocaleDateString('fr-FR');
+
+    // Page de couverture
+    doc.setFillColor(4, 64, 128);
+    doc.rect(0, 0, 210, 297, 'F');
+    doc.setTextColor(255);
+    doc.setFontSize(48);
+    doc.text("R.L ENERGIE", 105, 90, { align: "center" });
+    doc.setFontSize(24);
+    doc.text("RAPPORT DE MAINTENANCE", 105, 130, { align: "center" });
+    doc.setFontSize(16);
+    doc.text(client.name, 105, 160, { align: "center" });
+    doc.text(dateStr, 105, 175, { align: "center" });
+    doc.addPage();
+
+    // En-tête
+    function addHeader(page) {
+      doc.setFillColor(4, 64, 128);
+      doc.rect(0, 0, 210, 20, 'F');
+      doc.setTextColor(255);
+      doc.setFontSize(12);
+      doc.text("R.L ENERGIE - Rapport Maintenance", 15, 13);
+      doc.text(`Page ${page}`, 190, 13);
+    }
+    addHeader(1);
+
+    let y = 35;
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text("INFORMATIONS GÉNÉRALES", 20, y);
+    y += 10;
+
+    doc.setFontSize(11);
+    doc.text(`Client : ${client.name}`, 20, y); y += 7;
+    doc.text(`Technicien : ${technicianName || "—"}`, 20, y); y += 7;
+    doc.text(`Date intervention : ${document.getElementById('startDate').value || dateStr}`, 20, y); y += 15;
+
+    // Les 13 étapes
+    for (let step = 1; step <= 13; step++) {
+      if (y > 240) {
+        doc.addPage();
+        addHeader(Math.ceil(step/3));
+        y = 35;
+      }
+
+      doc.setFontSize(13);
+      doc.text(stepsList[step-1], 20, y);
+      y += 8;
+
+      const items = getChecklistItems(step-1);
+      const body = items.map((desc, j) => [
+        desc,
+        document.getElementById(`chk${step}-conforme-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${step}-defaut-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? '×' : ''
+      ]);
+
+      doc.autoTable({
+        startY: y,
+        head: [['Description', 'Conforme', 'Défaut', 'Non contrôlé']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontSize: 9 },
+        styles: { fontSize: 9, cellPadding: 3, halign: 'center' },
+        columnStyles: { 0: { halign: 'left', cellWidth: 110 } }
+      });
+
+      y = doc.lastAutoTable.finalY + 10;
+
+      const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
+      if (obs) {
+        doc.setFontSize(10);
+        doc.text("Observation : " + obs, 20, y);
+        y += 10;
+      }
+    }
+
+    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
+    toast("Rapport PDF généré avec succès !");
+  }
+
+  function generateExcel() {
+    if (!currentClientIndex && currentClientIndex !== 0) return toast("Sélectionnez un client", "danger");
+
+    const wb = XLSX.utils.book_new();
+
+    // Onglet Infos
+    const infoData = [
+      ["Client", clients[currentClientIndex].name],
+      ["Technicien", technicianName],
+      ["Date", document.getElementById('startDate').value || new Date().toLocaleDateString('fr-FR')]
+    ];
+    const wsInfo = XLSX.utils.aoa_to_sheet(infoData);
+    XLSX.utils.book_append_sheet(wb, wsInfo, "Informations");
+
+    // Onglets par étape
+    for (let step = 1; step <= 13; step++) {
+      const items = getChecklistItems(step-1);
+      const data = [["Description", "Conforme", "Défaut constaté", "Non contrôlé"]];
+      items.forEach((desc, j) => {
+        data.push([
+          desc,
+          document.getElementById(`chk${step}-conforme-${j}`)?.checked ? "Oui" : "",
+          document.getElementById(`chk${step}-defaut-${j}`)?.checked ? "Oui" : "",
+          document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? "Oui" : ""
+        ]);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, `Étape ${step}`);
+    }
+
+    XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex].name.replace(/ /g,'_')}.xlsx`);
+    toast("Fichier Excel généré !");
+  }
+
+  function generateWord() {
+    if (!currentClientIndex && currentClientIndex !== 0) return toast("Sélectionnez un client", "danger");
+
+    let content = `<h1>R.L ENERGIE - Rapport de Maintenance</h1>`;
+    content += `<p><strong>Client :</strong> ${clients[currentClientIndex].name}</p>`;
+    content += `<p><strong>Technicien :</strong> ${technicianName}</p>`;
+    content += `<p><strong>Date :</strong> ${document.getElementById('startDate').value || new Date().toLocaleDateString('fr-FR')}</p><hr>`;
+
+    for (let step = 1; step <= 13; step++) {
+      content += `<h2>Étape ${step} : ${stepsList[step-1]}</h2>`;
+      content += `<table border="1" style="border-collapse:collapse;width:100%;"><tr><th>Description</th><th>Conforme</th><th>Défaut</th><th>Non contrôlé</th></tr>`;
+      const items = getChecklistItems(step-1);
+      items.forEach((desc, j) => {
+        const conforme = document.getElementById(`chk${step}-conforme-${j}`)?.checked ? '×' : '';
+        const defaut = document.getElementById(`chk${step}-defaut-${j}`)?.checked ? '×' : '';
+        const noncontrole = document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? '×' : '';
+        content += `<tr><td>${desc}</td><td align="center">${conforme}</td><td align="center">${defaut}</td><td align="center">${noncontrole}</td></tr>`;
+      });
+      content += `</table>`;
+
+      const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
+      if (obs) content += `<p><strong>Observation :</strong> ${obs}</p>`;
+      content += `<br><hr><br>`;
+    }
+
+    const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Rapport_Maintenance_${clients[currentClientIndex].name.replace(/ /g,'_')}.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast("Fichier Word généré !");
+  }
+
+  function saveReportToHistory() {
+    toast("Rapport sauvegardé dans l'historique");
+  }
+
   function refreshHistory() { toast("Historique rafraîchi"); }
   function filterHistory() {
     const search = document.getElementById('searchHistory').value.toLowerCase();
