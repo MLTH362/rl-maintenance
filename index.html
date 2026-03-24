@@ -160,7 +160,6 @@
   </div>
 </div>
 <div id="toast"></div>
-
 <script>
   let currentStep = 0;
   let technicianName = "";
@@ -170,7 +169,7 @@
   let stepPhotos = {};
   let currentReportId = null;
   let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
-  let safetyWarningShown = false; // ← Ajouté pour n'afficher le message sécurité qu'une seule fois
+  let safetyWarningShown = false;
 
   const clients = [
     { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"] },
@@ -188,14 +187,14 @@
     "8 — Vérification des mesures entrées DC"
   ];
   const highVoltageSteps = [3,4,5,6,7,8];
-  const warningShown = {};
 
-  function showSafetyWarning(stepNum) {
-    if (safetyWarningShown) return; // ← N'apparaît qu'une seule fois par maintenance
+  function showSafetyWarning() {
+    if (safetyWarningShown) return;
     safetyWarningShown = true;
 
     const existing = document.querySelector('.toast-danger');
     if (existing) existing.remove();
+
     const el = document.createElement('div');
     el.className = 'toast-msg toast-danger';
     el.innerHTML = `
@@ -247,7 +246,7 @@
     currentStep = 1;
     currentReportId = Date.now();
     stepPhotos = {};
-    safetyWarningShown = false; // Reset pour la nouvelle intervention
+    safetyWarningShown = false;
   }
 
   function createSteps() {
@@ -293,13 +292,12 @@
       if (highVoltageSteps.includes(stepNum)) {
         stepDiv.addEventListener('transitionend', function handler(e) {
           if (stepDiv.classList.contains('active')) {
-            showSafetyWarning(stepNum);
+            showSafetyWarning();
           }
         });
       }
     });
-
-    // Bloc final unique (irradiance + relevés + monitoring)
+    // Bloc final
     const finalDiv = document.createElement('div');
     finalDiv.id = 'finalStep';
     finalDiv.className = 'step card';
@@ -350,7 +348,6 @@
     }
     document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
     updateObsPreview(n);
-    // toast supprimé ici
   }
 
   function exclusiveCheck(checkbox) {
