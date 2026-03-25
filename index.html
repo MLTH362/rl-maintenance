@@ -154,20 +154,28 @@
     </div>
   </div>
 
-  <div style="text-align:center;margin:5rem 0 8rem; display:flex; justify-content:center; gap:1.5rem; flex-wrap:wrap;">
-    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.2rem;padding:1.4rem 3rem;">
-      <i class="fas fa-file-pdf"></i> GÉNÉRER LE RAPPORT PDF
+  <div style="text-align:center; margin:4rem 0 3rem; display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
+    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.1rem;padding:1.2rem 2.8rem;">
+      <i class="fas fa-file-pdf"></i> PDF
     </button>
-    <button class="btn-big" style="background:#1e7e34;color:white;font-size:1.2rem;padding:1.4rem 3rem;" onclick="generateExcel()">
-      <i class="fas fa-file-excel"></i> EXPORTER EXCEL
+    <button class="btn-big" style="background:#1e7e34;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="generateExcel()">
+      <i class="fas fa-file-excel"></i> Excel
     </button>
-    <button class="btn-big" style="background:#0d6efd;color:white;font-size:1.2rem;padding:1.4rem 3rem;" onclick="generateWord()">
-      <i class="fas fa-file-word"></i> EXPORTER WORD
-    </button>
-    <button class="btn-big" style="background:#6c757d;color:white;font-size:1.2rem;padding:1.4rem 3rem;" onclick="saveReportToHistory()">
-      <i class="fas fa-save"></i> Sauvegarder maintenant
+    <button class="btn-big" style="background:#0d6efd;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="generateWord()">
+      <i class="fas fa-file-word"></i> Word
     </button>
   </div>
+
+  <div style="text-align:center; margin-bottom:4rem;">
+    <button class="btn-big" style="background:#6c757d;color:white;" onclick="exportJSON()">
+      <i class="fas fa-download"></i> Exporter JSON (Sauvegarde / Sync)
+    </button>
+    <button class="btn-big" style="background:#6c757d;color:white; margin-left:15px;" onclick="document.getElementById('importFile').click()">
+      <i class="fas fa-upload"></i> Importer JSON (Sync depuis l'autre appareil)
+    </button>
+    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(event)">
+  </div>
+
 </div>
 
 <div id="toast"></div>
@@ -189,23 +197,24 @@
     { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"] }
   ];
 
+  // Titres des étapes exactement comme tu les as demandés
   const stepsList = [
-    "1. Observation drone thermique",
-    "2. Observation thermique onduleur AC et DC",
-    "3. État visuel coffret AC (câbles, appareils, coffret)",
-    "4. État visuel onduleurs, câbles, chemin de câble, attache câble, capot, connectiques DC, environnement local onduleur, présence des étiquettes, nettoyage onduleur et coffret AC, test de continuité",
-    "5. Observation thermique coffret AC",
-    "6. Observation thermique (point de raccordement) - PDC",
-    "7. Observation test différentiel + Observation paramétrage AGCP",
-    "8. Coupure du sectionneur",
-    "9. Observation serrage PDC",
-    "10. Observation local onduleur",
-    "11. Observation nettoyage ventilateur onduleurs",
-    "12. Observation remise en tension local onduleur + PDC et relevé de compteur (production + non consommation)",
-    "13. Observation redémarrage"
+    "1. Drone thermique toiture → Rapport partie toiture",
+    "2. Caméra thermique onduleur AC+DC → Process",
+    "3. Ouverture du coffret AC et remise sous tension → Process + attention travail sous tension",
+    "4. Vérification visuel et nettoyage local onduleur",
+    "5. Thermique coffret AC",
+    "6. AGCP → Process",
+    "7. Test différentiel AGCP → Rapport test différentiel + verif paramétrage AGCP",
+    "8. Coupure sectionneur gestionnaire de réseau → Process",
+    "9. Vérification couple de serrage → Affichage support couple de serrage + Rapport: verif serrage (Partie AC + Onduleur)",
+    "10. Verif couple de serrage base onduleur → Affichage support couple de serrage + Rapport: verif serrage (Partie AC + Onduleur)",
+    "11. Ventilateur onduleur → Rapport partie onduleur nettoyage ventilateur",
+    "12. Remise en tension PDL + relevé de compteur → Rapport relevé compteur information centrale",
+    "13. Vérification redémarrage → Process"
   ];
 
-  const highVoltageSteps = [3,5,6,7,8,9,12];
+  const highVoltageSteps = [3,9,10,12];
 
   function showSafetyWarning() {
     if (safetyWarningShown) return;
@@ -332,14 +341,14 @@
       ["État visuel coffret AC (câbles, appareils, coffret)"],
       ["État visuel onduleurs","Câbles","Chemin de câble","Attache câble","Capot","Connectiques DC","Environnement local onduleur","Présence des étiquettes","Nettoyage onduleur et coffret AC","Test de continuité"],
       ["Observation thermique coffret AC"],
-      ["Observation thermique (point de raccordement) - PDC"],
+      ["AGCP"],
       ["Test différentiel","Paramétrage AGCP"],
       ["Coupure du sectionneur"],
-      ["Observation serrage PDC"],
-      ["Observation local onduleur"],
-      ["Observation nettoyage ventilateur onduleurs"],
-      ["Remise en tension local onduleur + PDC","Relevé de compteur (production + non consommation)"],
-      ["Observation redémarrage"]
+      ["Vérification couple de serrage"],
+      ["Vérification couple de serrage base onduleur"],
+      ["Nettoyage ventilateur onduleur"],
+      ["Remise en tension PDL + relevé de compteur"],
+      ["Vérification redémarrage"]
     ];
     return checklists[i] || ["Point à vérifier"];
   }
@@ -422,6 +431,39 @@
     setTimeout(() => el.remove(), 4000);
   }
 
+  // ====================== SYNCHRONISATION ======================
+  function exportJSON() {
+    const data = { clients: clients, history: history, timestamp: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `RL_Maintenance_Sync_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast("Fichier de synchronisation téléchargé !");
+  }
+
+  function importJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.clients) { clients.length = 0; clients.push(...data.clients); }
+        if (data.history) history = data.history;
+        localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
+        renderClientList();
+        refreshHistory();
+        toast("Synchronisation réussie !", "success");
+      } catch(err) {
+        toast("Erreur lors de l'import", "danger");
+      }
+    };
+    reader.readAsText(file);
+  }
+
   // ====================== ADMIN ======================
   function toggleAdminMode() {
     const pw = prompt("Mot de passe Admin :", "");
@@ -468,59 +510,33 @@
     reader.readAsDataURL(file);
   }
 
-  // ====================== EXPORTS FONCTIONNELS ======================
+  // ====================== EXPORTS ======================
   function generateReport() {
-    if (!currentClientIndex && currentClientIndex !== 0) return toast("Sélectionnez un client", "danger");
-    saveReportToHistory();
-
+    if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const client = clients[currentClientIndex] || { name: "—" };
+    const client = clients[currentClientIndex];
     const dateStr = new Date().toLocaleDateString('fr-FR');
 
-    // Page de couverture
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255);
     doc.setFontSize(48);
     doc.text("R.L ENERGIE", 105, 90, { align: "center" });
-    doc.setFontSize(24);
+    doc.setFontSize(22);
     doc.text("RAPPORT DE MAINTENANCE", 105, 130, { align: "center" });
     doc.setFontSize(16);
     doc.text(client.name, 105, 160, { align: "center" });
     doc.text(dateStr, 105, 175, { align: "center" });
     doc.addPage();
 
-    // En-tête
-    function addHeader(page) {
-      doc.setFillColor(4, 64, 128);
-      doc.rect(0, 0, 210, 20, 'F');
-      doc.setTextColor(255);
-      doc.setFontSize(12);
-      doc.text("R.L ENERGIE - Rapport Maintenance", 15, 13);
-      doc.text(`Page ${page}`, 190, 13);
-    }
-    addHeader(1);
-
-    let y = 35;
+    let y = 30;
     doc.setFontSize(14);
-    doc.setTextColor(0);
-    doc.text("INFORMATIONS GÉNÉRALES", 20, y);
-    y += 10;
+    doc.text("Client : " + client.name, 20, y); y += 10;
+    doc.text("Technicien : " + (technicianName || "—"), 20, y); y += 15;
 
-    doc.setFontSize(11);
-    doc.text(`Client : ${client.name}`, 20, y); y += 7;
-    doc.text(`Technicien : ${technicianName || "—"}`, 20, y); y += 7;
-    doc.text(`Date intervention : ${document.getElementById('startDate').value || dateStr}`, 20, y); y += 15;
-
-    // Les 13 étapes
     for (let step = 1; step <= 13; step++) {
-      if (y > 240) {
-        doc.addPage();
-        addHeader(Math.ceil(step/3));
-        y = 35;
-      }
-
+      if (y > 250) { doc.addPage(); y = 30; }
       doc.setFontSize(13);
       doc.text(stepsList[step-1], 20, y);
       y += 8;
@@ -538,14 +554,13 @@
         head: [['Description', 'Conforme', 'Défaut', 'Non contrôlé']],
         body: body,
         theme: 'grid',
-        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontSize: 9 },
-        styles: { fontSize: 9, cellPadding: 3, halign: 'center' },
-        columnStyles: { 0: { halign: 'left', cellWidth: 110 } }
+        headStyles: { fillColor: [0, 85, 170], textColor: 255 },
+        styles: { fontSize: 9, halign: 'center' },
+        columnStyles: { 0: { halign: 'left', cellWidth: 100 } }
       });
+      y = doc.lastAutoTable.finalY + 12;
 
-      y = doc.lastAutoTable.finalY + 10;
-
-      const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
+      const obs = document.getElementById(`obs${step}`)?.value || "";
       if (obs) {
         doc.setFontSize(10);
         doc.text("Observation : " + obs, 20, y);
@@ -553,25 +568,16 @@
       }
     }
 
-    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport PDF généré avec succès !");
+    doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
+    toast("Rapport PDF téléchargé !");
   }
 
   function generateExcel() {
-    if (!currentClientIndex && currentClientIndex !== 0) return toast("Sélectionnez un client", "danger");
-
+    if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
     const wb = XLSX.utils.book_new();
+    const info = [["Client", clients[currentClientIndex].name], ["Technicien", technicianName], ["Date", new Date().toLocaleDateString('fr-FR')]];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(info), "Infos");
 
-    // Onglet Infos
-    const infoData = [
-      ["Client", clients[currentClientIndex].name],
-      ["Technicien", technicianName],
-      ["Date", document.getElementById('startDate').value || new Date().toLocaleDateString('fr-FR')]
-    ];
-    const wsInfo = XLSX.utils.aoa_to_sheet(infoData);
-    XLSX.utils.book_append_sheet(wb, wsInfo, "Informations");
-
-    // Onglets par étape
     for (let step = 1; step <= 13; step++) {
       const items = getChecklistItems(step-1);
       const data = [["Description", "Conforme", "Défaut constaté", "Non contrôlé"]];
@@ -583,47 +589,41 @@
           document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? "Oui" : ""
         ]);
       });
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      XLSX.utils.book_append_sheet(wb, ws, `Étape ${step}`);
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), `Étape ${step}`);
     }
-
     XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex].name.replace(/ /g,'_')}.xlsx`);
-    toast("Fichier Excel généré !");
+    toast("Fichier Excel téléchargé !");
   }
 
   function generateWord() {
-    if (!currentClientIndex && currentClientIndex !== 0) return toast("Sélectionnez un client", "danger");
-
-    let content = `<h1>R.L ENERGIE - Rapport de Maintenance</h1>`;
-    content += `<p><strong>Client :</strong> ${clients[currentClientIndex].name}</p>`;
-    content += `<p><strong>Technicien :</strong> ${technicianName}</p>`;
-    content += `<p><strong>Date :</strong> ${document.getElementById('startDate').value || new Date().toLocaleDateString('fr-FR')}</p><hr>`;
+    if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
+    let html = `<h1>R.L ENERGIE - Rapport Maintenance</h1>`;
+    html += `<p>Client : ${clients[currentClientIndex].name}</p>`;
+    html += `<p>Technicien : ${technicianName}</p>`;
+    html += `<p>Date : ${new Date().toLocaleDateString('fr-FR')}</p><hr>`;
 
     for (let step = 1; step <= 13; step++) {
-      content += `<h2>Étape ${step} : ${stepsList[step-1]}</h2>`;
-      content += `<table border="1" style="border-collapse:collapse;width:100%;"><tr><th>Description</th><th>Conforme</th><th>Défaut</th><th>Non contrôlé</th></tr>`;
-      const items = getChecklistItems(step-1);
-      items.forEach((desc, j) => {
-        const conforme = document.getElementById(`chk${step}-conforme-${j}`)?.checked ? '×' : '';
-        const defaut = document.getElementById(`chk${step}-defaut-${j}`)?.checked ? '×' : '';
-        const noncontrole = document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? '×' : '';
-        content += `<tr><td>${desc}</td><td align="center">${conforme}</td><td align="center">${defaut}</td><td align="center">${noncontrole}</td></tr>`;
+      html += `<h2>Étape ${step} : ${stepsList[step-1]}</h2>`;
+      html += `<table border="1" style="width:100%;border-collapse:collapse;"><tr><th>Description</th><th>Conforme</th><th>Défaut</th><th>Non contrôlé</th></tr>`;
+      getChecklistItems(step-1).forEach((desc, j) => {
+        const c = document.getElementById(`chk${step}-conforme-${j}`)?.checked ? '×' : '';
+        const d = document.getElementById(`chk${step}-defaut-${j}`)?.checked ? '×' : '';
+        const nc = document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? '×' : '';
+        html += `<tr><td>${desc}</td><td align="center">${c}</td><td align="center">${d}</td><td align="center">${nc}</td></tr>`;
       });
-      content += `</table>`;
-
-      const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
-      if (obs) content += `<p><strong>Observation :</strong> ${obs}</p>`;
-      content += `<br><hr><br>`;
+      html += `</table>`;
+      const obs = document.getElementById(`obs${step}`)?.value || "";
+      if (obs) html += `<p><strong>Observation :</strong> ${obs}</p><br>`;
     }
 
-    const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Rapport_Maintenance_${clients[currentClientIndex].name.replace(/ /g,'_')}.doc`;
+    a.download = `Rapport_${clients[currentClientIndex].name.replace(/ /g,'_')}.doc`;
     a.click();
     URL.revokeObjectURL(url);
-    toast("Fichier Word généré !");
+    toast("Fichier Word téléchargé !");
   }
 
   function saveReportToHistory() {
