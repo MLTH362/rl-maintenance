@@ -71,6 +71,9 @@
     #historyList { margin-top:1rem; max-height:320px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; }
     .history-item { padding:14px; border-bottom:1px solid #eee; cursor:pointer; }
     .history-item:hover { background:#f0f7ff; }
+
+    .torque-select { margin:12px 0; }
+    .torque-select label { font-weight:600; }
   </style>
 </head>
 <body>
@@ -215,6 +218,9 @@
 
   const highVoltageSteps = [3,9,10,12];
 
+  // Couples de serrage pré-enregistrés
+  const torqueValues = ["8 Nm", "10 Nm", "12 Nm", "15 Nm", "18 Nm", "20 Nm", "25 Nm", "30 Nm", "Valeur personnalisée"];
+
   function showSafetyWarning() {
     if (safetyWarningShown) return;
     safetyWarningShown = true;
@@ -282,6 +288,18 @@
       stepDiv.id = `step${stepNum}`;
       stepDiv.className = 'step card';
 
+      let extraHTML = '';
+      if (stepNum === 9 || stepNum === 10) {
+        extraHTML = `
+          <div class="torque-select">
+            <label>Couple de serrage recommandé</label>
+            <select id="torque${stepNum}" onchange="addTorqueToObs(${stepNum})">
+              ${torqueValues.map(v => `<option value="${v}">${v}</option>`).join('')}
+            </select>
+          </div>
+        `;
+      }
+
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
@@ -300,6 +318,8 @@
               <div class="checklist-check"><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-noncontrole-${j}" onchange="exclusiveCheck(this)"></div>
             `).join('')}
           </div>
+
+          ${extraHTML}
 
           <button class="btn-big btn-ok" style="margin:1.2rem 0; width:100%;" onclick="setAllConforme(${stepNum})">
             <i class="fas fa-check-double"></i> TOUT MARQUER CONFORME
@@ -331,6 +351,18 @@
         }, { once: true });
       }
     });
+  }
+
+  function addTorqueToObs(stepNum) {
+    const select = document.getElementById(`torque${stepNum}`);
+    if (!select) return;
+    const value = select.value;
+    const obsTextarea = document.getElementById(`obs${stepNum}`);
+    if (value && value !== "Valeur personnalisée") {
+      if (obsTextarea.value.trim()) obsTextarea.value += "\n";
+      obsTextarea.value += "Couple de serrage : " + value;
+      updateObsPreview(stepNum);
+    }
   }
 
   function getChecklistItems(i) {
@@ -509,47 +541,33 @@
     reader.readAsText(file);
   }
 
-  // ====================== RAPPORT PDF PROPRE ======================
+  // ====================== EXPORTS ======================
   function generateReport() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
-
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const client = clients[currentClientIndex];
     const dateStr = new Date().toLocaleDateString('fr-FR');
 
-    // Page de couverture
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255);
-    doc.setFontSize(52);
+    doc.setFontSize(48);
     doc.text("R.L ENERGIE", 105, 85, { align: "center" });
-    doc.setFontSize(20);
-    doc.text("Spécialiste du Photovoltaïque", 105, 105, { align: "center" });
-    doc.setFontSize(32);
-    doc.text("RAPPORT DE MAINTENANCE", 105, 150, { align: "center" });
+    doc.setFontSize(22);
+    doc.text("RAPPORT DE MAINTENANCE", 105, 130, { align: "center" });
     doc.setFontSize(16);
-    doc.text(client.name, 105, 180, { align: "center" });
-    doc.text(dateStr, 105, 195, { align: "center" });
+    doc.text(client.name, 105, 160, { align: "center" });
+    doc.text(dateStr, 105, 175, { align: "center" });
     doc.addPage();
 
     let y = 30;
-    doc.setFontSize(16);
-    doc.setTextColor(0);
-    doc.text("INFORMATIONS GÉNÉRALES", 20, y);
-    y += 10;
-    doc.setFontSize(11);
-    doc.text(`Client : ${client.name}`, 25, y); y += 8;
-    doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
-    doc.text(`Date d'intervention : ${document.getElementById('startDate').value || dateStr}`, 25, y); y += 15;
+    doc.setFontSize(14);
+    doc.text("Client : " + client.name, 20, y); y += 10;
+    doc.text("Technicien : " + (technicianName || "—"), 20, y); y += 15;
 
-    // Les 13 étapes
     for (let step = 1; step <= 13; step++) {
-      if (y > 240) {
-        doc.addPage();
-        y = 30;
-      }
-
+      if (y > 250) { doc.addPage(); y = 30; }
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
       doc.text(stepsList[step-1], 20, y);
@@ -565,34 +583,32 @@
 
       doc.autoTable({
         startY: y,
-        head: [['Description', 'Conforme', 'Défaut constaté', 'Non contrôlé']],
+        head: [['Description', 'Conforme', 'Défaut', 'Non contrôlé']],
         body: body,
         theme: 'grid',
-        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontSize: 10, halign: 'center' },
-        styles: { fontSize: 9.5, cellPadding: 4, halign: 'center', lineWidth: 0.5 },
+        headStyles: { fillColor: [0, 85, 170], textColor: 255 },
+        styles: { fontSize: 9.5, halign: 'center' },
         columnStyles: { 0: { halign: 'left', cellWidth: 105 } }
       });
-
       y = doc.lastAutoTable.finalY + 12;
 
-      const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
+      const obs = document.getElementById(`obs${step}`)?.value || "";
       if (obs) {
         doc.setFontSize(10);
-        doc.setFont("helvetica", "italic");
         doc.text("Observation : " + obs, 25, y);
         y += 12;
       }
     }
 
-    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport PDF propre et professionnel généré !");
+    doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
+    toast("Rapport PDF téléchargé !");
   }
 
   function generateExcel() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
     const wb = XLSX.utils.book_new();
     const info = [["Client", clients[currentClientIndex].name], ["Technicien", technicianName], ["Date", new Date().toLocaleDateString('fr-FR')]];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(info), "Informations");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(info), "Infos");
 
     for (let step = 1; step <= 13; step++) {
       const items = getChecklistItems(step-1);
@@ -613,25 +629,23 @@
 
   function generateWord() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
-    let html = `<h1 style="text-align:center;">R.L ENERGIE - Rapport de Maintenance</h1>`;
-    html += `<p><strong>Client :</strong> ${clients[currentClientIndex].name}</p>`;
-    html += `<p><strong>Technicien :</strong> ${technicianName}</p>`;
-    html += `<p><strong>Date :</strong> ${new Date().toLocaleDateString('fr-FR')}</p><hr><br>`;
+    let html = `<h1>R.L ENERGIE - Rapport Maintenance</h1>`;
+    html += `<p>Client : ${clients[currentClientIndex].name}</p>`;
+    html += `<p>Technicien : ${technicianName}</p>`;
+    html += `<p>Date : ${new Date().toLocaleDateString('fr-FR')}</p><hr>`;
 
     for (let step = 1; step <= 13; step++) {
       html += `<h2>Étape ${step} : ${stepsList[step-1]}</h2>`;
-      html += `<table border="1" style="width:100%; border-collapse:collapse; margin-bottom:20px;">`;
-      html += `<tr><th style="background:#004080;color:white;padding:8px;">Description</th><th style="background:#004080;color:white;padding:8px;">Conforme</th><th style="background:#004080;color:white;padding:8px;">Défaut</th><th style="background:#004080;color:white;padding:8px;">Non contrôlé</th></tr>`;
+      html += `<table border="1" style="width:100%;border-collapse:collapse;"><tr><th>Description</th><th>Conforme</th><th>Défaut</th><th>Non contrôlé</th></tr>`;
       getChecklistItems(step-1).forEach((desc, j) => {
         const c = document.getElementById(`chk${step}-conforme-${j}`)?.checked ? '×' : '';
         const d = document.getElementById(`chk${step}-defaut-${j}`)?.checked ? '×' : '';
         const nc = document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? '×' : '';
-        html += `<tr><td style="padding:8px;">${desc}</td><td align="center" style="padding:8px;">${c}</td><td align="center" style="padding:8px;">${d}</td><td align="center" style="padding:8px;">${nc}</td></tr>`;
+        html += `<tr><td>${desc}</td><td align="center">${c}</td><td align="center">${d}</td><td align="center">${nc}</td></tr>`;
       });
       html += `</table>`;
-
       const obs = document.getElementById(`obs${step}`)?.value || "";
-      if (obs) html += `<p><strong>Observation :</strong> ${obs}</p><br><br>`;
+      if (obs) html += `<p><strong>Observation :</strong> ${obs}</p><br>`;
     }
 
     const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
