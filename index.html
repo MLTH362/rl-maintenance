@@ -73,7 +73,7 @@
     .history-item:hover { background:#f0f7ff; }
 
     .torque-select { margin:12px 0; }
-    .torque-select label { font-weight:600; }
+    .torque-select label { font-weight:600; margin-bottom:5px; display:block; }
   </style>
 </head>
 <body>
@@ -541,33 +541,43 @@
     reader.readAsText(file);
   }
 
-  // ====================== EXPORTS ======================
+  // ====================== RAPPORT PDF PROPRE ET PROFESSIONNEL ======================
   function generateReport() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const client = clients[currentClientIndex];
     const dateStr = new Date().toLocaleDateString('fr-FR');
 
+    // Page de couverture
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255);
-    doc.setFontSize(48);
+    doc.setFontSize(52);
     doc.text("R.L ENERGIE", 105, 85, { align: "center" });
-    doc.setFontSize(22);
-    doc.text("RAPPORT DE MAINTENANCE", 105, 130, { align: "center" });
+    doc.setFontSize(20);
+    doc.text("Spécialiste du Photovoltaïque", 105, 105, { align: "center" });
+    doc.setFontSize(32);
+    doc.text("RAPPORT DE MAINTENANCE", 105, 150, { align: "center" });
     doc.setFontSize(16);
-    doc.text(client.name, 105, 160, { align: "center" });
-    doc.text(dateStr, 105, 175, { align: "center" });
+    doc.text(client.name, 105, 180, { align: "center" });
+    doc.text(dateStr, 105, 195, { align: "center" });
     doc.addPage();
 
     let y = 30;
-    doc.setFontSize(14);
-    doc.text("Client : " + client.name, 20, y); y += 10;
-    doc.text("Technicien : " + (technicianName || "—"), 20, y); y += 15;
+    doc.setFontSize(16);
+    doc.setTextColor(0);
+    doc.text("INFORMATIONS GÉNÉRALES", 20, y);
+    y += 10;
+    doc.setFontSize(11);
+    doc.text(`Client : ${client.name}`, 25, y); y += 8;
+    doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
+    doc.text(`Date d'intervention : ${document.getElementById('startDate').value || dateStr}`, 25, y); y += 15;
 
     for (let step = 1; step <= 13; step++) {
-      if (y > 250) { doc.addPage(); y = 30; }
+      if (y > 240) { doc.addPage(); y = 30; }
+
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
       doc.text(stepsList[step-1], 20, y);
@@ -583,32 +593,34 @@
 
       doc.autoTable({
         startY: y,
-        head: [['Description', 'Conforme', 'Défaut', 'Non contrôlé']],
+        head: [['Description', 'Conforme', 'Défaut constaté', 'Non contrôlé']],
         body: body,
         theme: 'grid',
-        headStyles: { fillColor: [0, 85, 170], textColor: 255 },
-        styles: { fontSize: 9.5, halign: 'center' },
+        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontSize: 10, halign: 'center' },
+        styles: { fontSize: 9.5, cellPadding: 4, halign: 'center', lineWidth: 0.5 },
         columnStyles: { 0: { halign: 'left', cellWidth: 105 } }
       });
+
       y = doc.lastAutoTable.finalY + 12;
 
-      const obs = document.getElementById(`obs${step}`)?.value || "";
+      const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
       if (obs) {
         doc.setFontSize(10);
+        doc.setFont("helvetica", "italic");
         doc.text("Observation : " + obs, 25, y);
         y += 12;
       }
     }
 
-    doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport PDF téléchargé !");
+    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
+    toast("Rapport PDF professionnel téléchargé !");
   }
 
   function generateExcel() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
     const wb = XLSX.utils.book_new();
     const info = [["Client", clients[currentClientIndex].name], ["Technicien", technicianName], ["Date", new Date().toLocaleDateString('fr-FR')]];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(info), "Infos");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(info), "Informations");
 
     for (let step = 1; step <= 13; step++) {
       const items = getChecklistItems(step-1);
@@ -629,10 +641,10 @@
 
   function generateWord() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
-    let html = `<h1>R.L ENERGIE - Rapport Maintenance</h1>`;
+    let html = `<h1 style="text-align:center;">R.L ENERGIE - Rapport Maintenance</h1>`;
     html += `<p>Client : ${clients[currentClientIndex].name}</p>`;
     html += `<p>Technicien : ${technicianName}</p>`;
-    html += `<p>Date : ${new Date().toLocaleDateString('fr-FR')}</p><hr>`;
+    html += `<p>Date : ${new Date().toLocaleDateString('fr-FR')}</p><hr><br>`;
 
     for (let step = 1; step <= 13; step++) {
       html += `<h2>Étape ${step} : ${stepsList[step-1]}</h2>`;
