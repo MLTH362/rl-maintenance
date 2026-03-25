@@ -200,6 +200,7 @@
     { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"] }
   ];
 
+  // Titres des étapes EXACTEMENT comme tu les as écrits
   const stepsList = [
     "1. Drone thermique toiture → Rapport partie toiture",
     "2. Caméra thermique onduleur AC+DC → Process",
@@ -541,7 +542,7 @@
     reader.readAsText(file);
   }
 
-  // ====================== RAPPORT PDF PROPRE ET PROFESSIONNEL ======================
+  // ====================== RAPPORT PDF PROPRE ======================
   function generateReport() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
 
@@ -612,7 +613,7 @@
       }
     }
 
-    doc.save(`Rapport_Maintenance_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
+    doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
     toast("Rapport PDF professionnel téléchargé !");
   }
 
