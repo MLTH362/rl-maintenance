@@ -68,9 +68,10 @@
     .step.active { display:block; }
 
     .progress { text-align:center; font-size:1.1rem; color:var(--primary); margin-bottom:1.2rem; font-weight:600; }
-    #historyList { margin-top:1rem; max-height:320px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; }
+    #historyList { margin-top:1rem; max-height:420px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; }
     .history-item { padding:14px; border-bottom:1px solid #eee; cursor:pointer; }
     .history-item:hover { background:#f0f7ff; }
+    .history-item .date { font-size:0.85rem; color:#666; }
 
     .torque-select { margin:12px 0; }
     .torque-select label { font-weight:600; margin-bottom:5px; display:block; }
@@ -171,10 +172,10 @@
 
   <div style="text-align:center; margin-bottom:4rem;">
     <button class="btn-big" style="background:#6c757d;color:white;" onclick="exportJSON()">
-      <i class="fas fa-download"></i> Exporter JSON (Sauvegarde / Sync)
+      <i class="fas fa-download"></i> Exporter JSON (Sauvegarde / Sync PC → Tablette)
     </button>
     <button class="btn-big" style="background:#6c757d;color:white; margin-left:15px;" onclick="document.getElementById('importFile').click()">
-      <i class="fas fa-upload"></i> Importer JSON (Sync depuis l'autre appareil)
+      <i class="fas fa-upload"></i> Importer JSON (Sync Tablette → PC)
     </button>
     <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
@@ -189,10 +190,8 @@
   let currentClientIndex = -1;
   let isAdminMode = false;
   const ADMIN_PASSWORD = "admin123";
-  let stepPhotos = {};   // Photos par étape
-  let currentReportId = null;
+  let stepPhotos = {}; 
   let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
-  let safetyWarningShown = false;
 
   const clients = [
     { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"] },
@@ -220,8 +219,6 @@
   const torqueValues = ["8 Nm", "10 Nm", "12 Nm", "15 Nm", "18 Nm", "20 Nm", "25 Nm", "30 Nm", "Valeur personnalisée"];
 
   function showSafetyWarning() {
-    if (safetyWarningShown) return;
-    safetyWarningShown = true;
     const el = document.createElement('div');
     el.className = 'toast-msg toast-danger';
     el.innerHTML = `
@@ -267,12 +264,10 @@
     if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
 
     document.getElementById('infoBlock').style.display = 'none';
-    stepPhotos = {}; // Réinitialisation importante
+    stepPhotos = {}; 
     createSteps();
     document.getElementById('step1').classList.add('active');
     currentStep = 1;
-    currentReportId = Date.now();
-    safetyWarningShown = false;
     toast("Maintenance démarrée", "success");
   }
 
@@ -286,17 +281,13 @@
       stepDiv.id = `step${stepNum}`;
       stepDiv.className = 'step card';
 
-      let extraHTML = '';
-      if (stepNum === 9 || stepNum === 10) {
-        extraHTML = `
-          <div class="torque-select">
-            <label>Couple de serrage recommandé</label>
-            <select id="torque${stepNum}" onchange="addTorqueToObs(${stepNum})">
-              ${torqueValues.map(v => `<option value="${v}">${v}</option>`).join('')}
-            </select>
-          </div>
-        `;
-      }
+      let extraHTML = (stepNum === 9 || stepNum === 10) ? `
+        <div class="torque-select">
+          <label>Couple de serrage recommandé</label>
+          <select id="torque${stepNum}" onchange="addTorqueToObs(${stepNum})">
+            ${torqueValues.map(v => `<option value="${v}">${v}</option>`).join('')}
+          </select>
+        </div>` : '';
 
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
@@ -344,9 +335,7 @@
       container.appendChild(stepDiv);
 
       if (highVoltageSteps.includes(stepNum)) {
-        stepDiv.addEventListener('transitionend', () => {
-          if (stepDiv.classList.contains('active')) showSafetyWarning();
-        }, { once: true });
+        stepDiv.addEventListener('transitionend', () => { if (stepDiv.classList.contains('active')) showSafetyWarning(); }, { once: true });
       }
     });
   }
@@ -421,14 +410,13 @@
 
     Array.from(files).forEach(file => {
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = e => {
         stepPhotos[n].push(e.target.result);
         renderPhotos(n);
       };
       reader.readAsDataURL(file);
     });
 
-    // Réinitialiser l'input
     document.getElementById(`photo${n}`).value = '';
   }
 
@@ -467,7 +455,7 @@
     el.className = `toast-msg toast-${type}`;
     el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i> ${msg}`;
     document.getElementById('toast').appendChild(el);
-    setTimeout(() => el.remove(), 4500);
+    setTimeout(() => el.remove(), 4000);
   }
 
   // ====================== ADMIN ======================
@@ -518,7 +506,7 @@
 
   // ====================== SYNCHRONISATION ======================
   function exportJSON() {
-    const data = { clients: clients, history: history, timestamp: new Date().toISOString() };
+    const data = { clients, history, timestamp: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -526,7 +514,7 @@
     a.download = `RL_Maintenance_Sync_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast("Fichier de synchronisation téléchargé !");
+    toast("Export JSON terminé – transfère ce fichier vers la tablette");
   }
 
   function importJSON(event) {
@@ -536,20 +524,20 @@
     reader.onload = function(e) {
       try {
         const data = JSON.parse(e.target.result);
-        if (data.clients) { clients.length = 0; clients.push(...data.clients); }
+        if (data.clients) clients.length = 0, clients.push(...data.clients);
         if (data.history) history = data.history;
         localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
         renderClientList();
         refreshHistory();
-        toast("Synchronisation réussie !", "success");
+        toast("Import réussi – données synchronisées", "success");
       } catch(err) {
-        toast("Erreur lors de l'import", "danger");
+        toast("Erreur lors de l'import du fichier", "danger");
       }
     };
     reader.readAsText(file);
   }
 
-  // ====================== RAPPORT PDF AVEC PHOTOS (VERSION CORRIGÉE) ======================
+  // ====================== RAPPORT PDF + ENREGISTREMENT HISTORIQUE ======================
   function generateReport() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
 
@@ -557,6 +545,7 @@
     const doc = new jsPDF();
     const client = clients[currentClientIndex];
     const dateStr = new Date().toLocaleDateString('fr-FR');
+    const reportDate = new Date().toISOString();
 
     // Page de couverture
     doc.setFillColor(4, 64, 128);
@@ -591,7 +580,6 @@
       doc.text(stepsList[step-1], 20, y);
       y += 10;
 
-      // Tableau checklist
       const items = getChecklistItems(step-1);
       const body = items.map((desc, j) => [
         desc,
@@ -612,7 +600,6 @@
 
       y = doc.lastAutoTable.finalY + 12;
 
-      // Observation
       const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
       if (obs) {
         doc.setFontSize(10);
@@ -621,7 +608,7 @@
         y += 12;
       }
 
-      // === PHOTOS DE L'ÉTAPE ===
+      // Photos de l'étape
       if (stepPhotos[step] && stepPhotos[step].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
@@ -629,94 +616,67 @@
         y += 10;
 
         for (let imgData of stepPhotos[step]) {
-          if (y > 240) {
-            doc.addPage();
-            y = 30;
-          }
+          if (y > 240) { doc.addPage(); y = 30; }
           try {
             doc.addImage(imgData, 'JPEG', 25, y, 160, 90);
             y += 98;
-          } catch(e) {
-            console.log(`Erreur lors de l'ajout de la photo étape ${step}`);
-          }
+          } catch(e) {}
         }
         y += 10;
-      } else {
-        // Optionnel : afficher un message si pas de photo
-        // doc.setFontSize(10);
-        // doc.text("(Aucune photo ajoutée pour cette étape)", 25, y);
-        // y += 10;
       }
     }
 
+    // Sauvegarde du PDF
     doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport PDF généré avec les photos !");
+
+    // Enregistrement dans l'historique
+    const reportEntry = {
+      id: Date.now(),
+      clientName: client.name,
+      technician: technicianName,
+      date: dateStr,
+      timestamp: reportDate,
+      hasPhotos: Object.keys(stepPhotos).length > 0
+    };
+    history.unshift(reportEntry);
+    localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
+    refreshHistory();
+
+    toast("Rapport PDF généré et enregistré dans l'historique !");
   }
 
-  function generateExcel() {
-    if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
-    const wb = XLSX.utils.book_new();
-    const info = [["Client", clients[currentClientIndex].name], ["Technicien", technicianName], ["Date", new Date().toLocaleDateString('fr-FR')]];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(info), "Informations");
-
-    for (let step = 1; step <= 13; step++) {
-      const items = getChecklistItems(step-1);
-      const data = [["Description", "Conforme", "Défaut constaté", "Non contrôlé"]];
-      items.forEach((desc, j) => {
-        data.push([
-          desc,
-          document.getElementById(`chk${step}-conforme-${j}`)?.checked ? "Oui" : "",
-          document.getElementById(`chk${step}-defaut-${j}`)?.checked ? "Oui" : "",
-          document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? "Oui" : ""
-        ]);
-      });
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), `Étape ${step}`);
-    }
-    XLSX.writeFile(wb, `Maintenance_${clients[currentClientIndex].name.replace(/ /g,'_')}.xlsx`);
-    toast("Fichier Excel téléchargé !");
-  }
-
-  function generateWord() {
-    if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
-    let html = `<h1 style="text-align:center;">R.L ENERGIE - Rapport Maintenance</h1>`;
-    html += `<p>Client : ${clients[currentClientIndex].name}</p>`;
-    html += `<p>Technicien : ${technicianName}</p>`;
-    html += `<p>Date : ${new Date().toLocaleDateString('fr-FR')}</p><hr><br>`;
-
-    for (let step = 1; step <= 13; step++) {
-      html += `<h2>Étape ${step} : ${stepsList[step-1]}</h2>`;
-      html += `<table border="1" style="width:100%;border-collapse:collapse;"><tr><th>Description</th><th>Conforme</th><th>Défaut</th><th>Non contrôlé</th></tr>`;
-      getChecklistItems(step-1).forEach((desc, j) => {
-        const c = document.getElementById(`chk${step}-conforme-${j}`)?.checked ? '×' : '';
-        const d = document.getElementById(`chk${step}-defaut-${j}`)?.checked ? '×' : '';
-        const nc = document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? '×' : '';
-        html += `<tr><td>${desc}</td><td align="center">${c}</td><td align="center">${d}</td><td align="center">${nc}</td></tr>`;
-      });
-      html += `</table>`;
-      const obs = document.getElementById(`obs${step}`)?.value || "";
-      if (obs) html += `<p><strong>Observation :</strong> ${obs}</p><br>`;
+  function refreshHistory() {
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+    if (history.length === 0) {
+      list.innerHTML = '<p style="text-align:center;padding:20px;color:#666;">Aucun rapport enregistré pour le moment</p>';
+      return;
     }
 
-    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Rapport_${clients[currentClientIndex].name.replace(/ /g,'_')}.doc`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast("Fichier Word téléchargé !");
+    history.forEach(report => {
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = `
+        <strong>${report.clientName}</strong><br>
+        <span class="date">${report.date} — ${report.technician}</span>
+        ${report.hasPhotos ? '<span style="color:#28a745;"> • Photos incluses</span>' : ''}
+      `;
+      div.onclick = () => {
+        toast(`Rapport du ${report.date} sélectionné (téléchargement direct non implémenté)`, "success");
+      };
+      list.appendChild(div);
+    });
   }
 
-  function refreshHistory() { toast("Historique rafraîchi"); }
   function filterHistory() {
-    const search = document.getElementById('searchHistory').value.toLowerCase();
+    const term = document.getElementById('searchHistory').value.toLowerCase();
     document.querySelectorAll('.history-item').forEach(item => {
-      item.style.display = item.textContent.toLowerCase().includes(search) ? '' : 'none';
+      item.style.display = item.textContent.toLowerCase().includes(term) ? '' : 'none';
     });
   }
 
   function clearAll() {
-    if (confirm("Tout effacer ?")) location.reload();
+    if (confirm("Tout effacer et recommencer ?")) location.reload();
   }
 
   window.onload = function() {
