@@ -189,7 +189,7 @@
   let currentClientIndex = -1;
   let isAdminMode = false;
   const ADMIN_PASSWORD = "admin123";
-  let stepPhotos = {};
+  let stepPhotos = {};   // Photos par étape
   let currentReportId = null;
   let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
   let safetyWarningShown = false;
@@ -416,29 +416,33 @@
   function addPhoto(n) {
     const files = document.getElementById(`photo${n}`).files;
     if (!stepPhotos[n]) stepPhotos[n] = [];
-    for (let file of files) {
+    Array.from(files).forEach(file => {
       const reader = new FileReader();
       reader.onload = e => {
         stepPhotos[n].push(e.target.result);
         renderPhotos(n);
       };
       reader.readAsDataURL(file);
-    }
+    });
   }
 
   function renderPhotos(n) {
     const grid = document.getElementById(`photos${n}`);
     grid.innerHTML = '';
-    if (stepPhotos[n]) {
-      stepPhotos[n].forEach((src, idx) => {
-        grid.innerHTML += `<div class="photo-preview"><img src="${src}"><button class="delete-btn" onclick="deletePhoto(${n},${idx})">×</button></div>`;
-      });
-    }
+    (stepPhotos[n] || []).forEach((src, idx) => {
+      grid.innerHTML += `
+        <div class="photo-preview">
+          <img src="${src}">
+          <button class="delete-btn" onclick="deletePhoto(${n}, ${idx})">×</button>
+        </div>`;
+    });
   }
 
   function deletePhoto(n, idx) {
-    stepPhotos[n].splice(idx, 1);
-    renderPhotos(n);
+    if (stepPhotos[n]) {
+      stepPhotos[n].splice(idx, 1);
+      renderPhotos(n);
+    }
   }
 
   function updateObsPreview(n) {
@@ -539,7 +543,7 @@
     reader.readAsText(file);
   }
 
-  // ====================== RAPPORT PDF AVEC PHOTOS ÉTAPE 7 ======================
+  // ====================== RAPPORT PDF AVEC PHOTOS SUR TOUTES LES ÉTAPES ======================
   function generateReport() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
 
@@ -581,6 +585,7 @@
       doc.text(stepsList[step-1], 20, y);
       y += 10;
 
+      // Tableau checklist
       const items = getChecklistItems(step-1);
       const body = items.map((desc, j) => [
         desc,
@@ -601,6 +606,7 @@
 
       y = doc.lastAutoTable.finalY + 12;
 
+      // Observation
       const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
       if (obs) {
         doc.setFontSize(10);
@@ -609,22 +615,22 @@
         y += 12;
       }
 
-      // === AJOUT DES PHOTOS UNIQUEMENT POUR L'ÉTAPE 7 ===
-      if (step === 7 && stepPhotos[7] && stepPhotos[7].length > 0) {
+      // PHOTOS DE L'ÉTAPE (pour TOUTES les étapes)
+      if (stepPhotos[step] && stepPhotos[step].length > 0) {
         doc.setFontSize(12);
         doc.text("Photos de l'étape :", 25, y);
         y += 10;
 
-        for (let imgData of stepPhotos[7]) {
+        for (let imgData of stepPhotos[step]) {
           if (y > 240) {
             doc.addPage();
             y = 30;
           }
           try {
             doc.addImage(imgData, 'JPEG', 25, y, 160, 90);
-            y += 95;
+            y += 98;
           } catch(e) {
-            console.log("Erreur image PDF");
+            console.log("Erreur image étape " + step);
           }
         }
         y += 10;
@@ -632,7 +638,7 @@
     }
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport PDF avec photos (étape 7) téléchargé !");
+    toast("Rapport PDF avec toutes les photos téléchargé !");
   }
 
   function generateExcel() {
