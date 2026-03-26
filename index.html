@@ -267,11 +267,11 @@
     if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
 
     document.getElementById('infoBlock').style.display = 'none';
+    stepPhotos = {}; // Réinitialisation importante
     createSteps();
     document.getElementById('step1').classList.add('active');
     currentStep = 1;
     currentReportId = Date.now();
-    stepPhotos = {};
     safetyWarningShown = false;
     toast("Maintenance démarrée", "success");
   }
@@ -415,25 +415,33 @@
 
   function addPhoto(n) {
     const files = document.getElementById(`photo${n}`).files;
+    if (!files.length) return;
+
     if (!stepPhotos[n]) stepPhotos[n] = [];
+
     Array.from(files).forEach(file => {
       const reader = new FileReader();
-      reader.onload = e => {
+      reader.onload = function(e) {
         stepPhotos[n].push(e.target.result);
         renderPhotos(n);
       };
       reader.readAsDataURL(file);
     });
+
+    // Réinitialiser l'input
+    document.getElementById(`photo${n}`).value = '';
   }
 
   function renderPhotos(n) {
     const grid = document.getElementById(`photos${n}`);
+    if (!grid) return;
     grid.innerHTML = '';
+
     (stepPhotos[n] || []).forEach((src, idx) => {
       grid.innerHTML += `
         <div class="photo-preview">
           <img src="${src}">
-          <button class="delete-btn" onclick="deletePhoto(${n}, ${idx})">×</button>
+          <button class="delete-btn" onclick="deletePhoto(${n},${idx})">×</button>
         </div>`;
     });
   }
@@ -448,11 +456,9 @@
   function updateObsPreview(n) {
     const textarea = document.getElementById(`obs${n}`);
     const preview = document.getElementById(`preview${n}`);
-    if (textarea.value.trim()) {
-      preview.style.display = 'block';
-      preview.innerHTML = `<strong>Observation :</strong><br>${textarea.value}`;
-    } else {
-      preview.style.display = 'none';
+    if (textarea && preview) {
+      preview.style.display = textarea.value.trim() ? 'block' : 'none';
+      if (textarea.value.trim()) preview.innerHTML = `<strong>Observation :</strong><br>${textarea.value}`;
     }
   }
 
@@ -461,7 +467,7 @@
     el.className = `toast-msg toast-${type}`;
     el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i> ${msg}`;
     document.getElementById('toast').appendChild(el);
-    setTimeout(() => el.remove(), 4000);
+    setTimeout(() => el.remove(), 4500);
   }
 
   // ====================== ADMIN ======================
@@ -543,7 +549,7 @@
     reader.readAsText(file);
   }
 
-  // ====================== RAPPORT PDF AVEC PHOTOS SUR TOUTES LES ÉTAPES ======================
+  // ====================== RAPPORT PDF AVEC PHOTOS (VERSION CORRIGÉE) ======================
   function generateReport() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
 
@@ -615,9 +621,10 @@
         y += 12;
       }
 
-      // PHOTOS DE L'ÉTAPE (pour TOUTES les étapes)
+      // === PHOTOS DE L'ÉTAPE ===
       if (stepPhotos[step] && stepPhotos[step].length > 0) {
         doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
         doc.text("Photos de l'étape :", 25, y);
         y += 10;
 
@@ -630,15 +637,20 @@
             doc.addImage(imgData, 'JPEG', 25, y, 160, 90);
             y += 98;
           } catch(e) {
-            console.log("Erreur image étape " + step);
+            console.log(`Erreur lors de l'ajout de la photo étape ${step}`);
           }
         }
         y += 10;
+      } else {
+        // Optionnel : afficher un message si pas de photo
+        // doc.setFontSize(10);
+        // doc.text("(Aucune photo ajoutée pour cette étape)", 25, y);
+        // y += 10;
       }
     }
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
-    toast("Rapport PDF avec toutes les photos téléchargé !");
+    toast("Rapport PDF généré avec les photos !");
   }
 
   function generateExcel() {
