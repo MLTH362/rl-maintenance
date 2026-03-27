@@ -9,7 +9,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
   <style>
     :root {
       --primary: #004080;
@@ -63,7 +62,6 @@
   </style>
 </head>
 <body>
-
 <header>
   <div class="logo">R.L ENERGIE</div>
   <div>
@@ -71,26 +69,20 @@
     <button class="btn-big btn-clear" id="btnExitAdmin" onclick="exitAdminMode()" style="display:none;">Quitter Admin</button>
   </div>
 </header>
-
 <div class="main-content">
   <div id="infoBlock" class="card block active">
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
     <div class="cb">
-      <!-- Formulaire Admin amélioré -->
       <div id="adminControls" style="display:none;margin-bottom:1.4rem; padding:15px; background:#f8f9fa; border-radius:10px;">
         <h3>Ajouter un nouveau client</h3>
         <label>Nom du client / Site</label>
         <input type="text" id="newClientName" placeholder="Ex: Client D - Site Industriel" style="margin-bottom:8px;">
-
         <label>Puissance installée</label>
         <input type="text" id="newClientPower" placeholder="Ex: 250 kWc" style="margin-bottom:8px;">
-
         <label>Localisation</label>
         <input type="text" id="newClientLocation" placeholder="Ex: Blandainville - Région Centre" style="margin-bottom:8px;">
-
         <label>Détails supplémentaires</label>
         <textarea id="newClientDetails" rows="2" placeholder="Autres infos..."></textarea>
-
         <button class="btn-big btn-ok" style="width:100%; margin-top:10px;" onclick="addNewClient()">
           <i class="fas fa-plus"></i> Ajouter ce client
         </button>
@@ -116,20 +108,17 @@
           <div><label>Date début intervention</label><input type="text" id="startDate" readonly value=""/></div>
         </div>
 
-        <!-- Plans visibles par tous -->
+        <!-- Plans -->
         <label style="margin-top:1.5rem;">Plan de câblage</label>
         <div id="wiringPreview" class="plan-preview" style="display:none;"></div>
-
         <label style="margin-top:1.2rem;">Plan du site</label>
         <div id="sitePreview" class="plan-preview" style="display:none;"></div>
 
-        <!-- Boutons d'ajout de plans (seulement en mode admin) -->
         <div id="adminPlanButtons" style="display:none; margin-top:15px;">
           <button class="photo-upload-btn" onclick="document.getElementById('wiringPlanInput').click()">
             <i class="fas fa-camera"></i> Ajouter / Modifier plan de câblage
           </button>
           <input type="file" id="wiringPlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('wiring')"/>
-
           <button class="photo-upload-btn" onclick="document.getElementById('sitePlanInput').click()" style="margin-top:8px;">
             <i class="fas fa-camera"></i> Ajouter / Modifier plan du site
           </button>
@@ -175,16 +164,6 @@
       <i class="fas fa-file-word"></i> Word
     </button>
   </div>
-
-  <div style="text-align:center; margin-bottom:4rem;">
-    <button class="btn-big" style="background:#6c757d;color:white;" onclick="exportJSON()">
-      <i class="fas fa-download"></i> Exporter JSON (Sync)
-    </button>
-    <button class="btn-big" style="background:#6c757d;color:white; margin-left:15px;" onclick="document.getElementById('importFile').click()">
-      <i class="fas fa-upload"></i> Importer JSON
-    </button>
-    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(event)">
-  </div>
 </div>
 
 <div id="toast"></div>
@@ -198,7 +177,8 @@
   let stepPhotos = {};
   let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
 
-  let clients = [
+  // Clients persistants
+  let clients = JSON.parse(localStorage.getItem('rl_clients')) || [
     { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"], wiringPlan: null, sitePlan: null },
     { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"], wiringPlan: null, sitePlan: null },
     { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"], wiringPlan: null, sitePlan: null }
@@ -220,8 +200,21 @@
     "13. Vérification redémarrage"
   ];
 
-  const highVoltageSteps = [3]; // Une seule notification immédiate
+  const highVoltageSteps = [3];
   const torqueValues = ["8 Nm", "10 Nm", "12 Nm", "15 Nm", "18 Nm", "20 Nm", "25 Nm", "30 Nm", "Valeur personnalisée"];
+
+  function saveClients() {
+    localStorage.setItem('rl_clients', JSON.stringify(clients));
+  }
+
+  function deleteClient(index) {
+    if (confirm("Voulez-vous vraiment supprimer ce client ?")) {
+      clients.splice(index, 1);
+      saveClients();
+      renderClientList();
+      toast("Client supprimé", "success");
+    }
+  }
 
   function showSafetyWarning() {
     const el = document.createElement('div');
@@ -262,7 +255,6 @@
     document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
 
-    // Affichage des plans (visibles par tous)
     const wiringDiv = document.getElementById('wiringPreview');
     const siteDiv = document.getElementById('sitePreview');
     wiringDiv.style.display = c.wiringPlan ? 'block' : 'none';
@@ -270,7 +262,6 @@
     if (c.wiringPlan) wiringDiv.innerHTML = `<img src="${c.wiringPlan}">`;
     if (c.sitePlan) siteDiv.innerHTML = `<img src="${c.sitePlan}">`;
 
-    // Boutons d'ajout visibles seulement en admin
     document.getElementById('adminPlanButtons').style.display = isAdminMode ? 'block' : 'none';
   }
 
@@ -278,6 +269,7 @@
     technicianName = document.getElementById('technicianName').value.trim();
     if (!technicianName) return toast("Nom technicien requis");
     if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
+
     document.getElementById('infoBlock').style.display = 'none';
     stepPhotos = {};
     createSteps();
@@ -329,7 +321,7 @@
           <input type="file" id="photo${stepNum}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${stepNum})">
           <div id="photos${stepNum}" class="photo-grid"></div>
           <div class="nav-row">
-            <button class="btn-big btn-prev" onclick="prevStep()" ${stepNum === 1 ? 'disabled' : ''}>
+            <button class="btn-big btn-prev" onclick="prevStep()" ${stepNum === 1 ? '' : ''}>
               <i class="fas fa-arrow-left"></i> Précédent
             </button>
             <button class="btn-big btn-ok" onclick="nextStep(${stepNum})">
@@ -345,6 +337,24 @@
         }, { once: true });
       }
     });
+  }
+
+  function prevStep() {
+    if (currentStep <= 1) {
+      document.getElementById('stepsContainer').innerHTML = '';
+      document.getElementById('infoBlock').style.display = 'block';
+      currentStep = 0;
+      return;
+    }
+    document.getElementById(`step${currentStep}`).classList.remove('active');
+    currentStep--;
+    document.getElementById(`step${currentStep}`).classList.add('active');
+  }
+
+  function nextStep(n) {
+    document.getElementById(`step${n}`).classList.remove('active');
+    currentStep = n + 1;
+    if (currentStep <= 13) document.getElementById(`step${currentStep}`).classList.add('active');
   }
 
   function getChecklistItems(i) {
@@ -382,19 +392,6 @@
     }
     document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
     updateObsPreview(n);
-  }
-
-  function nextStep(n) {
-    document.getElementById(`step${n}`).classList.remove('active');
-    currentStep = n + 1;
-    if (currentStep <= 13) document.getElementById(`step${currentStep}`).classList.add('active');
-  }
-
-  function prevStep() {
-    if (currentStep <= 1) return;
-    document.getElementById(`step${currentStep}`).classList.remove('active');
-    currentStep--;
-    document.getElementById(`step${currentStep}`).classList.add('active');
   }
 
   function addTorqueToObs(stepNum) {
@@ -461,7 +458,6 @@
     setTimeout(() => el.remove(), 4000);
   }
 
-  // ====================== ADMIN ======================
   function toggleAdminMode() {
     const pw = prompt("Mot de passe Admin :", "");
     if (pw === ADMIN_PASSWORD) {
@@ -470,6 +466,8 @@
       document.getElementById('btnExitAdmin').style.display = 'inline-block';
       document.getElementById('adminPlanButtons').style.display = 'block';
       document.getElementById('installationDetails').readOnly = false;
+      document.getElementById('lastMaint').readOnly = false;
+      document.getElementById('startDate').readOnly = false;
       document.getElementById('editDetailsBtn').style.display = 'inline';
     }
   }
@@ -480,6 +478,8 @@
     document.getElementById('btnExitAdmin').style.display = 'none';
     document.getElementById('adminPlanButtons').style.display = 'none';
     document.getElementById('installationDetails').readOnly = true;
+    document.getElementById('lastMaint').readOnly = true;
+    document.getElementById('startDate').readOnly = true;
     document.getElementById('editDetailsBtn').style.display = 'none';
   }
 
@@ -488,22 +488,18 @@
     const name = document.getElementById('newClientName').value.trim();
     if (!name) return;
     if (clients.some(c => c.name === name)) return;
-    clients.push({ 
-      name, 
-      details: "", 
-      lastMaint: "", 
+    clients.push({
+      name,
+      details: document.getElementById('newClientDetails').value,
+      lastMaint: "",
       oldDates: [],
       wiringPlan: null,
-      sitePlan: null 
+      sitePlan: null
     });
+    saveClients();
     renderClientList();
     document.getElementById('newClientName').value = "";
     toast("Client ajouté", "success");
-  }
-
-  function enableEditDetails() {
-    if (!isAdminMode) return;
-    document.getElementById('installationDetails').readOnly = false;
   }
 
   function uploadPlan(type) {
@@ -517,12 +513,12 @@
     reader.onload = e => {
       clients[currentClientIndex][type + 'Plan'] = e.target.result;
       loadClientData();
+      saveClients();
       toast("Plan mis à jour", "success");
     };
     reader.readAsDataURL(file);
   }
 
-  // ====================== RAPPORT PDF ======================
   function generateReport() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
     const { jsPDF } = window.jspdf;
@@ -576,6 +572,7 @@
         styles: { fontSize: 9.5, cellPadding: 4, halign: 'center', lineWidth: 0.5 },
         columnStyles: { 0: { halign: 'left', cellWidth: 105 } }
       });
+
       y = doc.lastAutoTable.finalY + 12;
 
       const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
@@ -586,6 +583,7 @@
         y += 12;
       }
 
+      // Photos dans le PDF
       if (stepPhotos[step] && stepPhotos[step].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
