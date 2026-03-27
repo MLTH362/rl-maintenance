@@ -58,7 +58,7 @@
     #historyList { margin-top:1rem; max-height:420px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; }
     .history-item { padding:14px; border-bottom:1px solid #eee; cursor:pointer; }
     .history-item:hover { background:#f0f7ff; }
-    .plan-preview { margin-top:8px; max-width:100%; border:2px solid #ddd; border-radius:8px; overflow:hidden; }
+    .plan-preview { margin:10px 0; border:2px solid #ddd; border-radius:8px; overflow:hidden; }
     .plan-preview img { width:100%; height:auto; display:block; }
   </style>
 </head>
@@ -77,21 +77,21 @@
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
     <div class="cb">
       <!-- Formulaire Admin amélioré -->
-      <div id="adminControls" style="display:none; margin-bottom:1.8rem; padding:1.5rem; background:#f8f9fa; border-radius:10px;">
+      <div id="adminControls" style="display:none;margin-bottom:1.4rem; padding:15px; background:#f8f9fa; border-radius:10px;">
         <h3>Ajouter un nouveau client</h3>
         <label>Nom du client / Site</label>
-        <input type="text" id="newClientName" placeholder="Ex: Client D - Site Industriel">
+        <input type="text" id="newClientName" placeholder="Ex: Client D - Site Industriel" style="margin-bottom:8px;">
 
         <label>Puissance installée</label>
-        <input type="text" id="newClientPower" placeholder="Ex: 250 kWc">
+        <input type="text" id="newClientPower" placeholder="Ex: 250 kWc" style="margin-bottom:8px;">
 
         <label>Localisation</label>
-        <input type="text" id="newClientLocation" placeholder="Ex: Blandainville - Région Centre">
+        <input type="text" id="newClientLocation" placeholder="Ex: Blandainville - Région Centre" style="margin-bottom:8px;">
 
         <label>Détails supplémentaires</label>
-        <textarea id="newClientDetails" rows="2" placeholder="Autres informations..."></textarea>
+        <textarea id="newClientDetails" rows="2" placeholder="Autres infos..."></textarea>
 
-        <button class="btn-big btn-ok" style="width:100%; margin-top:15px;" onclick="addNewClient()">
+        <button class="btn-big btn-ok" style="width:100%; margin-top:10px;" onclick="addNewClient()">
           <i class="fas fa-plus"></i> Ajouter ce client
         </button>
       </div>
@@ -104,8 +104,8 @@
         <option value="">Sélectionnez un client...</option>
       </select>
 
-      <div id="clientDetails" style="display:none; margin-top:1.6rem;">
-        <label>Détails de l’installation</label>
+      <div id="clientDetails" style="display:none;margin-top:1.6rem;">
+        <label>Détails de l’installation <span id="editDetailsBtn" style="display:none;color:var(--primary);cursor:pointer;" onclick="enableEditDetails()">✏️ Modifier (Admin)</span></label>
         <textarea id="installationDetails" readonly rows="3"></textarea>
 
         <label style="margin-top:1.2rem;">Anciennes dates de maintenance (rappel)</label>
@@ -123,7 +123,7 @@
         <label style="margin-top:1.2rem;">Plan du site</label>
         <div id="sitePreview" class="plan-preview" style="display:none;"></div>
 
-        <!-- Boutons d'ajout de plans visibles seulement en admin -->
+        <!-- Boutons d'ajout de plans (seulement en mode admin) -->
         <div id="adminPlanButtons" style="display:none; margin-top:15px;">
           <button class="photo-upload-btn" onclick="document.getElementById('wiringPlanInput').click()">
             <i class="fas fa-camera"></i> Ajouter / Modifier plan de câblage
@@ -144,6 +144,9 @@
         <button class="btn-big" style="background:#6c757d;color:white;flex:1;" onclick="location.reload()">
           <i class="fas fa-redo"></i> Recommencer
         </button>
+        <button class="btn-big btn-clear" onclick="clearAll()" style="margin-left:1rem;">
+          <i class="fas fa-trash-alt"></i> Effacer tout
+        </button>
       </div>
     </div>
   </div>
@@ -160,6 +163,28 @@
       <div id="historyList" style="margin-top:1rem;"></div>
     </div>
   </div>
+
+  <div style="text-align:center; margin:4rem 0 3rem; display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
+    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.1rem;padding:1.2rem 2.8rem;">
+      <i class="fas fa-file-pdf"></i> PDF
+    </button>
+    <button class="btn-big" style="background:#1e7e34;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="generateExcel()">
+      <i class="fas fa-file-excel"></i> Excel
+    </button>
+    <button class="btn-big" style="background:#0d6efd;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="generateWord()">
+      <i class="fas fa-file-word"></i> Word
+    </button>
+  </div>
+
+  <div style="text-align:center; margin-bottom:4rem;">
+    <button class="btn-big" style="background:#6c757d;color:white;" onclick="exportJSON()">
+      <i class="fas fa-download"></i> Exporter JSON (Sync)
+    </button>
+    <button class="btn-big" style="background:#6c757d;color:white; margin-left:15px;" onclick="document.getElementById('importFile').click()">
+      <i class="fas fa-upload"></i> Importer JSON
+    </button>
+    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(event)">
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -174,30 +199,9 @@
   let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
 
   let clients = [
-    { 
-      name: "Client A - 450 kWc", 
-      details: "Puissance : 450 kWc\nLocalisation : Région PACA", 
-      lastMaint: "15/03/2025", 
-      oldDates: ["15/03/2025","10/09/2024"],
-      wiringPlan: null,
-      sitePlan: null
-    },
-    { 
-      name: "Client B - 120 kWc", 
-      details: "Puissance : 120 kWc\nLocalisation : Île-de-France", 
-      lastMaint: "08/01/2026", 
-      oldDates: ["08/01/2026","12/06/2025"],
-      wiringPlan: null,
-      sitePlan: null
-    },
-    { 
-      name: "Client C - 800 kWc", 
-      details: "Puissance : 800 kWc\nLocalisation : Occitanie", 
-      lastMaint: "22/11/2025", 
-      oldDates: ["22/11/2025","15/05/2025"],
-      wiringPlan: null,
-      sitePlan: null
-    }
+    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"], wiringPlan: null, sitePlan: null },
+    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"], wiringPlan: null, sitePlan: null },
+    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"], wiringPlan: null, sitePlan: null }
   ];
 
   const stepsList = [
@@ -216,13 +220,14 @@
     "13. Vérification redémarrage"
   ];
 
-  const highVoltageSteps = [3];
+  const highVoltageSteps = [3]; // Une seule notification immédiate
   const torqueValues = ["8 Nm", "10 Nm", "12 Nm", "15 Nm", "18 Nm", "20 Nm", "25 Nm", "30 Nm", "Valeur personnalisée"];
 
   function showSafetyWarning() {
     const el = document.createElement('div');
     el.className = 'toast-msg toast-danger';
     el.innerHTML = `
+      <div class="toast-icon"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
       <div style="margin:12px 0; line-height:1.5; font-size:1.3rem;">
         ⚠️ ATTENTION – TRAVAIL SOUS TENSION<br>
         <strong>VÉRIFIEZ CONSIGNES DE SÉCURITÉ AVANT TOUTE INTERVENTION</strong>
@@ -244,7 +249,7 @@
   }
 
   function loadClientData() {
-    const idx = parseInt(document.getElementById('clientSelect').value);
+    const idx = +document.getElementById('clientSelect').value;
     if (isNaN(idx) || idx < 0) {
       document.getElementById('clientDetails').style.display = 'none';
       return;
@@ -253,7 +258,6 @@
     const c = clients[idx];
     document.getElementById('clientDetails').style.display = 'block';
     document.getElementById('installationDetails').value = c.details || "";
-
     document.getElementById('oldDatesDisplay').innerHTML = c.oldDates?.length ? c.oldDates.map(d => `<div>• ${d}</div>`).join('') : 'Aucune date enregistrée';
     document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
@@ -266,21 +270,20 @@
     if (c.wiringPlan) wiringDiv.innerHTML = `<img src="${c.wiringPlan}">`;
     if (c.sitePlan) siteDiv.innerHTML = `<img src="${c.sitePlan}">`;
 
-    // Afficher les boutons d'ajout seulement en mode admin
+    // Boutons d'ajout visibles seulement en admin
     document.getElementById('adminPlanButtons').style.display = isAdminMode ? 'block' : 'none';
   }
 
   function startMaintenance() {
     technicianName = document.getElementById('technicianName').value.trim();
-    if (!technicianName) return alert("Nom du technicien requis");
-    if (document.getElementById('clientSelect').value === "") return alert("Sélectionnez un client");
-
+    if (!technicianName) return toast("Nom technicien requis");
+    if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
     document.getElementById('infoBlock').style.display = 'none';
     stepPhotos = {};
     createSteps();
     document.getElementById('step1').classList.add('active');
     currentStep = 1;
-    alert("Maintenance démarrée pour " + clients[currentClientIndex].name);
+    toast("Maintenance démarrée", "success");
   }
 
   function createSteps() {
@@ -291,15 +294,13 @@
       const stepDiv = document.createElement('div');
       stepDiv.id = `step${stepNum}`;
       stepDiv.className = 'step card';
-
       let extraHTML = (stepNum === 9 || stepNum === 10) ? `
-        <div style="margin:15px 0; padding:12px; background:#f8f9fa; border-radius:8px;">
+        <div class="torque-select">
           <label>Couple de serrage recommandé</label>
           <select id="torque${stepNum}" onchange="addTorqueToObs(${stepNum})">
             ${torqueValues.map(v => `<option value="${v}">${v}</option>`).join('')}
           </select>
         </div>` : '';
-
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
@@ -338,7 +339,6 @@
         </div>
       `;
       container.appendChild(stepDiv);
-
       if (highVoltageSteps.includes(stepNum)) {
         stepDiv.addEventListener('transitionend', () => {
           if (stepDiv.classList.contains('active')) showSafetyWarning();
@@ -378,7 +378,7 @@
     const items = getChecklistItems(n-1).length;
     for (let j = 0; j < items; j++) {
       const chk = document.getElementById(`chk${n}-conforme-${j}`);
-      if (chk) chk.checked = true;
+      if (chk) { chk.checked = true; exclusiveCheck(chk); }
     }
     document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
     updateObsPreview(n);
@@ -453,10 +453,10 @@
     }
   }
 
-  function toast(msg) {
+  function toast(msg, type = 'success') {
     const el = document.createElement('div');
-    el.className = 'toast-msg';
-    el.innerHTML = msg;
+    el.className = `toast-msg toast-${type}`;
+    el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i> ${msg}`;
     document.getElementById('toast').appendChild(el);
     setTimeout(() => el.remove(), 4000);
   }
@@ -469,8 +469,8 @@
       document.getElementById('adminControls').style.display = 'block';
       document.getElementById('btnExitAdmin').style.display = 'inline-block';
       document.getElementById('adminPlanButtons').style.display = 'block';
-    } else if (pw) {
-      alert("Code admin incorrect");
+      document.getElementById('installationDetails').readOnly = false;
+      document.getElementById('editDetailsBtn').style.display = 'inline';
     }
   }
 
@@ -479,65 +479,57 @@
     document.getElementById('adminControls').style.display = 'none';
     document.getElementById('btnExitAdmin').style.display = 'none';
     document.getElementById('adminPlanButtons').style.display = 'none';
+    document.getElementById('installationDetails').readOnly = true;
+    document.getElementById('editDetailsBtn').style.display = 'none';
   }
 
   function addNewClient() {
-    if (!isAdminMode) return alert("Vous devez être en mode Admin");
-
+    if (!isAdminMode) return;
     const name = document.getElementById('newClientName').value.trim();
-    const power = document.getElementById('newClientPower').value.trim();
-    const location = document.getElementById('newClientLocation').value.trim();
-    const details = document.getElementById('newClientDetails').value.trim();
-
-    if (!name) return alert("Le nom du client est obligatoire");
-
-    const newClient = {
-      name: name + (power ? ` - ${power}` : ""),
-      details: (location ? `Localisation : ${location}\n` : "") + (details || ""),
-      lastMaint: new Date().toLocaleDateString('fr-FR'),
+    if (!name) return;
+    if (clients.some(c => c.name === name)) return;
+    clients.push({ 
+      name, 
+      details: "", 
+      lastMaint: "", 
       oldDates: [],
       wiringPlan: null,
-      sitePlan: null
-    };
-
-    clients.push(newClient);
+      sitePlan: null 
+    });
     renderClientList();
-
-    document.getElementById('newClientName').value = '';
-    document.getElementById('newClientPower').value = '';
-    document.getElementById('newClientLocation').value = '';
-    document.getElementById('newClientDetails').value = '';
-
-    toast("Client ajouté avec succès !");
+    document.getElementById('newClientName').value = "";
+    toast("Client ajouté", "success");
   }
 
-  // ====================== PLANS (visibles par tous, modifiables seulement en admin) ======================
+  function enableEditDetails() {
+    if (!isAdminMode) return;
+    document.getElementById('installationDetails').readOnly = false;
+  }
+
   function uploadPlan(type) {
     if (!isAdminMode) {
-      alert("Vous devez être en mode Admin pour modifier les plans.");
+      alert("Seul le mode Admin permet de modifier les plans.");
       return;
     }
     const file = document.getElementById(type + 'PlanInput').files[0];
     if (!file || currentClientIndex < 0) return;
-
     const reader = new FileReader();
     reader.onload = e => {
       clients[currentClientIndex][type + 'Plan'] = e.target.result;
-      loadClientData(); // Rafraîchit l'affichage
-      toast("Plan " + (type === 'wiring' ? 'de câblage' : 'du site') + " mis à jour");
+      loadClientData();
+      toast("Plan mis à jour", "success");
     };
     reader.readAsDataURL(file);
   }
 
   // ====================== RAPPORT PDF ======================
   function generateReport() {
-    if (currentClientIndex === -1) return toast("Sélectionnez un client");
+    if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const client = clients[currentClientIndex];
     const dateStr = new Date().toLocaleDateString('fr-FR');
 
-    // Page de couverture simplifiée
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255);
@@ -554,13 +546,61 @@
     doc.setFontSize(16);
     doc.setTextColor(0);
     doc.text("INFORMATIONS GÉNÉRALES", 20, y);
-    y += 15;
+    y += 10;
     doc.setFontSize(11);
     doc.text(`Client : ${client.name}`, 25, y); y += 8;
     doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
-    doc.text(`Date : ${dateStr}`, 25, y); y += 20;
+    doc.text(`Date : ${document.getElementById('startDate').value || dateStr}`, 25, y); y += 15;
 
-    // ... (le reste du PDF reste identique à ta version)
+    for (let step = 1; step <= 13; step++) {
+      if (y > 240) { doc.addPage(); y = 30; }
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text(stepsList[step-1], 20, y);
+      y += 10;
+
+      const items = getChecklistItems(step-1);
+      const body = items.map((desc, j) => [
+        desc,
+        document.getElementById(`chk${step}-conforme-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${step}-defaut-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? '×' : ''
+      ]);
+
+      doc.autoTable({
+        startY: y,
+        head: [['Description', 'Conforme', 'Défaut constaté', 'Non contrôlé']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontSize: 10, halign: 'center' },
+        styles: { fontSize: 9.5, cellPadding: 4, halign: 'center', lineWidth: 0.5 },
+        columnStyles: { 0: { halign: 'left', cellWidth: 105 } }
+      });
+      y = doc.lastAutoTable.finalY + 12;
+
+      const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
+      if (obs) {
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "italic");
+        doc.text("Observation : " + obs, 25, y);
+        y += 12;
+      }
+
+      if (stepPhotos[step] && stepPhotos[step].length > 0) {
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text("Photos de l'étape :", 25, y);
+        y += 10;
+        for (let imgData of stepPhotos[step]) {
+          if (y > 240) { doc.addPage(); y = 30; }
+          try {
+            doc.addImage(imgData, 'JPEG', 25, y, 160, 90);
+            y += 98;
+          } catch(e) {}
+        }
+        y += 10;
+      }
+    }
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
 
@@ -572,7 +612,7 @@
     });
     localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
     refreshHistory();
-    toast("Rapport PDF généré et enregistré !");
+    toast("Rapport PDF généré et enregistré dans l'historique !", "success");
   }
 
   function refreshHistory() {
@@ -585,7 +625,7 @@
     history.forEach(report => {
       const div = document.createElement('div');
       div.className = 'history-item';
-      div.innerHTML = `<strong>${report.clientName}</strong><br><span>${report.date} — ${report.technician}</span>`;
+      div.innerHTML = `<strong>${report.clientName}</strong><br><span class="date">${report.date} — ${report.technician}</span>`;
       list.appendChild(div);
     });
   }
@@ -595,6 +635,10 @@
     document.querySelectorAll('.history-item').forEach(item => {
       item.style.display = item.textContent.toLowerCase().includes(term) ? '' : 'none';
     });
+  }
+
+  function clearAll() {
+    if (confirm("Tout effacer ?")) location.reload();
   }
 
   window.onload = function() {
