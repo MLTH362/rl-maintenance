@@ -581,7 +581,7 @@
     doc.text(`Date : ${document.getElementById('startDate').value || dateStr}`, 25, y); y += 15;
 
     // Étapes incluses dans le rapport (on enlève 2,3,5,6,11,13)
-    const reportStepIndices = [0, 3, 6, 7, 8, 9]; // 1,4,7,8,9,10,12
+    const reportStepIndices = [0, 3, 6, 7, 8, 9]; // étapes 1,4,7,8,9,10,12
 
     for (let idx of reportStepIndices) {
       const step = idx + 1;
@@ -642,7 +642,6 @@
     }
 
     // Étape 12 : seulement les relevés (sans tableau)
-    const step12 = 12;
     if (y > 240) { doc.addPage(); y = 30; }
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
@@ -654,7 +653,7 @@
 
     doc.setFontSize(11);
     doc.text("Relevé compteur Production : " + (prod || "—"), 25, y); y += 8;
-    doc.text("Relevé compteur Non-consommation : " + (nonConso || "—"), 25, y); y += 8;
+    doc.text("Relevé compteur Non-consommation : " + (nonConso || "—"), 25, y);
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
 
