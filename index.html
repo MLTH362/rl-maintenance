@@ -24,53 +24,41 @@
     }
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
     body { background:var(--bg); color:var(--dark); min-height:100vh; line-height:1.5; font-size:15px; }
-
     header { background:var(--primary); color:white; padding:1.4rem 2rem; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.15); display:flex; justify-content:space-between; align-items:center; }
     .logo { font-size:2.3rem; font-weight:800; letter-spacing:1px; }
-
     .main-content { max-width:1100px; margin:2rem auto; padding:0 1rem; }
-
     .card { background:white; border-radius:var(--radius); box-shadow:0 6px 20px rgba(0,0,0,0.08); margin-bottom:2rem; overflow:hidden; border:1px solid var(--border); }
     .ch { background:var(--primary); color:white; padding:1.1rem; font-size:1.35rem; font-weight:700; text-align:center; }
     .cb { padding:1.8rem 2rem; }
-
     label { font-weight:600; margin-bottom:0.5rem; display:block; font-size:0.97rem; }
     input, select, textarea { width:100%; padding:0.85rem; border:2px solid var(--border); border-radius:8px; font-size:0.97rem; margin-bottom:1.1rem; }
     input:focus, textarea:focus, select:focus { border-color:var(--primary-light); box-shadow:0 0 0 3px rgba(0,102,204,0.15); }
-
     .photo-upload-btn { background: var(--primary-light); color: white; padding: 1.3rem; border-radius: 12px; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.18rem; font-weight: 600; margin: 1.2rem 0; transition: all 0.25s; }
     .photo-upload-btn:hover { background: var(--primary); transform: translateY(-3px); }
-
     .photo-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:1.2rem; margin:1.4rem 0; }
     .photo-preview { position:relative; border-radius:10px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
     .photo-preview img { width:100%; height:145px; object-fit:cover; }
     .delete-btn { position:absolute; top:8px; right:8px; background:#dc3545; color:white; width:32px; height:32px; border-radius:50%; border:none; font-size:1.3rem; cursor:pointer; }
-
     .btn-big { padding:1rem 1.8rem; border:none; border-radius:10px; font-size:1.05rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:10px; transition:all 0.25s; }
     .btn-ok { background:var(--success); color:white; }
     .btn-ok:hover { background:#218838; transform:translateY(-2px); }
     .btn-prev { background:#6c757d; color:white; }
-    .btn-clear { background:#dc3545; color:white; }
-
+    .btn-clear { background:var(--danger); color:white; }
     .nav-row { display:flex; justify-content:space-between; margin-top:2.5rem; gap:1rem; }
-
     .checklist-grid { display:grid; grid-template-columns:3.2fr 1fr 1fr 1fr; gap:8px; margin:1rem 0; align-items:center; }
     .checklist-header { font-weight:bold; text-align:center; background:var(--primary); color:white; padding:0.6rem; border-radius:6px; font-size:0.88rem; }
     .checklist-item { padding:0.6rem 0.4rem; border-bottom:1px solid #eee; font-size:0.94rem; }
-
     input[type="checkbox"] { width:1.35rem; height:1.35rem; cursor:pointer; accent-color:#28a745; }
-
     #toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); z-index:9999; pointer-events:all; }
     .toast-msg { padding:1.6rem 3rem; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.5); font-weight:700; font-size:1.2rem; display:flex; flex-direction:column; align-items:center; gap:15px; text-align:center; max-width:92%; background:var(--danger); color:white; border:4px solid #fff; }
     .toast-btn { background:#fff; color:var(--danger); border:none; padding:0.8rem 2.2rem; border-radius:8px; font-weight:700; cursor:pointer; font-size:1.1rem; }
-
     .step { display:none; }
     .step.active { display:block; }
-
     .progress { text-align:center; font-size:1.1rem; color:var(--primary); margin-bottom:1.2rem; font-weight:600; }
     #historyList { margin-top:1rem; max-height:420px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; }
     .history-item { padding:14px; border-bottom:1px solid #eee; cursor:pointer; }
     .history-item:hover { background:#f0f7ff; }
+    .admin-client-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee; background:#f8f9fa; margin-bottom:8px; border-radius:8px; }
   </style>
 </head>
 <body>
@@ -84,16 +72,27 @@
 </header>
 
 <div class="main-content">
-
   <div id="infoBlock" class="card block active">
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
     <div class="cb">
-      <div id="adminControls" style="display:none;margin-bottom:1.4rem;">
-        <label>Ajouter un nouveau client</label>
-        <div style="display:flex;gap:10px;">
-          <input type="text" id="newClient" placeholder="Ex: Client D - 300 kWc" style="flex:1;"/>
-          <button class="btn-big btn-ok" style="width:auto;padding:0 1.6rem;" onclick="addNewClient()">Ajouter</button>
-        </div>
+      <!-- Formulaire Admin amélioré -->
+      <div id="adminControls" style="display:none; margin-bottom:1.8rem; padding:1.5rem; background:#f8f9fa; border-radius:10px;">
+        <h3>Ajouter un nouveau client</h3>
+        <label>Nom du client / Site</label>
+        <input type="text" id="newClientName" placeholder="Ex: Client D - Site Industriel">
+
+        <label>Puissance installée</label>
+        <input type="text" id="newClientPower" placeholder="Ex: 250 kWc">
+
+        <label>Localisation</label>
+        <input type="text" id="newClientLocation" placeholder="Ex: Blandainville - Région Centre">
+
+        <label>Détails supplémentaires (optionnel)</label>
+        <textarea id="newClientDetails" rows="3" placeholder="Type de panneaux, année d'installation, remarques..."></textarea>
+
+        <button class="btn-big btn-ok" style="width:100%; margin-top:15px;" onclick="addNewClient()">
+          <i class="fas fa-plus"></i> Ajouter ce client
+        </button>
       </div>
 
       <label>Nom du technicien (obligatoire)</label>
@@ -104,23 +103,19 @@
         <option value="">Sélectionnez un client...</option>
       </select>
 
-      <div id="clientDetails" style="display:none;margin-top:1.6rem;">
+      <div id="clientDetails" style="display:none; margin-top:1.6rem;">
         <label>Détails de l’installation <span id="editDetailsBtn" style="display:none;color:var(--primary);cursor:pointer;" onclick="enableEditDetails()">✏️ Modifier (Admin)</span></label>
         <textarea id="installationDetails" readonly rows="3"></textarea>
-
         <label style="margin-top:1.2rem;">Anciennes dates de maintenance (rappel)</label>
         <div id="oldDatesDisplay" style="padding:0.9rem;border:1px solid #dee2e6;border-radius:6px;background:#f8f9fa;min-height:60px;line-height:1.6;"></div>
-
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.4rem;">
           <div><label>Date dernière maintenance</label><input type="text" id="lastMaint" readonly/></div>
           <div><label>Date début intervention</label><input type="text" id="startDate" readonly value=""/></div>
         </div>
-
         <label style="margin-top:1.2rem;">Plan de câblage</label>
         <div class="photo-upload-btn" onclick="document.getElementById('wiringPlanInput').click()"><i class="fas fa-camera"></i> Ajouter / Modifier plan de câblage</div>
         <input type="file" id="wiringPlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('wiring')"/>
         <div id="wiringPreview" style="margin-top:0.6rem;"></div>
-
         <label style="margin-top:1.2rem;">Plan du site</label>
         <div class="photo-upload-btn" onclick="document.getElementById('sitePlanInput').click()"><i class="fas fa-camera"></i> Ajouter / Modifier plan du site</div>
         <input type="file" id="sitePlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('site')"/>
@@ -175,7 +170,6 @@
     </button>
     <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
-
 </div>
 
 <div id="toast"></div>
@@ -189,13 +183,12 @@
   let stepPhotos = {};
   let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
 
-  const clients = [
+  let clients = [
     { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"] },
     { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"] },
     { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"] }
   ];
 
-  // Titres propres (sans ce qui est après la flèche)
   const stepsList = [
     "1. Drone thermique toiture",
     "2. Caméra thermique onduleur AC+DC",
@@ -212,7 +205,7 @@
     "13. Vérification redémarrage"
   ];
 
-  const highVoltageSteps = [3,9,10,12];
+  const highVoltageSteps = [3]; // Une seule notification immédiate
   const torqueValues = ["8 Nm", "10 Nm", "12 Nm", "15 Nm", "18 Nm", "20 Nm", "25 Nm", "30 Nm", "Valeur personnalisée"];
 
   function showSafetyWarning() {
@@ -259,7 +252,6 @@
     technicianName = document.getElementById('technicianName').value.trim();
     if (!technicianName) return toast("Nom technicien requis");
     if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
-
     document.getElementById('infoBlock').style.display = 'none';
     stepPhotos = {};
     createSteps();
@@ -271,13 +263,11 @@
   function createSteps() {
     const container = document.getElementById('stepsContainer');
     container.innerHTML = '';
-
     stepsList.forEach((title, i) => {
       const stepNum = i + 1;
       const stepDiv = document.createElement('div');
       stepDiv.id = `step${stepNum}`;
       stepDiv.className = 'step card';
-
       let extraHTML = (stepNum === 9 || stepNum === 10) ? `
         <div class="torque-select">
           <label>Couple de serrage recommandé</label>
@@ -285,12 +275,10 @@
             ${torqueValues.map(v => `<option value="${v}">${v}</option>`).join('')}
           </select>
         </div>` : '';
-
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
           <div class="progress">Étape ${stepNum} / 13</div>
-          
           <h3 style="margin-bottom:1rem;">Checklist</h3>
           <div class="checklist-grid">
             <div class="checklist-header">Description</div>
@@ -304,21 +292,16 @@
               <div><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-noncontrole-${j}" onchange="exclusiveCheck(this)"></div>
             `).join('')}
           </div>
-
           ${extraHTML}
-
           <button class="btn-big btn-ok" style="margin:1.2rem 0; width:100%;" onclick="setAllConforme(${stepNum})">
             <i class="fas fa-check-double"></i> TOUT MARQUER CONFORME
           </button>
-
           <h3>Observations</h3>
           <textarea id="obs${stepNum}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${stepNum})"></textarea>
           <div id="preview${stepNum}" style="margin-top:1rem;padding:1.2rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:8px;display:none;"></div>
-
           <h3 style="margin-top:1.6rem;">Photos de l'étape</h3>
           <input type="file" id="photo${stepNum}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${stepNum})">
           <div id="photos${stepNum}" class="photo-grid"></div>
-
           <div class="nav-row">
             <button class="btn-big btn-prev" onclick="prevStep()" ${stepNum === 1 ? 'disabled' : ''}>
               <i class="fas fa-arrow-left"></i> Précédent
@@ -330,7 +313,6 @@
         </div>
       `;
       container.appendChild(stepDiv);
-
       if (highVoltageSteps.includes(stepNum)) {
         stepDiv.addEventListener('transitionend', () => {
           if (stepDiv.classList.contains('active')) showSafetyWarning();
@@ -404,9 +386,7 @@
   function addPhoto(n) {
     const files = document.getElementById(`photo${n}`).files;
     if (!files.length) return;
-
     if (!stepPhotos[n]) stepPhotos[n] = [];
-
     Array.from(files).forEach(file => {
       const reader = new FileReader();
       reader.onload = e => {
@@ -415,7 +395,6 @@
       };
       reader.readAsDataURL(file);
     });
-
     document.getElementById(`photo${n}`).value = '';
   }
 
@@ -423,7 +402,6 @@
     const grid = document.getElementById(`photos${n}`);
     if (!grid) return;
     grid.innerHTML = '';
-
     (stepPhotos[n] || []).forEach((src, idx) => {
       grid.innerHTML += `
         <div class="photo-preview">
@@ -484,7 +462,7 @@
     clients.push({ name, details: "", lastMaint: "", oldDates: [] });
     renderClientList();
     document.getElementById('newClient').value = "";
-    toast("Client ajouté");
+    toast("Client ajouté", "success");
   }
 
   function enableEditDetails() {
@@ -513,7 +491,7 @@
     a.download = `RL_Maintenance_Sync_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast("Fichier de synchronisation téléchargé");
+    toast("Fichier de synchronisation téléchargé", "success");
   }
 
   function importJSON(event) {
@@ -536,10 +514,9 @@
     reader.readAsText(file);
   }
 
-  // ====================== RAPPORT PDF AMÉLIORÉ ======================
+  // ====================== RAPPORT PDF ======================
   function generateReport() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
-
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const client = clients[currentClientIndex];
@@ -572,7 +549,6 @@
 
     for (let step = 1; step <= 13; step++) {
       if (y > 240) { doc.addPage(); y = 30; }
-
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
       doc.text(stepsList[step-1], 20, y);
@@ -595,7 +571,6 @@
         styles: { fontSize: 9.5, cellPadding: 4, halign: 'center', lineWidth: 0.5 },
         columnStyles: { 0: { halign: 'left', cellWidth: 105 } }
       });
-
       y = doc.lastAutoTable.finalY + 12;
 
       const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
@@ -606,13 +581,11 @@
         y += 12;
       }
 
-      // Photos de l'étape
       if (stepPhotos[step] && stepPhotos[step].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.text("Photos de l'étape :", 25, y);
         y += 10;
-
         for (let imgData of stepPhotos[step]) {
           if (y > 240) { doc.addPage(); y = 30; }
           try {
@@ -626,7 +599,6 @@
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
 
-    // Enregistrement dans l'historique
     history.unshift({
       id: Date.now(),
       clientName: client.name,
@@ -635,8 +607,7 @@
     });
     localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
     refreshHistory();
-
-    toast("Rapport PDF généré et enregistré dans l'historique !");
+    toast("Rapport PDF généré et enregistré dans l'historique !", "success");
   }
 
   function refreshHistory() {
