@@ -125,6 +125,11 @@
           </button>
           <input type="file" id="sitePlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('site')"/>
         </div>
+
+        <!-- Bouton Supprimer client (visible uniquement en Admin) -->
+        <button id="deleteClientBtn" class="btn-big btn-clear" style="display:none; margin-top:15px; width:100%;" onclick="deleteClient()">
+          <i class="fas fa-trash-alt"></i> Supprimer ce client
+        </button>
       </div>
 
       <div style="display:flex; gap:1rem; margin-top:2rem;">
@@ -164,7 +169,6 @@
     <button class="btn-big" style="background:#0d6efd;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="generateWord()">
       <i class="fas fa-file-word"></i> Word
     </button>
-    <!-- Bouton Recommencer à la toute fin -->
     <button class="btn-big" style="background:#6c757d;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="recommencerTout()">
       <i class="fas fa-redo"></i> Recommencer
     </button>
@@ -235,6 +239,7 @@
     const idx = +document.getElementById('clientSelect').value;
     if (isNaN(idx) || idx < 0) {
       document.getElementById('clientDetails').style.display = 'none';
+      document.getElementById('deleteClientBtn').style.display = 'none';
       return;
     }
     currentClientIndex = idx;
@@ -258,12 +263,25 @@
 
     document.getElementById('adminPlanButtons').style.display = isAdminMode ? 'block' : 'none';
     document.getElementById('editOldDatesBtn').style.display = isAdminMode ? 'inline' : 'none';
+    document.getElementById('deleteClientBtn').style.display = isAdminMode ? 'block' : 'none';
   }
 
   function enableOldDatesEdit() {
     if (!isAdminMode) return;
     document.getElementById('oldDatesInput').readOnly = false;
     toast("Vous pouvez modifier les anciennes dates", "success");
+  }
+
+  function deleteClient() {
+    if (currentClientIndex < 0 || !isAdminMode) return;
+    if (confirm("Supprimer définitivement ce client ?")) {
+      clients.splice(currentClientIndex, 1);
+      saveClients();
+      renderClientList();
+      document.getElementById('clientDetails').style.display = 'none';
+      document.getElementById('deleteClientBtn').style.display = 'none';
+      toast("Client supprimé", "success");
+    }
   }
 
   function startMaintenance() {
@@ -473,6 +491,7 @@
       document.getElementById('oldDatesInput').readOnly = false;
       document.getElementById('editOldDatesBtn').style.display = 'inline';
       document.getElementById('editDetailsBtn').style.display = 'inline';
+      document.getElementById('deleteClientBtn').style.display = 'block';
     }
   }
 
@@ -487,6 +506,7 @@
     document.getElementById('oldDatesInput').readOnly = true;
     document.getElementById('editOldDatesBtn').style.display = 'none';
     document.getElementById('editDetailsBtn').style.display = 'none';
+    document.getElementById('deleteClientBtn').style.display = 'none';
   }
 
   function addNewClient() {
@@ -520,6 +540,18 @@
       toast("Plan mis à jour", "success");
     };
     reader.readAsDataURL(file);
+  }
+
+  function deleteClient() {
+    if (currentClientIndex < 0 || !isAdminMode) return;
+    if (confirm("Supprimer définitivement ce client ?")) {
+      clients.splice(currentClientIndex, 1);
+      saveClients();
+      renderClientList();
+      document.getElementById('clientDetails').style.display = 'none';
+      document.getElementById('deleteClientBtn').style.display = 'none';
+      toast("Client supprimé", "success");
+    }
   }
 
   function generateReport() {
@@ -642,7 +674,7 @@
   }
 
   function recommencerTout() {
-    if (confirm("Recommencer une nouvelle maintenance ? Toutes les données actuelles seront perdues.")) {
+    if (confirm("Recommencer une nouvelle maintenance ?")) {
       location.reload();
     }
   }
