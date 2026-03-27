@@ -195,23 +195,39 @@
     { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"] }
   ];
 
+  // Titres propres (sans ce qui est après la flèche)
   const stepsList = [
-    "1. Drone thermique toiture → Rapport partie toiture",
-    "2. Caméra thermique onduleur AC+DC → Process",
-    "3. Ouverture du coffret AC et remise sous tension → Process + attention travail sous tension",
+    "1. Drone thermique toiture",
+    "2. Caméra thermique onduleur AC+DC",
+    "3. Ouverture du coffret AC et remise sous tension",
     "4. Vérification visuel et nettoyage local onduleur",
     "5. Thermique coffret AC",
-    "6. AGCP → Process",
-    "7. Test différentiel AGCP → Rapport test différentiel + verif paramétrage AGCP",
-    "8. Coupure sectionneur gestionnaire de réseau → Process",
-    "9. Vérification couple de serrage → Affichage support couple de serrage + Rapport: verif serrage (Partie AC + Onduleur)",
-    "10. Verif couple de serrage base onduleur → Affichage support couple de serrage + Rapport: verif serrage (Partie AC + Onduleur)",
-    "11. Ventilateur onduleur → Rapport partie onduleur nettoyage ventilateur",
-    "12. Remise en tension PDL + relevé de compteur → Rapport relevé compteur information centrale",
-    "13. Vérification redémarrage → Process"
+    "6. AGCP",
+    "7. Test différentiel AGCP",
+    "8. Coupure sectionneur gestionnaire de réseau",
+    "9. Vérification couple de serrage",
+    "10. Verif couple de serrage base onduleur",
+    "11. Ventilateur onduleur",
+    "12. Remise en tension PDL + relevé de compteur",
+    "13. Vérification redémarrage"
   ];
 
+  const highVoltageSteps = [3,9,10,12];
   const torqueValues = ["8 Nm", "10 Nm", "12 Nm", "15 Nm", "18 Nm", "20 Nm", "25 Nm", "30 Nm", "Valeur personnalisée"];
+
+  function showSafetyWarning() {
+    const el = document.createElement('div');
+    el.className = 'toast-msg toast-danger';
+    el.innerHTML = `
+      <div class="toast-icon"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
+      <div style="margin:12px 0; line-height:1.5; font-size:1.3rem;">
+        ⚠️ ATTENTION – TRAVAIL SOUS TENSION<br>
+        <strong>VÉRIFIEZ CONSIGNES DE SÉCURITÉ AVANT TOUTE INTERVENTION</strong>
+      </div>
+      <button class="toast-btn" onclick="this.parentElement.remove()">J'AI VÉRIFIÉ – OK</button>
+    `;
+    document.getElementById('toast').appendChild(el);
+  }
 
   function renderClientList() {
     const sel = document.getElementById('clientSelect');
@@ -314,6 +330,12 @@
         </div>
       `;
       container.appendChild(stepDiv);
+
+      if (highVoltageSteps.includes(stepNum)) {
+        stepDiv.addEventListener('transitionend', () => {
+          if (stepDiv.classList.contains('active')) showSafetyWarning();
+        }, { once: true });
+      }
     });
   }
 
@@ -514,7 +536,7 @@
     reader.readAsText(file);
   }
 
-  // ====================== RAPPORT PDF ======================
+  // ====================== RAPPORT PDF AMÉLIORÉ ======================
   function generateReport() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
 
@@ -614,7 +636,7 @@
     localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
     refreshHistory();
 
-    toast("Rapport PDF généré et enregistré !");
+    toast("Rapport PDF généré et enregistré dans l'historique !");
   }
 
   function refreshHistory() {
