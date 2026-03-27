@@ -100,15 +100,16 @@
         <label>Détails de l’installation <span id="editDetailsBtn" style="display:none;color:var(--primary);cursor:pointer;" onclick="enableEditDetails()">✏️ Modifier (Admin)</span></label>
         <textarea id="installationDetails" readonly rows="3"></textarea>
 
-        <label style="margin-top:1.2rem;">Anciennes dates de maintenance (rappel)</label>
-        <div id="oldDatesDisplay" style="padding:0.9rem;border:1px solid #dee2e6;border-radius:6px;background:#f8f9fa;min-height:60px;line-height:1.6;"></div>
+        <label style="margin-top:1.2rem;">Anciennes dates de maintenance (rappel) 
+          <span id="editOldDatesBtn" style="display:none;color:var(--primary);cursor:pointer;font-size:0.9rem;" onclick="enableOldDatesEdit()">✏️ Modifier (Admin)</span>
+        </label>
+        <textarea id="oldDatesInput" rows="4" readonly style="resize:vertical;"></textarea>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.4rem;">
           <div><label>Date dernière maintenance</label><input type="text" id="lastMaint" readonly/></div>
           <div><label>Date début intervention</label><input type="text" id="startDate" readonly value=""/></div>
         </div>
 
-        <!-- Plans -->
         <label style="margin-top:1.5rem;">Plan de câblage</label>
         <div id="wiringPreview" class="plan-preview" style="display:none;"></div>
         <label style="margin-top:1.2rem;">Plan du site</label>
@@ -177,7 +178,6 @@
   let stepPhotos = {};
   let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
 
-  // Clients persistants
   let clients = JSON.parse(localStorage.getItem('rl_clients')) || [
     { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"], wiringPlan: null, sitePlan: null },
     { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"], wiringPlan: null, sitePlan: null },
@@ -201,33 +201,9 @@
   ];
 
   const highVoltageSteps = [3];
-  const torqueValues = ["8 Nm", "10 Nm", "12 Nm", "15 Nm", "18 Nm", "20 Nm", "25 Nm", "30 Nm", "Valeur personnalisée"];
 
   function saveClients() {
     localStorage.setItem('rl_clients', JSON.stringify(clients));
-  }
-
-  function deleteClient(index) {
-    if (confirm("Voulez-vous vraiment supprimer ce client ?")) {
-      clients.splice(index, 1);
-      saveClients();
-      renderClientList();
-      toast("Client supprimé", "success");
-    }
-  }
-
-  function showSafetyWarning() {
-    const el = document.createElement('div');
-    el.className = 'toast-msg toast-danger';
-    el.innerHTML = `
-      <div class="toast-icon"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
-      <div style="margin:12px 0; line-height:1.5; font-size:1.3rem;">
-        ⚠️ ATTENTION – TRAVAIL SOUS TENSION<br>
-        <strong>VÉRIFIEZ CONSIGNES DE SÉCURITÉ AVANT TOUTE INTERVENTION</strong>
-      </div>
-      <button class="toast-btn" onclick="this.parentElement.remove()">J'AI VÉRIFIÉ – OK</button>
-    `;
-    document.getElementById('toast').appendChild(el);
   }
 
   function renderClientList() {
@@ -251,10 +227,16 @@
     const c = clients[idx];
     document.getElementById('clientDetails').style.display = 'block';
     document.getElementById('installationDetails').value = c.details || "";
-    document.getElementById('oldDatesDisplay').innerHTML = c.oldDates?.length ? c.oldDates.map(d => `<div>• ${d}</div>`).join('') : 'Aucune date enregistrée';
+
+    // Anciennes dates
+    const oldDatesArea = document.getElementById('oldDatesInput');
+    oldDatesArea.value = c.oldDates ? c.oldDates.join('\n') : '';
+    oldDatesArea.readOnly = !isAdminMode;
+
     document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
 
+    // Plans
     const wiringDiv = document.getElementById('wiringPreview');
     const siteDiv = document.getElementById('sitePreview');
     wiringDiv.style.display = c.wiringPlan ? 'block' : 'none';
@@ -263,6 +245,13 @@
     if (c.sitePlan) siteDiv.innerHTML = `<img src="${c.sitePlan}">`;
 
     document.getElementById('adminPlanButtons').style.display = isAdminMode ? 'block' : 'none';
+    document.getElementById('editOldDatesBtn').style.display = isAdminMode ? 'inline' : 'none';
+  }
+
+  function enableOldDatesEdit() {
+    if (!isAdminMode) return;
+    document.getElementById('oldDatesInput').readOnly = false;
+    toast("Vous pouvez modifier les anciennes dates", "success");
   }
 
   function startMaintenance() {
@@ -290,7 +279,9 @@
         <div class="torque-select">
           <label>Couple de serrage recommandé</label>
           <select id="torque${stepNum}" onchange="addTorqueToObs(${stepNum})">
-            ${torqueValues.map(v => `<option value="${v}">${v}</option>`).join('')}
+            <option>8 Nm</option><option>10 Nm</option><option>12 Nm</option><option>15 Nm</option>
+            <option>18 Nm</option><option>20 Nm</option><option>25 Nm</option><option>30 Nm</option>
+            <option>Valeur personnalisée</option>
           </select>
         </div>` : '';
       stepDiv.innerHTML = `
@@ -468,6 +459,8 @@
       document.getElementById('installationDetails').readOnly = false;
       document.getElementById('lastMaint').readOnly = false;
       document.getElementById('startDate').readOnly = false;
+      document.getElementById('oldDatesInput').readOnly = false;
+      document.getElementById('editOldDatesBtn').style.display = 'inline';
       document.getElementById('editDetailsBtn').style.display = 'inline';
     }
   }
@@ -480,6 +473,8 @@
     document.getElementById('installationDetails').readOnly = true;
     document.getElementById('lastMaint').readOnly = true;
     document.getElementById('startDate').readOnly = true;
+    document.getElementById('oldDatesInput').readOnly = true;
+    document.getElementById('editOldDatesBtn').style.display = 'none';
     document.getElementById('editDetailsBtn').style.display = 'none';
   }
 
@@ -503,10 +498,7 @@
   }
 
   function uploadPlan(type) {
-    if (!isAdminMode) {
-      alert("Seul le mode Admin permet de modifier les plans.");
-      return;
-    }
+    if (!isAdminMode) return alert("Seul le mode Admin permet de modifier les plans.");
     const file = document.getElementById(type + 'PlanInput').files[0];
     if (!file || currentClientIndex < 0) return;
     const reader = new FileReader();
@@ -583,7 +575,6 @@
         y += 12;
       }
 
-      // Photos dans le PDF
       if (stepPhotos[step] && stepPhotos[step].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
