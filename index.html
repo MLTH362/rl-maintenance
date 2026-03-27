@@ -580,16 +580,15 @@
     doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
     doc.text(`Date : ${document.getElementById('startDate').value || dateStr}`, 25, y); y += 15;
 
-    // Étapes à inclure dans le rapport (supprime 2,3,5,6,11,13) avec leur numéro original
-    const reportSteps = [1,4,7,8,9,10,12];
+    // Étapes incluses avec leur numéro original
+    const reportSteps = [1, 4, 7, 8, 9, 10, 12];
 
     for (let step of reportSteps) {
-      const idx = step - 1; // index dans stepsList
+      const idx = step - 1;
       if (y > 240) { doc.addPage(); y = 30; }
 
       let stepTitle = stepsList[idx];
       if (step === 7) stepTitle = "7. Vérification PDL";
-      if (step === 6) stepTitle = "6. Serrage PDL";
       if (step === 10) stepTitle = "10. Local onduleur";
 
       doc.setFontSize(14);
@@ -641,7 +640,7 @@
       }
     }
 
-    // Étape 12 spéciale : seulement les relevés sans tableau
+    // Étape 12 : seulement les relevés (sans tableau)
     if (y > 240) { doc.addPage(); y = 30; }
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
@@ -674,7 +673,7 @@
     const dateStr = new Date().toLocaleDateString('fr-FR');
 
     const wb = XLSX.utils.book_new();
-    const wsData = [
+    let wsData = [
       ["R.L ENERGIE - Rapport de Maintenance"],
       ["Client", client.name],
       ["Technicien", technicianName || "—"],
@@ -683,12 +682,19 @@
       ["Étape", "Observation"]
     ];
 
-    // Ajout des observations des étapes incluses
     const reportSteps = [1,4,7,8,9,10,12];
     reportSteps.forEach(step => {
+      let title = stepsList[step-1];
+      if (step === 7) title = "7. Vérification PDL";
+      if (step === 10) title = "10. Local onduleur";
       const obs = document.getElementById(`obs${step}`)?.value.trim() || "RAS";
-      wsData.push([`Étape ${step}`, obs]);
+      wsData.push([`Étape ${step} - ${title}`, obs]);
     });
+
+    // Relevés étape 12
+    const prod = document.getElementById('releveProd_12')?.value || "—";
+    const nonConso = document.getElementById('releveNonConso_12')?.value || "—";
+    wsData.push(["Étape 12 - Relevés", `Production : ${prod} | Non-consommation : ${nonConso}`]);
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     XLSX.utils.book_append_sheet(wb, ws, "Rapport");
@@ -702,7 +708,7 @@
     const dateStr = new Date().toLocaleDateString('fr-FR');
 
     let content = `
-      <h1 style="text-align:center;">R.L ENERGIE - Rapport de Maintenance</h1>
+      <h1 style="text-align:center; color:#004080;">R.L ENERGIE - Rapport de Maintenance</h1>
       <p><strong>Client :</strong> ${client.name}</p>
       <p><strong>Technicien :</strong> ${technicianName || "—"}</p>
       <p><strong>Date :</strong> ${dateStr}</p>
@@ -712,18 +718,15 @@
 
     const reportSteps = [1,4,7,8,9,10,12];
     reportSteps.forEach(step => {
-      let stepTitle = stepsList[step-1];
-      if (step === 7) stepTitle = "7. Vérification PDL";
-      if (step === 6) stepTitle = "6. Serrage PDL";
-      if (step === 10) stepTitle = "10. Local onduleur";
-
+      let title = stepsList[step-1];
+      if (step === 7) title = "7. Vérification PDL";
+      if (step === 10) title = "10. Local onduleur";
       const obs = document.getElementById(`obs${step}`)?.value.trim() || "RAS";
-      content += `<h3>Étape ${step} - ${stepTitle}</h3><p>${obs}</p><br>`;
+      content += `<h3>Étape ${step} - ${title}</h3><p>${obs}</p><br>`;
     });
 
-    // Ajout des relevés étape 12
-    const prod = document.getElementById('releveProd_12') ? document.getElementById('releveProd_12').value : "—";
-    const nonConso = document.getElementById('releveNonConso_12') ? document.getElementById('releveNonConso_12').value : "—";
+    const prod = document.getElementById('releveProd_12')?.value || "—";
+    const nonConso = document.getElementById('releveNonConso_12')?.value || "—";
     content += `<h3>Étape 12 - Relevés compteur</h3><p>Production : ${prod}<br>Non-consommation : ${nonConso}</p>`;
 
     const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
