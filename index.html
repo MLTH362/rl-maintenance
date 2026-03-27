@@ -312,6 +312,15 @@
             <option>Valeur personnalisée</option>
           </select>
         </div>` : '';
+
+      let step12Extra = (stepNum === 12) ? `
+        <div style="margin-top:1.5rem; background:#f8f9fa; padding:15px; border-radius:8px;">
+          <label>Relevé compteur Production (kWh)</label>
+          <input type="text" id="releveProd_${stepNum}" placeholder="Ex: 12456">
+          <label>Relevé compteur Non-consommation (kWh)</label>
+          <input type="text" id="releveNonConso_${stepNum}" placeholder="Ex: 8754">
+        </div>` : '';
+
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
@@ -330,6 +339,7 @@
             `).join('')}
           </div>
           ${extraHTML}
+          ${step12Extra}
           <button class="btn-big btn-ok" style="margin:1.2rem 0; width:100%;" onclick="setAllConforme(${stepNum})">
             <i class="fas fa-check-double"></i> TOUT MARQUER CONFORME
           </button>
@@ -570,10 +580,10 @@
     doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
     doc.text(`Date : ${document.getElementById('startDate').value || dateStr}`, 25, y); y += 15;
 
-    // Liste des étapes à inclure dans le rapport (on enlève 2,3,5,6,11,13)
-    const reportSteps = [0, 3, 7, 8, 9, 11]; // indices correspondant aux étapes 1,4,8,9,10,12
+    // Étapes incluses dans le rapport (on enlève 2,3,5,6,11,13)
+    const reportStepIndices = [0, 3, 6, 7, 8, 9]; // 1,4,7,8,9,10,12
 
-    for (let idx of reportSteps) {
+    for (let idx of reportStepIndices) {
       const step = idx + 1;
       if (y > 240) { doc.addPage(); y = 30; }
 
@@ -615,7 +625,6 @@
         y += 12;
       }
 
-      // Photos uniquement pour les étapes présentes dans le rapport
       if (stepPhotos[step] && stepPhotos[step].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
@@ -632,7 +641,7 @@
       }
     }
 
-    // Étape 12 spéciale : seulement relevé compteur
+    // Étape 12 : seulement les relevés (sans tableau)
     const step12 = 12;
     if (y > 240) { doc.addPage(); y = 30; }
     doc.setFontSize(14);
