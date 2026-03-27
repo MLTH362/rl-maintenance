@@ -350,7 +350,7 @@
           <input type="file" id="photo${stepNum}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${stepNum})">
           <div id="photos${stepNum}" class="photo-grid"></div>
           <div class="nav-row">
-            <button class="btn-big btn-prev" onclick="prevStep()" ${stepNum === 1 ? '' : ''}>
+            <button class="btn-big btn-prev" onclick="prevStep()">
               <i class="fas fa-arrow-left"></i> Précédent
             </button>
             <button class="btn-big btn-ok" onclick="nextStep(${stepNum})">
@@ -580,11 +580,11 @@
     doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
     doc.text(`Date : ${document.getElementById('startDate').value || dateStr}`, 25, y); y += 15;
 
-    // Étapes incluses dans le rapport (on enlève 2,3,5,6,11,13)
-    const reportStepIndices = [0, 3, 6, 7, 8, 9]; // étapes 1,4,7,8,9,10,12
+    // Étapes à inclure dans le rapport (supprime 2,3,5,6,11,13) avec leur numéro original
+    const reportSteps = [1,4,7,8,9,10,12];
 
-    for (let idx of reportStepIndices) {
-      const step = idx + 1;
+    for (let step of reportSteps) {
+      const idx = step - 1; // index dans stepsList
       if (y > 240) { doc.addPage(); y = 30; }
 
       let stepTitle = stepsList[idx];
@@ -641,7 +641,7 @@
       }
     }
 
-    // Étape 12 : seulement les relevés (sans tableau)
+    // Étape 12 spéciale : seulement les relevés sans tableau
     if (y > 240) { doc.addPage(); y = 30; }
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
@@ -666,6 +666,74 @@
     localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
     refreshHistory();
     toast("Rapport PDF généré et enregistré dans l'historique !", "success");
+  }
+
+  function generateExcel() {
+    if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
+    const client = clients[currentClientIndex];
+    const dateStr = new Date().toLocaleDateString('fr-FR');
+
+    const wb = XLSX.utils.book_new();
+    const wsData = [
+      ["R.L ENERGIE - Rapport de Maintenance"],
+      ["Client", client.name],
+      ["Technicien", technicianName || "—"],
+      ["Date", dateStr],
+      [""],
+      ["Étape", "Observation"]
+    ];
+
+    // Ajout des observations des étapes incluses
+    const reportSteps = [1,4,7,8,9,10,12];
+    reportSteps.forEach(step => {
+      const obs = document.getElementById(`obs${step}`)?.value.trim() || "RAS";
+      wsData.push([`Étape ${step}`, obs]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    XLSX.utils.book_append_sheet(wb, ws, "Rapport");
+    XLSX.writeFile(wb, `Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.xlsx`);
+    toast("Fichier Excel généré avec succès !", "success");
+  }
+
+  function generateWord() {
+    if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
+    const client = clients[currentClientIndex];
+    const dateStr = new Date().toLocaleDateString('fr-FR');
+
+    let content = `
+      <h1 style="text-align:center;">R.L ENERGIE - Rapport de Maintenance</h1>
+      <p><strong>Client :</strong> ${client.name}</p>
+      <p><strong>Technicien :</strong> ${technicianName || "—"}</p>
+      <p><strong>Date :</strong> ${dateStr}</p>
+      <hr>
+      <h2>Observations par étape</h2>
+    `;
+
+    const reportSteps = [1,4,7,8,9,10,12];
+    reportSteps.forEach(step => {
+      let stepTitle = stepsList[step-1];
+      if (step === 7) stepTitle = "7. Vérification PDL";
+      if (step === 6) stepTitle = "6. Serrage PDL";
+      if (step === 10) stepTitle = "10. Local onduleur";
+
+      const obs = document.getElementById(`obs${step}`)?.value.trim() || "RAS";
+      content += `<h3>Étape ${step} - ${stepTitle}</h3><p>${obs}</p><br>`;
+    });
+
+    // Ajout des relevés étape 12
+    const prod = document.getElementById('releveProd_12') ? document.getElementById('releveProd_12').value : "—";
+    const nonConso = document.getElementById('releveNonConso_12') ? document.getElementById('releveNonConso_12').value : "—";
+    content += `<h3>Étape 12 - Relevés compteur</h3><p>Production : ${prod}<br>Non-consommation : ${nonConso}</p>`;
+
+    const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast("Fichier Word généré avec succès !", "success");
   }
 
   function refreshHistory() {
