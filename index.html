@@ -164,6 +164,20 @@
     <button class="btn-big" style="background:#0d6efd;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="generateWord()">
       <i class="fas fa-file-word"></i> Word
     </button>
+    <!-- Bouton Recommencer à la toute fin -->
+    <button class="btn-big" style="background:#6c757d;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="recommencerTout()">
+      <i class="fas fa-redo"></i> Recommencer
+    </button>
+  </div>
+
+  <div style="text-align:center; margin-bottom:4rem;">
+    <button class="btn-big" style="background:#6c757d;color:white;" onclick="exportJSON()">
+      <i class="fas fa-download"></i> Exporter JSON (Sync tablette/PC)
+    </button>
+    <button class="btn-big" style="background:#6c757d;color:white; margin-left:15px;" onclick="document.getElementById('importFile').click()">
+      <i class="fas fa-upload"></i> Importer JSON (Sync tablette/PC)
+    </button>
+    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
 </div>
 
@@ -228,7 +242,6 @@
     document.getElementById('clientDetails').style.display = 'block';
     document.getElementById('installationDetails').value = c.details || "";
 
-    // Anciennes dates
     const oldDatesArea = document.getElementById('oldDatesInput');
     oldDatesArea.value = c.oldDates ? c.oldDates.join('\n') : '';
     oldDatesArea.readOnly = !isAdminMode;
@@ -236,7 +249,6 @@
     document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
 
-    // Plans
     const wiringDiv = document.getElementById('wiringPreview');
     const siteDiv = document.getElementById('sitePreview');
     wiringDiv.style.display = c.wiringPlan ? 'block' : 'none';
@@ -258,7 +270,6 @@
     technicianName = document.getElementById('technicianName').value.trim();
     if (!technicianName) return toast("Nom technicien requis");
     if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
-
     document.getElementById('infoBlock').style.display = 'none';
     stepPhotos = {};
     createSteps();
@@ -628,6 +639,63 @@
 
   function clearAll() {
     if (confirm("Tout effacer ?")) location.reload();
+  }
+
+  function recommencerTout() {
+    if (confirm("Recommencer une nouvelle maintenance ? Toutes les données actuelles seront perdues.")) {
+      location.reload();
+    }
+  }
+
+  function exportJSON() {
+    const data = { clients, history };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rl_energie_backup.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast("JSON exporté avec succès", "success");
+  }
+
+  function importJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.clients) {
+          clients = data.clients;
+          saveClients();
+          renderClientList();
+        }
+        if (data.history) {
+          history = data.history;
+          localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
+          refreshHistory();
+        }
+        toast("Données importées avec succès", "success");
+      } catch(err) {
+        toast("Erreur lors de l'importation", "danger");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function showSafetyWarning() {
+    const el = document.createElement('div');
+    el.className = 'toast-msg toast-danger';
+    el.innerHTML = `
+      <div class="toast-icon"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
+      <div style="margin:12px 0; line-height:1.5; font-size:1.3rem;">
+        ⚠️ ATTENTION – TRAVAIL SOUS TENSION<br>
+        <strong>VÉRIFIEZ CONSIGNES DE SÉCURITÉ AVANT TOUTE INTERVENTION</strong>
+      </div>
+      <button class="toast-btn" onclick="this.parentElement.remove()">J'AI VÉRIFIÉ – OK</button>
+    `;
+    document.getElementById('toast').appendChild(el);
   }
 
   window.onload = function() {
