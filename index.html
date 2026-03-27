@@ -20,197 +20,57 @@
       --dark: #1f2d3d;
       --bg: #f6f9fc;
       --border: #ced4da;
-      --radius: 14px;
+      --radius: 12px;
     }
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
-    body { background:var(--bg); color:var(--dark); min-height:100vh; line-height:1.6; font-size:15px; }
+    body { background:var(--bg); color:var(--dark); min-height:100vh; line-height:1.5; font-size:15px; }
 
-    header { 
-      background: linear-gradient(135deg, #004080, #0066cc); 
-      color:white; 
-      padding:1.6rem 2rem; 
-      text-align:center; 
-      box-shadow:0 6px 20px rgba(0,0,0,0.2); 
-      display:flex; 
-      justify-content:space-between; 
-      align-items:center; 
-    }
-    .logo { font-size:2.5rem; font-weight:800; letter-spacing:1.5px; }
+    header { background:var(--primary); color:white; padding:1.4rem 2rem; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.15); display:flex; justify-content:space-between; align-items:center; }
+    .logo { font-size:2.3rem; font-weight:800; letter-spacing:1px; }
 
-    .main-content { max-width:1150px; margin:2.5rem auto; padding:0 1.2rem; }
+    .main-content { max-width:1100px; margin:2rem auto; padding:0 1rem; }
 
-    .card { 
-      background:white; 
-      border-radius:var(--radius); 
-      box-shadow:0 8px 25px rgba(0,0,0,0.1); 
-      margin-bottom:2.2rem; 
-      overflow:hidden; 
-      border:1px solid var(--border); 
-    }
-    .ch { 
-      background:var(--primary); 
-      color:white; 
-      padding:1.3rem; 
-      font-size:1.4rem; 
-      font-weight:700; 
-      text-align:center; 
-    }
-    .cb { padding:2rem; }
+    .card { background:white; border-radius:var(--radius); box-shadow:0 6px 20px rgba(0,0,0,0.08); margin-bottom:2rem; overflow:hidden; border:1px solid var(--border); }
+    .ch { background:var(--primary); color:white; padding:1.1rem; font-size:1.35rem; font-weight:700; text-align:center; }
+    .cb { padding:1.8rem 2rem; }
 
-    label { font-weight:600; margin-bottom:0.6rem; display:block; color:#333; }
-    input, select, textarea { 
-      width:100%; 
-      padding:0.95rem; 
-      border:2px solid var(--border); 
-      border-radius:10px; 
-      font-size:1rem; 
-      margin-bottom:1.3rem; 
-    }
-    input:focus, textarea:focus, select:focus { 
-      border-color:var(--primary-light); 
-      box-shadow:0 0 0 4px rgba(0,102,204,0.15); 
-    }
+    label { font-weight:600; margin-bottom:0.5rem; display:block; font-size:0.97rem; }
+    input, select, textarea { width:100%; padding:0.85rem; border:2px solid var(--border); border-radius:8px; font-size:0.97rem; margin-bottom:1.1rem; }
+    input:focus, textarea:focus, select:focus { border-color:var(--primary-light); box-shadow:0 0 0 3px rgba(0,102,204,0.15); }
 
-    .photo-upload-btn { 
-      background: var(--primary-light); 
-      color: white; 
-      padding: 1.4rem; 
-      border-radius: 12px; 
-      text-align: center; 
-      cursor: pointer; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      gap: 12px; 
-      font-size: 1.2rem; 
-      font-weight: 600; 
-      margin: 1.2rem 0; 
-      transition: all 0.3s; 
-    }
-    .photo-upload-btn:hover { background: var(--primary); transform: translateY(-4px); }
+    .photo-upload-btn { background: var(--primary-light); color: white; padding: 1.3rem; border-radius: 12px; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.18rem; font-weight: 600; margin: 1.2rem 0; transition: all 0.25s; }
+    .photo-upload-btn:hover { background: var(--primary); transform: translateY(-3px); }
 
-    .photo-grid { 
-      display:grid; 
-      grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); 
-      gap:1.4rem; 
-      margin:1.6rem 0; 
-    }
-    .photo-preview { 
-      position:relative; 
-      border-radius:12px; 
-      overflow:hidden; 
-      box-shadow:0 6px 15px rgba(0,0,0,0.12); 
-    }
-    .photo-preview img { width:100%; height:160px; object-fit:cover; }
-    .delete-btn { 
-      position:absolute; 
-      top:10px; 
-      right:10px; 
-      background:#dc3545; 
-      color:white; 
-      width:36px; 
-      height:36px; 
-      border-radius:50%; 
-      border:none; 
-      font-size:1.4rem; 
-      cursor:pointer; 
-      box-shadow:0 2px 8px rgba(0,0,0,0.3);
-    }
+    .photo-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:1.2rem; margin:1.4rem 0; }
+    .photo-preview { position:relative; border-radius:10px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+    .photo-preview img { width:100%; height:145px; object-fit:cover; }
+    .delete-btn { position:absolute; top:8px; right:8px; background:#dc3545; color:white; width:32px; height:32px; border-radius:50%; border:none; font-size:1.3rem; cursor:pointer; }
 
-    .btn-big { 
-      padding:1.1rem 2rem; 
-      border:none; 
-      border-radius:10px; 
-      font-size:1.1rem; 
-      font-weight:700; 
-      cursor:pointer; 
-      display:inline-flex; 
-      align-items:center; 
-      justify-content:center; 
-      gap:10px; 
-      transition:all 0.3s; 
-    }
+    .btn-big { padding:1rem 1.8rem; border:none; border-radius:10px; font-size:1.05rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:10px; transition:all 0.25s; }
     .btn-ok { background:var(--success); color:white; }
-    .btn-ok:hover { background:#218838; transform:translateY(-3px); }
+    .btn-ok:hover { background:#218838; transform:translateY(-2px); }
     .btn-prev { background:#6c757d; color:white; }
     .btn-clear { background:#dc3545; color:white; }
 
-    .nav-row { display:flex; justify-content:space-between; margin-top:2.8rem; gap:1.2rem; }
+    .nav-row { display:flex; justify-content:space-between; margin-top:2.5rem; gap:1rem; }
 
-    .checklist-grid { 
-      display:grid; 
-      grid-template-columns:3.4fr 1fr 1fr 1fr; 
-      gap:10px; 
-      margin:1.2rem 0; 
-      align-items:center; 
-    }
-    .checklist-header { 
-      font-weight:bold; 
-      text-align:center; 
-      background:var(--primary); 
-      color:white; 
-      padding:0.7rem; 
-      border-radius:8px; 
-      font-size:0.9rem; 
-    }
-    .checklist-item { padding:0.7rem 0.5rem; border-bottom:1px solid #eee; font-size:0.96rem; }
+    .checklist-grid { display:grid; grid-template-columns:3.2fr 1fr 1fr 1fr; gap:8px; margin:1rem 0; align-items:center; }
+    .checklist-header { font-weight:bold; text-align:center; background:var(--primary); color:white; padding:0.6rem; border-radius:6px; font-size:0.88rem; }
+    .checklist-item { padding:0.6rem 0.4rem; border-bottom:1px solid #eee; font-size:0.94rem; }
 
-    input[type="checkbox"] { width:1.4rem; height:1.4rem; cursor:pointer; accent-color:#28a745; }
+    input[type="checkbox"] { width:1.35rem; height:1.35rem; cursor:pointer; accent-color:#28a745; }
 
     #toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); z-index:9999; pointer-events:all; }
-    .toast-msg { 
-      padding:1.6rem 3rem; 
-      border-radius:14px; 
-      box-shadow:0 10px 30px rgba(0,0,0,0.5); 
-      font-weight:700; 
-      font-size:1.2rem; 
-      display:flex; 
-      flex-direction:column; 
-      align-items:center; 
-      gap:15px; 
-      text-align:center; 
-      max-width:92%; 
-      background:var(--danger); 
-      color:white; 
-      border:4px solid #fff; 
-    }
-    .toast-btn { 
-      background:#fff; 
-      color:var(--danger); 
-      border:none; 
-      padding:0.8rem 2.2rem; 
-      border-radius:8px; 
-      font-weight:700; 
-      cursor:pointer; 
-      font-size:1.1rem; 
-    }
+    .toast-msg { padding:1.6rem 3rem; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.5); font-weight:700; font-size:1.2rem; display:flex; flex-direction:column; align-items:center; gap:15px; text-align:center; max-width:92%; background:var(--danger); color:white; border:4px solid #fff; }
+    .toast-btn { background:#fff; color:var(--danger); border:none; padding:0.8rem 2.2rem; border-radius:8px; font-weight:700; cursor:pointer; font-size:1.1rem; }
 
     .step { display:none; }
     .step.active { display:block; }
 
-    .progress { 
-      text-align:center; 
-      font-size:1.15rem; 
-      color:var(--primary); 
-      margin-bottom:1.4rem; 
-      font-weight:700; 
-    }
-
-    #historyList { 
-      margin-top:1rem; 
-      max-height:420px; 
-      overflow-y:auto; 
-      border:1px solid #ddd; 
-      border-radius:10px; 
-    }
-    .history-item { 
-      padding:16px; 
-      border-bottom:1px solid #eee; 
-      cursor:pointer; 
-      transition:0.2s; 
-    }
+    .progress { text-align:center; font-size:1.1rem; color:var(--primary); margin-bottom:1.2rem; font-weight:600; }
+    #historyList { margin-top:1rem; max-height:420px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; }
+    .history-item { padding:14px; border-bottom:1px solid #eee; cursor:pointer; }
     .history-item:hover { background:#f0f7ff; }
-    .history-item .date { font-size:0.9rem; color:#555; }
   </style>
 </head>
 <body>
@@ -228,11 +88,11 @@
   <div id="infoBlock" class="card block active">
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
     <div class="cb">
-      <div id="adminControls" style="display:none;margin-bottom:1.6rem;">
+      <div id="adminControls" style="display:none;margin-bottom:1.4rem;">
         <label>Ajouter un nouveau client</label>
-        <div style="display:flex;gap:12px;">
+        <div style="display:flex;gap:10px;">
           <input type="text" id="newClient" placeholder="Ex: Client D - 300 kWc" style="flex:1;"/>
-          <button class="btn-big btn-ok" style="width:auto;padding:0 1.8rem;" onclick="addNewClient()">Ajouter</button>
+          <button class="btn-big btn-ok" style="width:auto;padding:0 1.6rem;" onclick="addNewClient()">Ajouter</button>
         </div>
       </div>
 
@@ -244,37 +104,37 @@
         <option value="">Sélectionnez un client...</option>
       </select>
 
-      <div id="clientDetails" style="display:none;margin-top:1.8rem;">
+      <div id="clientDetails" style="display:none;margin-top:1.6rem;">
         <label>Détails de l’installation <span id="editDetailsBtn" style="display:none;color:var(--primary);cursor:pointer;" onclick="enableEditDetails()">✏️ Modifier (Admin)</span></label>
         <textarea id="installationDetails" readonly rows="3"></textarea>
 
-        <label style="margin-top:1.4rem;">Anciennes dates de maintenance (rappel)</label>
-        <div id="oldDatesDisplay" style="padding:1rem;border:1px solid #dee2e6;border-radius:8px;background:#f8f9fa;min-height:70px;line-height:1.7;"></div>
+        <label style="margin-top:1.2rem;">Anciennes dates de maintenance (rappel)</label>
+        <div id="oldDatesDisplay" style="padding:0.9rem;border:1px solid #dee2e6;border-radius:6px;background:#f8f9fa;min-height:60px;line-height:1.6;"></div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.4rem; margin-top:1.6rem;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.4rem;">
           <div><label>Date dernière maintenance</label><input type="text" id="lastMaint" readonly/></div>
           <div><label>Date début intervention</label><input type="text" id="startDate" readonly value=""/></div>
         </div>
 
-        <label style="margin-top:1.4rem;">Plan de câblage</label>
+        <label style="margin-top:1.2rem;">Plan de câblage</label>
         <div class="photo-upload-btn" onclick="document.getElementById('wiringPlanInput').click()"><i class="fas fa-camera"></i> Ajouter / Modifier plan de câblage</div>
         <input type="file" id="wiringPlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('wiring')"/>
-        <div id="wiringPreview" style="margin-top:0.8rem;"></div>
+        <div id="wiringPreview" style="margin-top:0.6rem;"></div>
 
-        <label style="margin-top:1.4rem;">Plan du site</label>
+        <label style="margin-top:1.2rem;">Plan du site</label>
         <div class="photo-upload-btn" onclick="document.getElementById('sitePlanInput').click()"><i class="fas fa-camera"></i> Ajouter / Modifier plan du site</div>
         <input type="file" id="sitePlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('site')"/>
-        <div id="sitePreview" style="margin-top:0.8rem;"></div>
+        <div id="sitePreview" style="margin-top:0.6rem;"></div>
       </div>
 
-      <div style="display:flex; gap:1.2rem; margin-top:2.4rem;">
-        <button id="startBtn" class="btn-big btn-ok" onclick="startMaintenance()" style="flex:1;font-size:1.15rem;">
+      <div style="display:flex; gap:1rem; margin-top:2rem;">
+        <button id="startBtn" class="btn-big btn-ok" onclick="startMaintenance()" style="flex:1;font-size:1.12rem;">
           <i class="fas fa-play"></i> COMMENCER LA MAINTENANCE
         </button>
         <button class="btn-big" style="background:#6c757d;color:white;flex:1;" onclick="location.reload()">
-          <i class="fas fa-redo"></i> Nouvelle maintenance
+          <i class="fas fa-redo"></i> Recommencer
         </button>
-        <button class="btn-big btn-clear" onclick="clearAll()" style="margin-left:0.5rem;">
+        <button class="btn-big btn-clear" onclick="clearAll()" style="margin-left:1rem;">
           <i class="fas fa-trash-alt"></i> Effacer tout
         </button>
       </div>
@@ -283,35 +143,35 @@
 
   <div id="stepsContainer"></div>
 
-  <div class="card" style="margin-top:2.5rem;">
-    <div class="ch">Historique des rapports</div>
+  <div class="card" style="margin-top:2rem;">
+    <div class="ch">Historique des rapports enregistrés</div>
     <div class="cb">
-      <input type="text" id="searchHistory" placeholder="Rechercher par client ou technicien..." oninput="filterHistory()" style="margin-bottom:1rem;">
-      <button class="btn-big" onclick="refreshHistory()" style="background:#17a2b8;color:white;margin-bottom:1rem;">
+      <input type="text" id="searchHistory" placeholder="Rechercher client ou technicien..." oninput="filterHistory()">
+      <button class="btn-big" onclick="refreshHistory()" style="background:#17a2b8;color:white;margin-top:10px;">
         <i class="fas fa-history"></i> Rafraîchir
       </button>
-      <div id="historyList"></div>
+      <div id="historyList" style="margin-top:1rem;"></div>
     </div>
   </div>
 
-  <div style="text-align:center; margin:4.5rem 0 3rem; display:flex; justify-content:center; gap:1.2rem; flex-wrap:wrap;">
-    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.15rem;padding:1.3rem 3rem;">
-      <i class="fas fa-file-pdf"></i> Générer PDF
+  <div style="text-align:center; margin:4rem 0 3rem; display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
+    <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.1rem;padding:1.2rem 2.8rem;">
+      <i class="fas fa-file-pdf"></i> PDF
     </button>
-    <button class="btn-big" style="background:#1e7e34;color:white;font-size:1.15rem;padding:1.3rem 3rem;" onclick="generateExcel()">
+    <button class="btn-big" style="background:#1e7e34;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="generateExcel()">
       <i class="fas fa-file-excel"></i> Excel
     </button>
-    <button class="btn-big" style="background:#0d6efd;color:white;font-size:1.15rem;padding:1.3rem 3rem;" onclick="generateWord()">
+    <button class="btn-big" style="background:#0d6efd;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="generateWord()">
       <i class="fas fa-file-word"></i> Word
     </button>
   </div>
 
-  <div style="text-align:center; margin-bottom:5rem;">
+  <div style="text-align:center; margin-bottom:4rem;">
     <button class="btn-big" style="background:#6c757d;color:white;" onclick="exportJSON()">
-      <i class="fas fa-download"></i> Exporter JSON (Sync PC → Tablette)
+      <i class="fas fa-download"></i> Exporter JSON (Sync)
     </button>
-    <button class="btn-big" style="background:#6c757d;color:white; margin-left:20px;" onclick="document.getElementById('importFile').click()">
-      <i class="fas fa-upload"></i> Importer JSON (Sync Tablette → PC)
+    <button class="btn-big" style="background:#6c757d;color:white; margin-left:15px;" onclick="document.getElementById('importFile').click()">
+      <i class="fas fa-upload"></i> Importer JSON
     </button>
     <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
@@ -381,15 +241,15 @@
 
   function startMaintenance() {
     technicianName = document.getElementById('technicianName').value.trim();
-    if (!technicianName) return toast("Veuillez entrer le nom du technicien", "danger");
-    if (document.getElementById('clientSelect').value === "") return toast("Veuillez sélectionner un client", "danger");
+    if (!technicianName) return toast("Nom technicien requis");
+    if (document.getElementById('clientSelect').value === "") return toast("Sélectionnez un client");
 
     document.getElementById('infoBlock').style.display = 'none';
     stepPhotos = {};
     createSteps();
     document.getElementById('step1').classList.add('active');
     currentStep = 1;
-    toast("Maintenance démarrée avec succès", "success");
+    toast("Maintenance démarrée", "success");
   }
 
   function createSteps() {
@@ -413,13 +273,13 @@
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
-          <div class="progress">Étape ${stepNum} sur 13</div>
+          <div class="progress">Étape ${stepNum} / 13</div>
           
-          <h3 style="margin:1.2rem 0 0.8rem;">Checklist</h3>
+          <h3 style="margin-bottom:1rem;">Checklist</h3>
           <div class="checklist-grid">
             <div class="checklist-header">Description</div>
             <div class="checklist-header">Conforme</div>
-            <div class="checklist-header">Défaut</div>
+            <div class="checklist-header">Défaut constaté</div>
             <div class="checklist-header">Non contrôlé</div>
             ${getChecklistItems(i).map((desc, j) => `
               <div class="checklist-item">${desc}</div>
@@ -431,7 +291,7 @@
 
           ${extraHTML}
 
-          <button class="btn-big btn-ok" style="margin:1.4rem 0; width:100%;" onclick="setAllConforme(${stepNum})">
+          <button class="btn-big btn-ok" style="margin:1.2rem 0; width:100%;" onclick="setAllConforme(${stepNum})">
             <i class="fas fa-check-double"></i> TOUT MARQUER CONFORME
           </button>
 
@@ -459,17 +319,18 @@
 
   function addTorqueToObs(stepNum) {
     const select = document.getElementById(`torque${stepNum}`);
+    if (!select) return;
     const value = select.value;
-    const obs = document.getElementById(`obs${stepNum}`);
+    const obsTextarea = document.getElementById(`obs${stepNum}`);
     if (value && value !== "Valeur personnalisée") {
-      if (obs.value.trim()) obs.value += "\n";
-      obs.value += "Couple de serrage : " + value;
+      if (obsTextarea.value.trim()) obsTextarea.value += "\n";
+      obsTextarea.value += "Couple de serrage : " + value;
       updateObsPreview(stepNum);
     }
   }
 
   function getChecklistItems(i) {
-    const lists = [
+    const checklists = [
       ["Observation drone thermique"],
       ["Observation thermique onduleur AC et DC"],
       ["État visuel coffret AC (câbles, appareils, coffret)"],
@@ -484,7 +345,7 @@
       ["Remise en tension PDL + relevé de compteur"],
       ["Vérification redémarrage"]
     ];
-    return lists[i] || ["Point à vérifier"];
+    return checklists[i] || ["Point à vérifier"];
   }
 
   function exclusiveCheck(checkbox) {
@@ -558,11 +419,11 @@
   }
 
   function updateObsPreview(n) {
-    const ta = document.getElementById(`obs${n}`);
+    const textarea = document.getElementById(`obs${n}`);
     const preview = document.getElementById(`preview${n}`);
-    if (ta && preview) {
-      preview.style.display = ta.value.trim() ? 'block' : 'none';
-      if (ta.value.trim()) preview.innerHTML = `<strong>Observation :</strong><br>${ta.value}`;
+    if (textarea && preview) {
+      preview.style.display = textarea.value.trim() ? 'block' : 'none';
+      if (textarea.value.trim()) preview.innerHTML = `<strong>Observation :</strong><br>${textarea.value}`;
     }
   }
 
@@ -601,7 +462,7 @@
     clients.push({ name, details: "", lastMaint: "", oldDates: [] });
     renderClientList();
     document.getElementById('newClient').value = "";
-    toast("Client ajouté avec succès");
+    toast("Client ajouté");
   }
 
   function enableEditDetails() {
@@ -622,7 +483,7 @@
 
   // ====================== SYNCHRONISATION ======================
   function exportJSON() {
-    const data = { clients, history, timestamp: new Date().toISOString() };
+    const data = { clients: clients, history: history, timestamp: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -630,7 +491,7 @@
     a.download = `RL_Maintenance_Sync_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast("Fichier de synchronisation prêt (transférez-le sur l'autre appareil)");
+    toast("Fichier de synchronisation téléchargé");
   }
 
   function importJSON(event) {
@@ -645,7 +506,7 @@
         localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
         renderClientList();
         refreshHistory();
-        toast("Synchronisation réussie !", "success");
+        toast("Synchronisation réussie", "success");
       } catch(err) {
         toast("Erreur lors de l'import", "danger");
       }
@@ -662,7 +523,7 @@
     const client = clients[currentClientIndex];
     const dateStr = new Date().toLocaleDateString('fr-FR');
 
-    // Couverture
+    // Page de couverture
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255);
@@ -723,7 +584,7 @@
         y += 12;
       }
 
-      // Photos
+      // Photos de l'étape
       if (stepPhotos[step] && stepPhotos[step].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
@@ -743,36 +604,31 @@
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
 
-    // Sauvegarde dans l'historique
+    // Enregistrement dans l'historique
     history.unshift({
       id: Date.now(),
       clientName: client.name,
       technician: technicianName || "Inconnu",
-      date: dateStr,
-      timestamp: new Date().toISOString()
+      date: dateStr
     });
     localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
     refreshHistory();
 
-    toast("Rapport PDF généré et enregistré dans l'historique !", "success");
+    toast("Rapport PDF généré et enregistré !");
   }
 
   function refreshHistory() {
-    const container = document.getElementById('historyList');
-    container.innerHTML = '';
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
     if (history.length === 0) {
-      container.innerHTML = '<p style="text-align:center; padding:30px; color:#777;">Aucun rapport enregistré pour le moment</p>';
+      list.innerHTML = '<p style="text-align:center;padding:20px;color:#666;">Aucun rapport enregistré</p>';
       return;
     }
-
-    history.forEach(item => {
+    history.forEach(report => {
       const div = document.createElement('div');
       div.className = 'history-item';
-      div.innerHTML = `
-        <strong>${item.clientName}</strong><br>
-        <span class="date">${item.date} — Technicien : ${item.technician}</span>
-      `;
-      container.appendChild(div);
+      div.innerHTML = `<strong>${report.clientName}</strong><br><span class="date">${report.date} — ${report.technician}</span>`;
+      list.appendChild(div);
     });
   }
 
@@ -784,9 +640,7 @@
   }
 
   function clearAll() {
-    if (confirm("Tout effacer et recommencer une nouvelle maintenance ?")) {
-      location.reload();
-    }
+    if (confirm("Tout effacer ?")) location.reload();
   }
 
   window.onload = function() {
