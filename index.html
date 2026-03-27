@@ -126,7 +126,6 @@
           <input type="file" id="sitePlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('site')"/>
         </div>
 
-        <!-- Bouton Supprimer client (visible uniquement en Admin) -->
         <button id="deleteClientBtn" class="btn-big btn-clear" style="display:none; margin-top:15px; width:100%;" onclick="deleteClient()">
           <i class="fas fa-trash-alt"></i> Supprimer ce client
         </button>
@@ -542,18 +541,6 @@
     reader.readAsDataURL(file);
   }
 
-  function deleteClient() {
-    if (currentClientIndex < 0 || !isAdminMode) return;
-    if (confirm("Supprimer définitivement ce client ?")) {
-      clients.splice(currentClientIndex, 1);
-      saveClients();
-      renderClientList();
-      document.getElementById('clientDetails').style.display = 'none';
-      document.getElementById('deleteClientBtn').style.display = 'none';
-      toast("Client supprimé", "success");
-    }
-  }
-
   function generateReport() {
     if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
     const { jsPDF } = window.jspdf;
@@ -583,14 +570,24 @@
     doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
     doc.text(`Date : ${document.getElementById('startDate').value || dateStr}`, 25, y); y += 15;
 
-    for (let step = 1; step <= 13; step++) {
+    // Liste des étapes à inclure dans le rapport (on enlève 2,3,5,6,11,13)
+    const reportSteps = [0, 3, 7, 8, 9, 11]; // indices correspondant aux étapes 1,4,8,9,10,12
+
+    for (let idx of reportSteps) {
+      const step = idx + 1;
       if (y > 240) { doc.addPage(); y = 30; }
+
+      let stepTitle = stepsList[idx];
+      if (step === 7) stepTitle = "7. Vérification PDL";
+      if (step === 6) stepTitle = "6. Serrage PDL";
+      if (step === 10) stepTitle = "10. Local onduleur";
+
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
-      doc.text(stepsList[step-1], 20, y);
+      doc.text(stepTitle, 20, y);
       y += 10;
 
-      const items = getChecklistItems(step-1);
+      const items = getChecklistItems(idx);
       const body = items.map((desc, j) => [
         desc,
         document.getElementById(`chk${step}-conforme-${j}`)?.checked ? '×' : '',
@@ -618,6 +615,7 @@
         y += 12;
       }
 
+      // Photos uniquement pour les étapes présentes dans le rapport
       if (stepPhotos[step] && stepPhotos[step].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
@@ -633,6 +631,21 @@
         y += 10;
       }
     }
+
+    // Étape 12 spéciale : seulement relevé compteur
+    const step12 = 12;
+    if (y > 240) { doc.addPage(); y = 30; }
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("12. Remise en tension PDL + relevé de compteur", 20, y);
+    y += 12;
+
+    const prod = document.getElementById('releveProd_12') ? document.getElementById('releveProd_12').value : "";
+    const nonConso = document.getElementById('releveNonConso_12') ? document.getElementById('releveNonConso_12').value : "";
+
+    doc.setFontSize(11);
+    doc.text("Relevé compteur Production : " + (prod || "—"), 25, y); y += 8;
+    doc.text("Relevé compteur Non-consommation : " + (nonConso || "—"), 25, y); y += 8;
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
 
