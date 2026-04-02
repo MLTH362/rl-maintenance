@@ -33,8 +33,6 @@
     label { font-weight:600; margin-bottom:0.5rem; display:block; font-size:0.97rem; }
     input, select, textarea { width:100%; padding:0.85rem; border:2px solid var(--border); border-radius:8px; font-size:0.97rem; margin-bottom:1.1rem; }
     input:focus, textarea:focus, select:focus { border-color:var(--primary-light); box-shadow:0 0 0 3px rgba(0,102,204,0.15); }
-    .photo-upload-btn { background: var(--primary-light); color: white; padding: 1.3rem; border-radius: 12px; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.18rem; font-weight: 600; margin: 1.2rem 0; transition: all 0.25s; }
-    .photo-upload-btn:hover { background: var(--primary); transform: translateY(-3px); }
     .photo-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:1.2rem; margin:1.4rem 0; }
     .photo-preview { position:relative; border-radius:10px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
     .photo-preview img { width:100%; height:145px; object-fit:cover; }
@@ -158,10 +156,10 @@
     "4. Vérification visuel et nettoyage local onduleur",
     "5. Thermique coffret AC",
     "6. AGCP",
-    "7. Vérification PDL",                    // modifié
-    "8. Serrage PDL",                         // modifié
+    "7. Vérification PDL",
+    "8. Serrage PDL",
     "9. Vérification couple de serrage",
-    "10. Local onduleur",                     // modifié
+    "10. Local onduleur",
     "11. Ventilateur onduleur",
     "12. Remise en tension PDL + relevé de compteur",
     "13. Vérification redémarrage"
@@ -290,19 +288,19 @@
 
   function getChecklistItems(i) {
     const checklists = [
-      ["Observation drone thermique"],                    // 1 - supprimé du rapport
-      ["Observation thermique onduleur AC et DC"],        // 2
-      ["État visuel coffret AC"],                         // 3 - supprimé
-      ["État visuel onduleurs","Câbles","Chemin de câble","Attache câble","Capot","Connectiques DC","Environnement","Étiquettes","Nettoyage","Test continuité"], // 4
-      ["Observation thermique coffret AC"],               // 5 - supprimé
-      ["AGCP"],                                           // 6 - supprimé
-      ["Test différentiel","Paramétrage"],               // 7 → Vérification PDL
-      ["Coupure du sectionneur"],                         // 8 → Serrage PDL
-      ["Vérification couple de serrage"],                 // 9
-      ["Vérification couple de serrage base onduleur"],   // 10 → Local onduleur
-      ["Nettoyage ventilateur onduleur"],                 // 11
-      [],                                                 // 12 → seulement relevé
-      ["Vérification redémarrage"]                        // 13
+      ["Observation drone thermique"],
+      ["Observation thermique onduleur AC et DC"],
+      ["État visuel coffret AC"],
+      ["État visuel onduleurs","Câbles","Chemin de câble","Attache câble","Capot","Connectiques DC","Environnement","Étiquettes","Nettoyage","Test continuité"],
+      ["Observation thermique coffret AC"],
+      ["AGCP"],
+      ["Test différentiel","Paramétrage"],
+      ["Coupure du sectionneur"],
+      ["Vérification couple de serrage"],
+      ["Vérification couple de serrage base onduleur"],
+      ["Nettoyage ventilateur onduleur"],
+      [],
+      ["Vérification redémarrage"]
     ];
     return checklists[i] || ["Point à vérifier"];
   }
@@ -390,7 +388,7 @@
       <div><i class="fas fa-exclamation-triangle fa-3x"></i></div>
       <div style="margin:12px 0; line-height:1.5; font-size:1.3rem;">
         ⚠️ ATTENTION – TRAVAIL SOUS TENSION<br>
-        <strong>VÉRIFIEZ CONSIGNES DE SÉCURITÉ</strong>
+        <strong>VÉRIFIEZ CONSIGNES DE SÉCURITÉ AVANT TOUTE INTERVENTION</strong>
       </div>
       <button class="toast-btn" onclick="this.parentElement.remove()">J'AI VÉRIFIÉ – OK</button>
     `;
@@ -456,23 +454,27 @@
     doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
     doc.text(`Date : ${dateStr}`, 25, y); y += 20;
 
-    // Étapes incluses dans le rapport
-    const reportSteps = [2,4,7,8,9,10,11,13];   // 1,3,5,6 supprimées
+    // Étapes qui vont dans le rapport (dans l'ordre voulu)
+    const reportSteps = [2, 4, 7, 8, 9, 10, 11, 13];   // numéros originaux dans l'app
 
-    for (let step of reportSteps) {
+    reportSteps.forEach((originalStep, reportIndex) => {
+      const displayNumber = reportIndex + 1;   // 1, 2, 3, 4... dans le rapport
+      const title = stepsList[originalStep - 1];
+
       if (y > 240) { doc.addPage(); y = 30; }
+
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
-      doc.text(stepsList[step-1], 20, y);
+      doc.text(`${displayNumber}. ${title}`, 20, y);
       y += 10;
 
-      const items = getChecklistItems(step-1);
+      const items = getChecklistItems(originalStep - 1);
       if (items.length > 0) {
         const body = items.map((desc, j) => [
           desc,
-          document.getElementById(`chk${step}-conforme-${j}`)?.checked ? '×' : '',
-          document.getElementById(`chk${step}-defaut-${j}`)?.checked ? '×' : '',
-          document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? '×' : ''
+          document.getElementById(`chk${originalStep}-conforme-${j}`)?.checked ? '×' : '',
+          document.getElementById(`chk${originalStep}-defaut-${j}`)?.checked ? '×' : '',
+          document.getElementById(`chk${originalStep}-noncontrole-${j}`)?.checked ? '×' : ''
         ]);
 
         doc.autoTable({
@@ -487,7 +489,7 @@
         y = doc.lastAutoTable.finalY + 12;
       }
 
-      const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
+      const obs = document.getElementById(`obs${originalStep}`)?.value.trim() || "";
       if (obs) {
         doc.setFontSize(10);
         doc.setFont("helvetica", "italic");
@@ -495,23 +497,27 @@
         y += 12;
       }
 
-      if (stepPhotos[step] && stepPhotos[step].length > 0) {
+      if (stepPhotos[originalStep] && stepPhotos[originalStep].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
-        doc.text("Photos :", 25, y);
+        doc.text("Photos de l'étape :", 25, y);
         y += 10;
-        for (let img of stepPhotos[step]) {
+        for (let img of stepPhotos[originalStep]) {
           if (y > 240) { doc.addPage(); y = 30; }
-          try { doc.addImage(img, 'JPEG', 25, y, 160, 90); y += 98; } catch(e) {}
+          try {
+            doc.addImage(img, 'JPEG', 25, y, 160, 90);
+            y += 98;
+          } catch(e) {}
         }
+        y += 10;
       }
-    }
+    });
 
-    // Étape 12 - seulement relevé compteur
+    // Étape 12 - relevé compteur (toujours en dernier)
     if (y > 240) { doc.addPage(); y = 30; }
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("12. Remise en tension PDL + relevé de compteur", 20, y);
+    doc.text("9. Remise en tension PDL + relevé de compteur", 20, y);   // on le met en 9 dans le rapport
     y += 12;
     const prod = document.getElementById('releveProd_12')?.value || "—";
     const nonConso = document.getElementById('releveNonConso_12')?.value || "—";
@@ -553,11 +559,6 @@
     if (confirm("Tout effacer ?")) location.reload();
   }
 
-  window.onload = function() {
-    renderClientList();
-    refreshHistory();
-  };
-
   function toast(msg) {
     const el = document.createElement('div');
     el.className = 'toast-msg';
@@ -565,6 +566,11 @@
     document.getElementById('toast').appendChild(el);
     setTimeout(() => el.remove(), 4000);
   }
+
+  window.onload = function() {
+    renderClientList();
+    refreshHistory();
+  };
 </script>
 </body>
 </html>
