@@ -119,6 +119,7 @@
     </div>
   </div>
 
+  <!-- Boutons en bas -->
   <div style="text-align:center; margin:4rem 0 3rem; display:flex; justify-content:center; gap:1rem; flex-wrap:wrap;">
     <button class="btn-big btn-ok" onclick="generateReport()" style="font-size:1.1rem;padding:1.2rem 2.8rem;">
       <i class="fas fa-file-pdf"></i> PDF
@@ -129,6 +130,19 @@
     <button class="btn-big" style="background:#0d6efd;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="generateWord()">
       <i class="fas fa-file-word"></i> Word
     </button>
+    <button class="btn-big" style="background:#6c757d;color:white;" onclick="recommencerTout()">
+      <i class="fas fa-redo"></i> Recommencer une maintenance
+    </button>
+  </div>
+
+  <div style="text-align:center; margin-bottom:4rem;">
+    <button class="btn-big" style="background:#6c757d;color:white;" onclick="exportJSON()">
+      <i class="fas fa-download"></i> Exporter JSON (Sync)
+    </button>
+    <button class="btn-big" style="background:#6c757d;color:white; margin-left:15px;" onclick="document.getElementById('importFile').click()">
+      <i class="fas fa-upload"></i> Importer JSON (Sync)
+    </button>
+    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
 </div>
 
@@ -431,7 +445,6 @@
     const client = clients[currentClientIndex];
     const dateStr = new Date().toLocaleDateString('fr-FR');
 
-    // Page de couverture
     doc.setFillColor(4, 64, 128);
     doc.rect(0, 0, 210, 297, 'F');
     doc.setTextColor(255);
@@ -454,7 +467,6 @@
     doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
     doc.text(`Date : ${dateStr}`, 25, y); y += 20;
 
-    // Mapping des étapes pour le rapport (numérotées 1 à 9)
     const reportMapping = [
       { original: 2, display: 1, title: "Caméra thermique onduleur AC+DC" },
       { original: 4, display: 2, title: "Vérification visuel et nettoyage local onduleur" },
@@ -503,30 +515,22 @@
         y += 15;
       }
 
-      // === PARTIE PHOTOS CORRIGÉE ===
       if (stepPhotos[item.original] && stepPhotos[item.original].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.text("Photos de l'étape :", 25, y);
         y += 12;
-
-        for (let imgData of stepPhotos[item.original]) {
-          if (y > 240) {
-            doc.addPage();
-            y = 30;
-          }
+        for (let img of stepPhotos[item.original]) {
+          if (y > 240) { doc.addPage(); y = 30; }
           try {
-            doc.addImage(imgData, 'JPEG', 25, y, 160, 95);  // taille optimisée
-            y += 102;  // espace après chaque photo
-          } catch(e) {
-            console.log("Erreur image :", e);
-          }
+            doc.addImage(img, 'JPEG', 25, y, 160, 95);
+            y += 102;
+          } catch(e) {}
         }
-        y += 8;
       }
     });
 
-    // Étape 12 - relevé compteur (numéroté 9 dans le rapport)
+    // Relevé compteur (numéro 9 dans le rapport)
     if (y > 240) { doc.addPage(); y = 30; }
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
@@ -544,6 +548,44 @@
     saveData();
     refreshHistory();
     toast("Rapport PDF généré avec succès !");
+  }
+
+  function recommencerTout() {
+    if (confirm("Recommencer une nouvelle maintenance ? Toute la progression sera perdue.")) {
+      location.reload();
+    }
+  }
+
+  function exportJSON() {
+    const data = { clients, history, stepPhotos: {} };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rl_maintenance_backup.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast("Backup JSON exporté");
+  }
+
+  function importJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.clients) clients = data.clients;
+        if (data.history) history = data.history;
+        saveData();
+        renderClientList();
+        refreshHistory();
+        toast("Données importées avec succès");
+      } catch(err) {
+        toast("Erreur lors de l'importation");
+      }
+    };
+    reader.readAsText(file);
   }
 
   function refreshHistory() {
