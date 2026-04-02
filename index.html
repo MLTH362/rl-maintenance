@@ -9,6 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
   <style>
     :root {
       --primary: #004080;
@@ -57,11 +58,10 @@
     #historyList { margin-top:1rem; max-height:420px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; }
     .history-item { padding:14px; border-bottom:1px solid #eee; cursor:pointer; }
     .history-item:hover { background:#f0f7ff; }
-    .plan-preview { margin:10px 0; border:2px solid #ddd; border-radius:8px; overflow:hidden; }
-    .plan-preview img { width:100%; height:auto; display:block; }
   </style>
 </head>
 <body>
+
 <header>
   <div class="logo">R.L ENERGIE</div>
   <div>
@@ -69,68 +69,34 @@
     <button class="btn-big btn-clear" id="btnExitAdmin" onclick="exitAdminMode()" style="display:none;">Quitter Admin</button>
   </div>
 </header>
+
 <div class="main-content">
   <div id="infoBlock" class="card block active">
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
     <div class="cb">
-      <div id="adminControls" style="display:none;margin-bottom:1.4rem; padding:15px; background:#f8f9fa; border-radius:10px;">
-        <h3>Ajouter un nouveau client</h3>
-        <label>Nom du client / Site</label>
-        <input type="text" id="newClientName" placeholder="Ex: Client D - Site Industriel" style="margin-bottom:8px;">
-        <label>Puissance installée</label>
-        <input type="text" id="newClientPower" placeholder="Ex: 250 kWc" style="margin-bottom:8px;">
-        <label>Localisation</label>
-        <input type="text" id="newClientLocation" placeholder="Ex: Blandainville - Région Centre" style="margin-bottom:8px;">
-        <label>Détails supplémentaires</label>
-        <textarea id="newClientDetails" rows="2" placeholder="Autres infos..."></textarea>
-        <button class="btn-big btn-ok" style="width:100%; margin-top:10px;" onclick="addNewClient()">
-          <i class="fas fa-plus"></i> Ajouter ce client
-        </button>
+      <div id="adminControls" style="display:none;margin-bottom:1.4rem;">
+        <label>Ajouter un nouveau client</label>
+        <div style="display:flex;gap:10px;">
+          <input type="text" id="newClient" placeholder="Ex: Client D - 300 kWc" style="flex:1;"/>
+          <button class="btn-big btn-ok" style="width:auto;padding:0 1.6rem;" onclick="addNewClient()">Ajouter</button>
+        </div>
       </div>
-
       <label>Nom du technicien (obligatoire)</label>
       <input type="text" id="technicianName" placeholder="Ex: Jean Dupont"/>
-
       <label>Client / Installation</label>
       <select id="clientSelect" onchange="loadClientData()">
         <option value="">Sélectionnez un client...</option>
       </select>
-
       <div id="clientDetails" style="display:none;margin-top:1.6rem;">
         <label>Détails de l’installation <span id="editDetailsBtn" style="display:none;color:var(--primary);cursor:pointer;" onclick="enableEditDetails()">✏️ Modifier (Admin)</span></label>
         <textarea id="installationDetails" readonly rows="3"></textarea>
-
-        <label style="margin-top:1.2rem;">Anciennes dates de maintenance (rappel) 
-          <span id="editOldDatesBtn" style="display:none;color:var(--primary);cursor:pointer;font-size:0.9rem;" onclick="enableOldDatesEdit()">✏️ Modifier (Admin)</span>
-        </label>
-        <textarea id="oldDatesInput" rows="4" readonly style="resize:vertical;"></textarea>
-
+        <label style="margin-top:1.2rem;">Anciennes dates de maintenance (rappel)</label>
+        <div id="oldDatesDisplay" style="padding:0.9rem;border:1px solid #dee2e6;border-radius:6px;background:#f8f9fa;min-height:60px;line-height:1.6;"></div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.4rem;">
           <div><label>Date dernière maintenance</label><input type="text" id="lastMaint" readonly/></div>
           <div><label>Date début intervention</label><input type="text" id="startDate" readonly value=""/></div>
         </div>
-
-        <label style="margin-top:1.5rem;">Plan de câblage</label>
-        <div id="wiringPreview" class="plan-preview" style="display:none;"></div>
-        <label style="margin-top:1.2rem;">Plan du site</label>
-        <div id="sitePreview" class="plan-preview" style="display:none;"></div>
-
-        <div id="adminPlanButtons" style="display:none; margin-top:15px;">
-          <button class="photo-upload-btn" onclick="document.getElementById('wiringPlanInput').click()">
-            <i class="fas fa-camera"></i> Ajouter / Modifier plan de câblage
-          </button>
-          <input type="file" id="wiringPlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('wiring')"/>
-          <button class="photo-upload-btn" onclick="document.getElementById('sitePlanInput').click()" style="margin-top:8px;">
-            <i class="fas fa-camera"></i> Ajouter / Modifier plan du site
-          </button>
-          <input type="file" id="sitePlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('site')"/>
-        </div>
-
-        <button id="deleteClientBtn" class="btn-big btn-clear" style="display:none; margin-top:15px; width:100%;" onclick="deleteClient()">
-          <i class="fas fa-trash-alt"></i> Supprimer ce client
-        </button>
       </div>
-
       <div style="display:flex; gap:1rem; margin-top:2rem;">
         <button id="startBtn" class="btn-big btn-ok" onclick="startMaintenance()" style="flex:1;font-size:1.12rem;">
           <i class="fas fa-play"></i> COMMENCER LA MAINTENANCE
@@ -168,17 +134,14 @@
     <button class="btn-big" style="background:#0d6efd;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="generateWord()">
       <i class="fas fa-file-word"></i> Word
     </button>
-    <button class="btn-big" style="background:#6c757d;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="recommencerTout()">
-      <i class="fas fa-redo"></i> Recommencer
-    </button>
   </div>
 
   <div style="text-align:center; margin-bottom:4rem;">
     <button class="btn-big" style="background:#6c757d;color:white;" onclick="exportJSON()">
-      <i class="fas fa-download"></i> Exporter JSON (Sync tablette/PC)
+      <i class="fas fa-download"></i> Exporter JSON (Sync)
     </button>
     <button class="btn-big" style="background:#6c757d;color:white; margin-left:15px;" onclick="document.getElementById('importFile').click()">
-      <i class="fas fa-upload"></i> Importer JSON (Sync tablette/PC)
+      <i class="fas fa-upload"></i> Importer JSON
     </button>
     <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
@@ -195,10 +158,11 @@
   let stepPhotos = {};
   let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
 
+  // Base de données persistante
   let clients = JSON.parse(localStorage.getItem('rl_clients')) || [
-    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"], wiringPlan: null, sitePlan: null },
-    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"], wiringPlan: null, sitePlan: null },
-    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"], wiringPlan: null, sitePlan: null }
+    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"] },
+    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"] },
+    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"] }
   ];
 
   const stepsList = [
@@ -218,9 +182,25 @@
   ];
 
   const highVoltageSteps = [3];
+  const torqueValues = ["8 Nm", "10 Nm", "12 Nm", "15 Nm", "18 Nm", "20 Nm", "25 Nm", "30 Nm", "Valeur personnalisée"];
 
-  function saveClients() {
+  function saveData() {
     localStorage.setItem('rl_clients', JSON.stringify(clients));
+    localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
+  }
+
+  function showSafetyWarning() {
+    const el = document.createElement('div');
+    el.className = 'toast-msg toast-danger';
+    el.innerHTML = `
+      <div class="toast-icon"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
+      <div style="margin:12px 0; line-height:1.5; font-size:1.3rem;">
+        ⚠️ ATTENTION – TRAVAIL SOUS TENSION<br>
+        <strong>VÉRIFIEZ CONSIGNES DE SÉCURITÉ AVANT TOUTE INTERVENTION</strong>
+      </div>
+      <button class="toast-btn" onclick="this.parentElement.remove()">J'AI VÉRIFIÉ – OK</button>
+    `;
+    document.getElementById('toast').appendChild(el);
   }
 
   function renderClientList() {
@@ -238,49 +218,15 @@
     const idx = +document.getElementById('clientSelect').value;
     if (isNaN(idx) || idx < 0) {
       document.getElementById('clientDetails').style.display = 'none';
-      document.getElementById('deleteClientBtn').style.display = 'none';
       return;
     }
     currentClientIndex = idx;
     const c = clients[idx];
     document.getElementById('clientDetails').style.display = 'block';
     document.getElementById('installationDetails').value = c.details || "";
-
-    const oldDatesArea = document.getElementById('oldDatesInput');
-    oldDatesArea.value = c.oldDates ? c.oldDates.join('\n') : '';
-    oldDatesArea.readOnly = !isAdminMode;
-
+    document.getElementById('oldDatesDisplay').innerHTML = c.oldDates?.length ? c.oldDates.map(d => `<div>• ${d}</div>`).join('') : 'Aucune date enregistrée';
     document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
-
-    const wiringDiv = document.getElementById('wiringPreview');
-    const siteDiv = document.getElementById('sitePreview');
-    wiringDiv.style.display = c.wiringPlan ? 'block' : 'none';
-    siteDiv.style.display = c.sitePlan ? 'block' : 'none';
-    if (c.wiringPlan) wiringDiv.innerHTML = `<img src="${c.wiringPlan}">`;
-    if (c.sitePlan) siteDiv.innerHTML = `<img src="${c.sitePlan}">`;
-
-    document.getElementById('adminPlanButtons').style.display = isAdminMode ? 'block' : 'none';
-    document.getElementById('editOldDatesBtn').style.display = isAdminMode ? 'inline' : 'none';
-    document.getElementById('deleteClientBtn').style.display = isAdminMode ? 'block' : 'none';
-  }
-
-  function enableOldDatesEdit() {
-    if (!isAdminMode) return;
-    document.getElementById('oldDatesInput').readOnly = false;
-    toast("Vous pouvez modifier les anciennes dates", "success");
-  }
-
-  function deleteClient() {
-    if (currentClientIndex < 0 || !isAdminMode) return;
-    if (confirm("Supprimer définitivement ce client ?")) {
-      clients.splice(currentClientIndex, 1);
-      saveClients();
-      renderClientList();
-      document.getElementById('clientDetails').style.display = 'none';
-      document.getElementById('deleteClientBtn').style.display = 'none';
-      toast("Client supprimé", "success");
-    }
   }
 
   function startMaintenance() {
@@ -307,20 +253,9 @@
         <div class="torque-select">
           <label>Couple de serrage recommandé</label>
           <select id="torque${stepNum}" onchange="addTorqueToObs(${stepNum})">
-            <option>8 Nm</option><option>10 Nm</option><option>12 Nm</option><option>15 Nm</option>
-            <option>18 Nm</option><option>20 Nm</option><option>25 Nm</option><option>30 Nm</option>
-            <option>Valeur personnalisée</option>
+            ${torqueValues.map(v => `<option value="${v}">${v}</option>`).join('')}
           </select>
         </div>` : '';
-
-      let step12Extra = (stepNum === 12) ? `
-        <div style="margin-top:1.5rem; background:#f8f9fa; padding:15px; border-radius:8px;">
-          <label>Relevé compteur Production (kWh)</label>
-          <input type="text" id="releveProd_${stepNum}" placeholder="Ex: 12456">
-          <label>Relevé compteur Non-consommation (kWh)</label>
-          <input type="text" id="releveNonConso_${stepNum}" placeholder="Ex: 8754">
-        </div>` : '';
-
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
@@ -339,7 +274,6 @@
             `).join('')}
           </div>
           ${extraHTML}
-          ${step12Extra}
           <button class="btn-big btn-ok" style="margin:1.2rem 0; width:100%;" onclick="setAllConforme(${stepNum})">
             <i class="fas fa-check-double"></i> TOUT MARQUER CONFORME
           </button>
@@ -350,7 +284,7 @@
           <input type="file" id="photo${stepNum}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${stepNum})">
           <div id="photos${stepNum}" class="photo-grid"></div>
           <div class="nav-row">
-            <button class="btn-big btn-prev" onclick="prevStep()">
+            <button class="btn-big btn-prev" onclick="prevStep()" ${stepNum === 1 ? 'disabled' : ''}>
               <i class="fas fa-arrow-left"></i> Précédent
             </button>
             <button class="btn-big btn-ok" onclick="nextStep(${stepNum})">
@@ -366,24 +300,6 @@
         }, { once: true });
       }
     });
-  }
-
-  function prevStep() {
-    if (currentStep <= 1) {
-      document.getElementById('stepsContainer').innerHTML = '';
-      document.getElementById('infoBlock').style.display = 'block';
-      currentStep = 0;
-      return;
-    }
-    document.getElementById(`step${currentStep}`).classList.remove('active');
-    currentStep--;
-    document.getElementById(`step${currentStep}`).classList.add('active');
-  }
-
-  function nextStep(n) {
-    document.getElementById(`step${n}`).classList.remove('active');
-    currentStep = n + 1;
-    if (currentStep <= 13) document.getElementById(`step${currentStep}`).classList.add('active');
   }
 
   function getChecklistItems(i) {
@@ -421,6 +337,19 @@
     }
     document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
     updateObsPreview(n);
+  }
+
+  function nextStep(n) {
+    document.getElementById(`step${n}`).classList.remove('active');
+    currentStep = n + 1;
+    if (currentStep <= 13) document.getElementById(`step${currentStep}`).classList.add('active');
+  }
+
+  function prevStep() {
+    if (currentStep <= 1) return;
+    document.getElementById(`step${currentStep}`).classList.remove('active');
+    currentStep--;
+    document.getElementById(`step${currentStep}`).classList.add('active');
   }
 
   function addTorqueToObs(stepNum) {
@@ -493,14 +422,8 @@
       isAdminMode = true;
       document.getElementById('adminControls').style.display = 'block';
       document.getElementById('btnExitAdmin').style.display = 'inline-block';
-      document.getElementById('adminPlanButtons').style.display = 'block';
       document.getElementById('installationDetails').readOnly = false;
-      document.getElementById('lastMaint').readOnly = false;
-      document.getElementById('startDate').readOnly = false;
-      document.getElementById('oldDatesInput').readOnly = false;
-      document.getElementById('editOldDatesBtn').style.display = 'inline';
       document.getElementById('editDetailsBtn').style.display = 'inline';
-      document.getElementById('deleteClientBtn').style.display = 'block';
     }
   }
 
@@ -508,47 +431,24 @@
     isAdminMode = false;
     document.getElementById('adminControls').style.display = 'none';
     document.getElementById('btnExitAdmin').style.display = 'none';
-    document.getElementById('adminPlanButtons').style.display = 'none';
     document.getElementById('installationDetails').readOnly = true;
-    document.getElementById('lastMaint').readOnly = true;
-    document.getElementById('startDate').readOnly = true;
-    document.getElementById('oldDatesInput').readOnly = true;
-    document.getElementById('editOldDatesBtn').style.display = 'none';
     document.getElementById('editDetailsBtn').style.display = 'none';
-    document.getElementById('deleteClientBtn').style.display = 'none';
   }
 
   function addNewClient() {
     if (!isAdminMode) return;
-    const name = document.getElementById('newClientName').value.trim();
-    if (!name) return;
-    if (clients.some(c => c.name === name)) return;
-    clients.push({
-      name,
-      details: document.getElementById('newClientDetails').value,
-      lastMaint: "",
-      oldDates: [],
-      wiringPlan: null,
-      sitePlan: null
-    });
-    saveClients();
+    const name = document.getElementById('newClient').value.trim();
+    if (!name || clients.some(c => c.name === name)) return;
+    clients.push({ name, details: "", lastMaint: "", oldDates: [] });
+    saveData();
     renderClientList();
-    document.getElementById('newClientName').value = "";
+    document.getElementById('newClient').value = "";
     toast("Client ajouté", "success");
   }
 
-  function uploadPlan(type) {
-    if (!isAdminMode) return alert("Seul le mode Admin permet de modifier les plans.");
-    const file = document.getElementById(type + 'PlanInput').files[0];
-    if (!file || currentClientIndex < 0) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      clients[currentClientIndex][type + 'Plan'] = e.target.result;
-      loadClientData();
-      saveClients();
-      toast("Plan mis à jour", "success");
-    };
-    reader.readAsDataURL(file);
+  function enableEditDetails() {
+    if (!isAdminMode) return;
+    document.getElementById('installationDetails').readOnly = false;
   }
 
   function generateReport() {
@@ -578,25 +478,16 @@
     doc.setFontSize(11);
     doc.text(`Client : ${client.name}`, 25, y); y += 8;
     doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
-    doc.text(`Date : ${document.getElementById('startDate').value || dateStr}`, 25, y); y += 15;
+    doc.text(`Date : ${dateStr}`, 25, y); y += 15;
 
-    // Étapes incluses avec leur numéro original
-    const reportSteps = [1, 4, 7, 8, 9, 10, 12];
-
-    for (let step of reportSteps) {
-      const idx = step - 1;
+    for (let step = 1; step <= 13; step++) {
       if (y > 240) { doc.addPage(); y = 30; }
-
-      let stepTitle = stepsList[idx];
-      if (step === 7) stepTitle = "7. Vérification PDL";
-      if (step === 10) stepTitle = "10. Local onduleur";
-
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
-      doc.text(stepTitle, 20, y);
+      doc.text(stepsList[step-1], 20, y);
       y += 10;
 
-      const items = getChecklistItems(idx);
+      const items = getChecklistItems(step-1);
       const body = items.map((desc, j) => [
         desc,
         document.getElementById(`chk${step}-conforme-${j}`)?.checked ? '×' : '',
@@ -613,7 +504,6 @@
         styles: { fontSize: 9.5, cellPadding: 4, halign: 'center', lineWidth: 0.5 },
         columnStyles: { 0: { halign: 'left', cellWidth: 105 } }
       });
-
       y = doc.lastAutoTable.finalY + 12;
 
       const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
@@ -624,6 +514,7 @@
         y += 12;
       }
 
+      // Photos corrigées
       if (stepPhotos[step] && stepPhotos[step].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
@@ -640,20 +531,6 @@
       }
     }
 
-    // Étape 12 : seulement les relevés (sans tableau)
-    if (y > 240) { doc.addPage(); y = 30; }
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("12. Remise en tension PDL + relevé de compteur", 20, y);
-    y += 12;
-
-    const prod = document.getElementById('releveProd_12') ? document.getElementById('releveProd_12').value : "";
-    const nonConso = document.getElementById('releveNonConso_12') ? document.getElementById('releveNonConso_12').value : "";
-
-    doc.setFontSize(11);
-    doc.text("Relevé compteur Production : " + (prod || "—"), 25, y); y += 8;
-    doc.text("Relevé compteur Non-consommation : " + (nonConso || "—"), 25, y);
-
     doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
 
     history.unshift({
@@ -662,81 +539,9 @@
       technician: technicianName || "Inconnu",
       date: dateStr
     });
-    localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
+    saveData();
     refreshHistory();
-    toast("Rapport PDF généré et enregistré dans l'historique !", "success");
-  }
-
-  function generateExcel() {
-    if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
-    const client = clients[currentClientIndex];
-    const dateStr = new Date().toLocaleDateString('fr-FR');
-
-    const wb = XLSX.utils.book_new();
-    let wsData = [
-      ["R.L ENERGIE - Rapport de Maintenance"],
-      ["Client", client.name],
-      ["Technicien", technicianName || "—"],
-      ["Date", dateStr],
-      [""],
-      ["Étape", "Observation"]
-    ];
-
-    const reportSteps = [1,4,7,8,9,10,12];
-    reportSteps.forEach(step => {
-      let title = stepsList[step-1];
-      if (step === 7) title = "7. Vérification PDL";
-      if (step === 10) title = "10. Local onduleur";
-      const obs = document.getElementById(`obs${step}`)?.value.trim() || "RAS";
-      wsData.push([`Étape ${step} - ${title}`, obs]);
-    });
-
-    // Relevés étape 12
-    const prod = document.getElementById('releveProd_12')?.value || "—";
-    const nonConso = document.getElementById('releveNonConso_12')?.value || "—";
-    wsData.push(["Étape 12 - Relevés", `Production : ${prod} | Non-consommation : ${nonConso}`]);
-
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb, ws, "Rapport");
-    XLSX.writeFile(wb, `Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.xlsx`);
-    toast("Fichier Excel généré avec succès !", "success");
-  }
-
-  function generateWord() {
-    if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
-    const client = clients[currentClientIndex];
-    const dateStr = new Date().toLocaleDateString('fr-FR');
-
-    let content = `
-      <h1 style="text-align:center; color:#004080;">R.L ENERGIE - Rapport de Maintenance</h1>
-      <p><strong>Client :</strong> ${client.name}</p>
-      <p><strong>Technicien :</strong> ${technicianName || "—"}</p>
-      <p><strong>Date :</strong> ${dateStr}</p>
-      <hr>
-      <h2>Observations par étape</h2>
-    `;
-
-    const reportSteps = [1,4,7,8,9,10,12];
-    reportSteps.forEach(step => {
-      let title = stepsList[step-1];
-      if (step === 7) title = "7. Vérification PDL";
-      if (step === 10) title = "10. Local onduleur";
-      const obs = document.getElementById(`obs${step}`)?.value.trim() || "RAS";
-      content += `<h3>Étape ${step} - ${title}</h3><p>${obs}</p><br>`;
-    });
-
-    const prod = document.getElementById('releveProd_12')?.value || "—";
-    const nonConso = document.getElementById('releveNonConso_12')?.value || "—";
-    content += `<h3>Étape 12 - Relevés compteur</h3><p>Production : ${prod}<br>Non-consommation : ${nonConso}</p>`;
-
-    const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.doc`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast("Fichier Word généré avec succès !", "success");
+    toast("Rapport PDF généré et enregistré !", "success");
   }
 
   function refreshHistory() {
@@ -765,61 +570,9 @@
     if (confirm("Tout effacer ?")) location.reload();
   }
 
-  function recommencerTout() {
-    if (confirm("Recommencer une nouvelle maintenance ?")) {
-      location.reload();
-    }
-  }
-
-  function exportJSON() {
-    const data = { clients, history };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'rl_energie_backup.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast("JSON exporté avec succès", "success");
-  }
-
-  function importJSON(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const data = JSON.parse(e.target.result);
-        if (data.clients) {
-          clients = data.clients;
-          saveClients();
-          renderClientList();
-        }
-        if (data.history) {
-          history = data.history;
-          localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
-          refreshHistory();
-        }
-        toast("Données importées avec succès", "success");
-      } catch(err) {
-        toast("Erreur lors de l'importation", "danger");
-      }
-    };
-    reader.readAsText(file);
-  }
-
-  function showSafetyWarning() {
-    const el = document.createElement('div');
-    el.className = 'toast-msg toast-danger';
-    el.innerHTML = `
-      <div class="toast-icon"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
-      <div style="margin:12px 0; line-height:1.5; font-size:1.3rem;">
-        ⚠️ ATTENTION – TRAVAIL SOUS TENSION<br>
-        <strong>VÉRIFIEZ CONSIGNES DE SÉCURITÉ AVANT TOUTE INTERVENTION</strong>
-      </div>
-      <button class="toast-btn" onclick="this.parentElement.remove()">J'AI VÉRIFIÉ – OK</button>
-    `;
-    document.getElementById('toast').appendChild(el);
+  function saveData() {
+    localStorage.setItem('rl_clients', JSON.stringify(clients));
+    localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
   }
 
   window.onload = function() {
