@@ -454,7 +454,7 @@
     doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
     doc.text(`Date : ${dateStr}`, 25, y); y += 20;
 
-    // Mapping : numéros originaux → numéros affichés dans le rapport
+    // Mapping des étapes pour le rapport (numérotées 1 à 9)
     const reportMapping = [
       { original: 2, display: 1, title: "Caméra thermique onduleur AC+DC" },
       { original: 4, display: 2, title: "Vérification visuel et nettoyage local onduleur" },
@@ -500,26 +500,33 @@
         doc.setFontSize(10);
         doc.setFont("helvetica", "italic");
         doc.text("Observation : " + obs, 25, y);
-        y += 12;
+        y += 15;
       }
 
+      // === PARTIE PHOTOS CORRIGÉE ===
       if (stepPhotos[item.original] && stepPhotos[item.original].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.text("Photos de l'étape :", 25, y);
-        y += 10;
-        for (let img of stepPhotos[item.original]) {
-          if (y > 240) { doc.addPage(); y = 30; }
+        y += 12;
+
+        for (let imgData of stepPhotos[item.original]) {
+          if (y > 240) {
+            doc.addPage();
+            y = 30;
+          }
           try {
-            doc.addImage(img, 'JPEG', 25, y, 160, 90);
-            y += 98;
-          } catch(e) {}
+            doc.addImage(imgData, 'JPEG', 25, y, 160, 95);  // taille optimisée
+            y += 102;  // espace après chaque photo
+          } catch(e) {
+            console.log("Erreur image :", e);
+          }
         }
-        y += 10;
+        y += 8;
       }
     });
 
-    // Étape relevé compteur (toujours en dernier avec le numéro 9)
+    // Étape 12 - relevé compteur (numéroté 9 dans le rapport)
     if (y > 240) { doc.addPage(); y = 30; }
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
