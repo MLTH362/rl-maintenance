@@ -454,27 +454,33 @@
     doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
     doc.text(`Date : ${dateStr}`, 25, y); y += 20;
 
-    // Étapes qui vont dans le rapport (dans l'ordre voulu)
-    const reportSteps = [2, 4, 7, 8, 9, 10, 11, 13];   // numéros originaux dans l'app
+    // Mapping : numéros originaux → numéros affichés dans le rapport
+    const reportMapping = [
+      { original: 2, display: 1, title: "Caméra thermique onduleur AC+DC" },
+      { original: 4, display: 2, title: "Vérification visuel et nettoyage local onduleur" },
+      { original: 7, display: 3, title: "Vérification PDL" },
+      { original: 8, display: 4, title: "Serrage PDL" },
+      { original: 9, display: 5, title: "Vérification couple de serrage" },
+      { original: 10, display: 6, title: "Local onduleur" },
+      { original: 11, display: 7, title: "Ventilateur onduleur" },
+      { original: 13, display: 8, title: "Vérification redémarrage" }
+    ];
 
-    reportSteps.forEach((originalStep, reportIndex) => {
-      const displayNumber = reportIndex + 1;   // 1, 2, 3, 4... dans le rapport
-      const title = stepsList[originalStep - 1];
-
+    reportMapping.forEach(item => {
       if (y > 240) { doc.addPage(); y = 30; }
 
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
-      doc.text(`${displayNumber}. ${title}`, 20, y);
+      doc.text(`${item.display}. ${item.title}`, 20, y);
       y += 10;
 
-      const items = getChecklistItems(originalStep - 1);
+      const items = getChecklistItems(item.original - 1);
       if (items.length > 0) {
         const body = items.map((desc, j) => [
           desc,
-          document.getElementById(`chk${originalStep}-conforme-${j}`)?.checked ? '×' : '',
-          document.getElementById(`chk${originalStep}-defaut-${j}`)?.checked ? '×' : '',
-          document.getElementById(`chk${originalStep}-noncontrole-${j}`)?.checked ? '×' : ''
+          document.getElementById(`chk${item.original}-conforme-${j}`)?.checked ? '×' : '',
+          document.getElementById(`chk${item.original}-defaut-${j}`)?.checked ? '×' : '',
+          document.getElementById(`chk${item.original}-noncontrole-${j}`)?.checked ? '×' : ''
         ]);
 
         doc.autoTable({
@@ -489,7 +495,7 @@
         y = doc.lastAutoTable.finalY + 12;
       }
 
-      const obs = document.getElementById(`obs${originalStep}`)?.value.trim() || "";
+      const obs = document.getElementById(`obs${item.original}`)?.value.trim() || "";
       if (obs) {
         doc.setFontSize(10);
         doc.setFont("helvetica", "italic");
@@ -497,12 +503,12 @@
         y += 12;
       }
 
-      if (stepPhotos[originalStep] && stepPhotos[originalStep].length > 0) {
+      if (stepPhotos[item.original] && stepPhotos[item.original].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.text("Photos de l'étape :", 25, y);
         y += 10;
-        for (let img of stepPhotos[originalStep]) {
+        for (let img of stepPhotos[item.original]) {
           if (y > 240) { doc.addPage(); y = 30; }
           try {
             doc.addImage(img, 'JPEG', 25, y, 160, 90);
@@ -513,11 +519,11 @@
       }
     });
 
-    // Étape 12 - relevé compteur (toujours en dernier)
+    // Étape relevé compteur (toujours en dernier avec le numéro 9)
     if (y > 240) { doc.addPage(); y = 30; }
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("9. Remise en tension PDL + relevé de compteur", 20, y);   // on le met en 9 dans le rapport
+    doc.text("9. Remise en tension PDL + relevé de compteur", 20, y);
     y += 12;
     const prod = document.getElementById('releveProd_12')?.value || "—";
     const nonConso = document.getElementById('releveNonConso_12')?.value || "—";
