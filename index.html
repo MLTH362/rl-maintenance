@@ -89,7 +89,7 @@
         <label>Détails de l’installation</label>
         <textarea id="installationDetails" readonly rows="3"></textarea>
         <label style="margin-top:1.2rem;">Anciennes dates de maintenance (rappel)</label>
-        <div id="oldDatesDisplay" style="padding:0.9rem;border:1px solid #dee2e6;border-radius:6px;background:#f8f9fa;min-height:60px;line-height:1.6;"></div>
+        <textarea id="oldDatesInput" rows="4" style="resize:vertical;"></textarea>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.4rem;">
           <div><label>Date dernière maintenance</label><input type="text" id="lastMaint" /></div>
           <div><label>Date début intervention</label><input type="text" id="startDate" readonly value=""/></div>
@@ -206,7 +206,7 @@
     const c = clients[idx];
     document.getElementById('clientDetails').style.display = 'block';
     document.getElementById('installationDetails').value = c.details || "";
-    document.getElementById('oldDatesDisplay').innerHTML = c.oldDates?.length ? c.oldDates.map(d => `<div>• ${d}</div>`).join('') : 'Aucune date enregistrée';
+    document.getElementById('oldDatesInput').value = c.oldDates ? c.oldDates.join('\n') : '';
     document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
   }
@@ -280,7 +280,7 @@
           <input type="file" id="photo${stepNum}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${stepNum})">
           <div id="photos${stepNum}" class="photo-grid"></div>
           <div class="nav-row">
-            <button class="btn-big btn-prev" onclick="prevStep()" ${stepNum === 1 ? 'disabled' : ''}>
+            <button class="btn-big btn-prev" onclick="prevStep()">
               <i class="fas fa-arrow-left"></i> Précédent
             </button>
             <button class="btn-big btn-ok" onclick="nextStep(${stepNum})">
@@ -336,7 +336,7 @@
   }
 
   function nextStep(n) {
-    // Vérification que toutes les lignes sont cochées
+    // Vérification obligatoire : toutes les lignes doivent être cochées
     const items = getChecklistItems(n-1).length;
     let allChecked = true;
     for (let j = 0; j < items; j++) {
@@ -349,7 +349,7 @@
       }
     }
     if (!allChecked) {
-      toast("Vous devez cocher une option (Conforme, Défaut ou Non contrôlé) pour chaque ligne avant de continuer.");
+      toast("Vous devez cocher une option pour chaque ligne avant de continuer.");
       return;
     }
 
@@ -359,7 +359,13 @@
   }
 
   function prevStep() {
-    if (currentStep <= 1) return;
+    if (currentStep <= 1) {
+      // Retour à la toute première page (informations)
+      document.getElementById('stepsContainer').innerHTML = '';
+      document.getElementById('infoBlock').style.display = 'block';
+      currentStep = 0;
+      return;
+    }
     document.getElementById(`step${currentStep}`).classList.remove('active');
     currentStep--;
     document.getElementById(`step${currentStep}`).classList.add('active');
@@ -432,7 +438,8 @@
       document.getElementById('adminControls').style.display = 'block';
       document.getElementById('btnExitAdmin').style.display = 'inline-block';
       document.getElementById('installationDetails').readOnly = false;
-      document.getElementById('lastMaint').readOnly = false;   // <-- modifiable en admin
+      document.getElementById('oldDatesInput').readOnly = false;   // modifiable
+      document.getElementById('lastMaint').readOnly = false;       // modifiable
     }
   }
 
@@ -441,6 +448,7 @@
     document.getElementById('adminControls').style.display = 'none';
     document.getElementById('btnExitAdmin').style.display = 'none';
     document.getElementById('installationDetails').readOnly = true;
+    document.getElementById('oldDatesInput').readOnly = true;
     document.getElementById('lastMaint').readOnly = true;
   }
 
@@ -533,7 +541,6 @@
         y += 15;
       }
 
-      // Photos corrigées
       if (stepPhotos[item.original] && stepPhotos[item.original].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
@@ -549,7 +556,6 @@
       }
     });
 
-    // Relevé compteur (numéro 9)
     if (y > 240) { doc.addPage(); y = 30; }
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
