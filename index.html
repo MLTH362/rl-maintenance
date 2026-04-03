@@ -21,6 +21,7 @@
       --bg: #f6f9fc;
       --border: #ced4da;
       --radius: 12px;
+      --radius  1
     }
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
     body { background:var(--bg); color:var(--dark); min-height:100vh; line-height:1.5; font-size:15px; }
@@ -33,6 +34,8 @@
     label { font-weight:600; margin-bottom:0.5rem; display:block; font-size:0.97rem; }
     input, select, textarea { width:100%; padding:0.85rem; border:2px solid var(--border); border-radius:8px; font-size:0.97rem; margin-bottom:1.1rem; }
     input:focus, textarea:focus, select:focus { border-color:var(--primary-light); box-shadow:0 0 0 3px rgba(0,102,204,0.15); }
+    .photo-upload-btn { background: var(--primary-light); color: white; padding: 1.3rem; border-radius: 12px; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.18rem; font-weight: 600; margin: 1.2rem 0; transition: all 0.25s; }
+    .photo-upload-btn:hover { background: var(--primary); transform: translateY(-3px); }
     .photo-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:1.2rem; margin:1.4rem 0; }
     .photo-preview { position:relative; border-radius:10px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
     .photo-preview img { width:100%; height:145px; object-fit:cover; }
@@ -56,6 +59,8 @@
     #historyList { margin-top:1rem; max-height:420px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; }
     .history-item { padding:14px; border-bottom:1px solid #eee; cursor:pointer; }
     .history-item:hover { background:#f0f7ff; }
+    .plan-preview { margin:10px 0; border:2px solid #ddd; border-radius:8px; overflow:hidden; }
+    .plan-preview img { width:100%; height:auto; display:block; }
   </style>
 </head>
 <body>
@@ -72,29 +77,67 @@
   <div id="infoBlock" class="card block active">
     <div class="ch">INFORMATIONS SITE & TECHNICIEN</div>
     <div class="cb">
-      <div id="adminControls" style="display:none;margin-bottom:1.4rem;">
-        <label>Ajouter un nouveau client</label>
-        <div style="display:flex;gap:10px;">
-          <input type="text" id="newClient" placeholder="Ex: Client D - 300 kWc" style="flex:1;"/>
-          <button class="btn-big btn-ok" style="width:auto;padding:0 1.6rem;" onclick="addNewClient()">Ajouter</button>
-        </div>
+      <!-- Formulaire Admin amélioré -->
+      <div id="adminControls" style="display:none;margin-bottom:1.4rem; padding:15px; background:#f8f9fa; border-radius:10px;">
+        <h3>Ajouter un nouveau client</h3>
+        <label>Nom du client / Site</label>
+        <input type="text" id="newClientName" placeholder="Ex: Client D - Site Industriel" style="margin-bottom:8px;">
+
+        <label>Puissance installée</label>
+        <input type="text" id="newClientPower" placeholder="Ex: 250 kWc" style="margin-bottom:8px;">
+
+        <label>Localisation</label>
+        <input type="text" id="newClientLocation" placeholder="Ex: Blandainville - Région Centre" style="margin-bottom:8px;">
+
+        <label>Détails supplémentaires</label>
+        <textarea id="newClientDetails" rows="2" placeholder="Autres infos..."></textarea>
+
+        <button class="btn-big btn-ok" style="width:100%; margin-top:10px;" onclick="addNewClient()">
+          <i class="fas fa-plus"></i> Ajouter ce client
+        </button>
       </div>
+
       <label>Nom du technicien (obligatoire)</label>
       <input type="text" id="technicianName" placeholder="Ex: Jean Dupont"/>
+
       <label>Client / Installation</label>
       <select id="clientSelect" onchange="loadClientData()">
         <option value="">Sélectionnez un client...</option>
       </select>
+
       <div id="clientDetails" style="display:none;margin-top:1.6rem;">
-        <label>Détails de l’installation</label>
+        <label>Détails de l’installation <span id="editDetailsBtn" style="display:none;color:var(--primary);cursor:pointer;" onclick="enableEditDetails()">✏️ Modifier (Admin)</span></label>
         <textarea id="installationDetails" readonly rows="3"></textarea>
+
         <label style="margin-top:1.2rem;">Anciennes dates de maintenance (rappel)</label>
         <div id="oldDatesDisplay" style="padding:0.9rem;border:1px solid #dee2e6;border-radius:6px;background:#f8f9fa;min-height:60px;line-height:1.6;"></div>
+
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.4rem;">
           <div><label>Date dernière maintenance</label><input type="text" id="lastMaint" readonly/></div>
           <div><label>Date début intervention</label><input type="text" id="startDate" readonly value=""/></div>
         </div>
+
+        <!-- Plans visibles par tous -->
+        <label style="margin-top:1.5rem;">Plan de câblage</label>
+        <div id="wiringPreview" class="plan-preview" style="display:none;"></div>
+
+        <label style="margin-top:1.2rem;">Plan du site</label>
+        <div id="sitePreview" class="plan-preview" style="display:none;"></div>
+
+        <!-- Boutons d'ajout de plans (seulement en mode admin) -->
+        <div id="adminPlanButtons" style="display:none; margin-top:15px;">
+          <button class="photo-upload-btn" onclick="document.getElementById('wiringPlanInput').click()">
+            <i class="fas fa-camera"></i> Ajouter / Modifier plan de câblage
+          </button>
+          <input type="file" id="wiringPlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('wiring')"/>
+
+          <button class="photo-upload-btn" onclick="document.getElementById('sitePlanInput').click()" style="margin-top:8px;">
+            <i class="fas fa-camera"></i> Ajouter / Modifier plan du site
+          </button>
+          <input type="file" id="sitePlanInput" accept="image/*" style="display:none;" onchange="uploadPlan('site')"/>
+        </div>
       </div>
+
       <div style="display:flex; gap:1rem; margin-top:2rem;">
         <button id="startBtn" class="btn-big btn-ok" onclick="startMaintenance()" style="flex:1;font-size:1.12rem;">
           <i class="fas fa-play"></i> COMMENCER LA MAINTENANCE
@@ -115,6 +158,9 @@
     <div class="ch">Historique des rapports enregistrés</div>
     <div class="cb">
       <input type="text" id="searchHistory" placeholder="Rechercher client ou technicien..." oninput="filterHistory()">
+      <button class="btn-big" onclick="refreshHistory()" style="background:#17a2b8;color:white;margin-top:10px;">
+        <i class="fas fa-history"></i> Rafraîchir
+      </button>
       <div id="historyList" style="margin-top:1rem;"></div>
     </div>
   </div>
@@ -129,9 +175,6 @@
     <button class="btn-big" style="background:#0d6efd;color:white;font-size:1.1rem;padding:1.2rem 2.8rem;" onclick="generateWord()">
       <i class="fas fa-file-word"></i> Word
     </button>
-    <button class="btn-big" style="background:#6c757d;color:white;" onclick="recommencerTout()">
-      <i class="fas fa-redo"></i> Recommencer une maintenance
-    </button>
   </div>
 
   <div style="text-align:center; margin-bottom:4rem;">
@@ -139,7 +182,7 @@
       <i class="fas fa-download"></i> Exporter JSON (Sync)
     </button>
     <button class="btn-big" style="background:#6c757d;color:white; margin-left:15px;" onclick="document.getElementById('importFile').click()">
-      <i class="fas fa-upload"></i> Importer JSON (Sync)
+      <i class="fas fa-upload"></i> Importer JSON
     </button>
     <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(event)">
   </div>
@@ -156,10 +199,10 @@
   let stepPhotos = {};
   let history = JSON.parse(localStorage.getItem('rl_maintenance_reports')) || [];
 
-  let clients = JSON.parse(localStorage.getItem('rl_clients')) || [
-    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"] },
-    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"] },
-    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"] }
+  let clients = [
+    { name: "Client A - 450 kWc", details: "Puissance : 450 kWc\nLocalisation : Région PACA", lastMaint: "15/03/2025", oldDates: ["15/03/2025","10/09/2024"], wiringPlan: null, sitePlan: null },
+    { name: "Client B - 120 kWc", details: "Puissance : 120 kWc\nLocalisation : Île-de-France", lastMaint: "08/01/2026", oldDates: ["08/01/2026","12/06/2025"], wiringPlan: null, sitePlan: null },
+    { name: "Client C - 800 kWc", details: "Puissance : 800 kWc\nLocalisation : Occitanie", lastMaint: "22/11/2025", oldDates: ["22/11/2025","15/05/2025"], wiringPlan: null, sitePlan: null }
   ];
 
   const stepsList = [
@@ -169,20 +212,30 @@
     "4. Vérification visuel et nettoyage local onduleur",
     "5. Thermique coffret AC",
     "6. AGCP",
-    "7. Vérification PDL",
-    "8. Serrage PDL",
+    "7. Test différentiel AGCP",
+    "8. Coupure sectionneur gestionnaire de réseau",
     "9. Vérification couple de serrage",
-    "10. Local onduleur",
+    "10. Verif couple de serrage base onduleur",
     "11. Ventilateur onduleur",
     "12. Remise en tension PDL + relevé de compteur",
     "13. Vérification redémarrage"
   ];
 
-  const highVoltageSteps = [3];
+  const highVoltageSteps = [3]; // Une seule notification immédiate
+  const torqueValues = ["8 Nm", "10 Nm", "12 Nm", "15 Nm", "18 Nm", "20 Nm", "25 Nm", "30 Nm", "Valeur personnalisée"];
 
-  function saveData() {
-    localStorage.setItem('rl_clients', JSON.stringify(clients));
-    localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
+  function showSafetyWarning() {
+    const el = document.createElement('div');
+    el.className = 'toast-msg toast-danger';
+    el.innerHTML = `
+      <div class="toast-icon"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
+      <div style="margin:12px 0; line-height:1.5; font-size:1.3rem;">
+        ⚠️ ATTENTION – TRAVAIL SOUS TENSION<br>
+        <strong>VÉRIFIEZ CONSIGNES DE SÉCURITÉ AVANT TOUTE INTERVENTION</strong>
+      </div>
+      <button class="toast-btn" onclick="this.parentElement.remove()">J'AI VÉRIFIÉ – OK</button>
+    `;
+    document.getElementById('toast').appendChild(el);
   }
 
   function renderClientList() {
@@ -209,6 +262,17 @@
     document.getElementById('oldDatesDisplay').innerHTML = c.oldDates?.length ? c.oldDates.map(d => `<div>• ${d}</div>`).join('') : 'Aucune date enregistrée';
     document.getElementById('lastMaint').value = c.lastMaint || "";
     document.getElementById('startDate').value = new Date().toLocaleDateString('fr-FR');
+
+    // Affichage des plans (visibles par tous)
+    const wiringDiv = document.getElementById('wiringPreview');
+    const siteDiv = document.getElementById('sitePreview');
+    wiringDiv.style.display = c.wiringPlan ? 'block' : 'none';
+    siteDiv.style.display = c.sitePlan ? 'block' : 'none';
+    if (c.wiringPlan) wiringDiv.innerHTML = `<img src="${c.wiringPlan}">`;
+    if (c.sitePlan) siteDiv.innerHTML = `<img src="${c.sitePlan}">`;
+
+    // Boutons d'ajout visibles seulement en admin
+    document.getElementById('adminPlanButtons').style.display = isAdminMode ? 'block' : 'none';
   }
 
   function startMaintenance() {
@@ -231,31 +295,18 @@
       const stepDiv = document.createElement('div');
       stepDiv.id = `step${stepNum}`;
       stepDiv.className = 'step card';
-
       let extraHTML = (stepNum === 9 || stepNum === 10) ? `
-        <div style="margin-top:1.5rem;">
+        <div class="torque-select">
           <label>Couple de serrage recommandé</label>
           <select id="torque${stepNum}" onchange="addTorqueToObs(${stepNum})">
-            <option>8 Nm</option><option>10 Nm</option><option>12 Nm</option><option>15 Nm</option>
-            <option>18 Nm</option><option>20 Nm</option><option>25 Nm</option><option>30 Nm</option>
-            <option>Valeur personnalisée</option>
+            ${torqueValues.map(v => `<option value="${v}">${v}</option>`).join('')}
           </select>
         </div>` : '';
-
-      let step12Extra = (stepNum === 12) ? `
-        <div style="margin-top:1.5rem; background:#f8f9fa; padding:15px; border-radius:8px;">
-          <label>Relevé compteur Production (kWh)</label>
-          <input type="text" id="releveProd_12" placeholder="Ex: 12456">
-          <label>Relevé compteur Non-consommation (kWh)</label>
-          <input type="text" id="releveNonConso_12" placeholder="Ex: 8754">
-        </div>` : '';
-
       stepDiv.innerHTML = `
         <div class="ch">${title}</div>
         <div class="cb">
           <div class="progress">Étape ${stepNum} / 13</div>
-          ${stepNum !== 12 ? `<h3 style="margin-bottom:1rem;">Checklist</h3>` : ''}
-          ${stepNum !== 12 ? `
+          <h3 style="margin-bottom:1rem;">Checklist</h3>
           <div class="checklist-grid">
             <div class="checklist-header">Description</div>
             <div class="checklist-header">Conforme</div>
@@ -267,15 +318,14 @@
               <div><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-defaut-${j}" onchange="exclusiveCheck(this)"></div>
               <div><input type="checkbox" class="chk-line" data-line="${stepNum}-${j}" id="chk${stepNum}-noncontrole-${j}" onchange="exclusiveCheck(this)"></div>
             `).join('')}
-          </div>` : ''}
+          </div>
           ${extraHTML}
-          ${step12Extra}
-          ${stepNum !== 12 ? `
           <button class="btn-big btn-ok" style="margin:1.2rem 0; width:100%;" onclick="setAllConforme(${stepNum})">
             <i class="fas fa-check-double"></i> TOUT MARQUER CONFORME
-          </button>` : ''}
+          </button>
           <h3>Observations</h3>
-          <textarea id="obs${stepNum}" rows="4" placeholder="Notes, anomalies, commentaires..."></textarea>
+          <textarea id="obs${stepNum}" rows="4" placeholder="Notes, anomalies, commentaires..." oninput="updateObsPreview(${stepNum})"></textarea>
+          <div id="preview${stepNum}" style="margin-top:1rem;padding:1.2rem;border:1px solid #0066cc;background:#e6f3ff;border-radius:8px;display:none;"></div>
           <h3 style="margin-top:1.6rem;">Photos de l'étape</h3>
           <input type="file" id="photo${stepNum}" accept="image/*" multiple style="margin-bottom:1rem;" onchange="addPhoto(${stepNum})">
           <div id="photos${stepNum}" class="photo-grid"></div>
@@ -290,7 +340,6 @@
         </div>
       `;
       container.appendChild(stepDiv);
-
       if (highVoltageSteps.includes(stepNum)) {
         stepDiv.addEventListener('transitionend', () => {
           if (stepDiv.classList.contains('active')) showSafetyWarning();
@@ -303,16 +352,16 @@
     const checklists = [
       ["Observation drone thermique"],
       ["Observation thermique onduleur AC et DC"],
-      ["État visuel coffret AC"],
-      ["État visuel onduleurs","Câbles","Chemin de câble","Attache câble","Capot","Connectiques DC","Environnement","Étiquettes","Nettoyage","Test continuité"],
+      ["État visuel coffret AC (câbles, appareils, coffret)"],
+      ["État visuel onduleurs","Câbles","Chemin de câble","Attache câble","Capot","Connectiques DC","Environnement local onduleur","Présence des étiquettes","Nettoyage onduleur et coffret AC","Test de continuité"],
       ["Observation thermique coffret AC"],
       ["AGCP"],
-      ["Test différentiel","Paramétrage"],
+      ["Test différentiel","Paramétrage AGCP"],
       ["Coupure du sectionneur"],
       ["Vérification couple de serrage"],
       ["Vérification couple de serrage base onduleur"],
       ["Nettoyage ventilateur onduleur"],
-      [],
+      ["Remise en tension PDL + relevé de compteur"],
       ["Vérification redémarrage"]
     ];
     return checklists[i] || ["Point à vérifier"];
@@ -333,12 +382,14 @@
       if (chk) { chk.checked = true; exclusiveCheck(chk); }
     }
     document.getElementById(`obs${n}`).value = "RAS - Aucun problème constaté sur cette étape.";
+    updateObsPreview(n);
   }
 
   function nextStep(n) {
     document.getElementById(`step${n}`).classList.remove('active');
     currentStep = n + 1;
     if (currentStep <= 13) document.getElementById(`step${currentStep}`).classList.add('active');
+
   }
 
   function prevStep() {
@@ -356,6 +407,7 @@
     if (value && value !== "Valeur personnalisée") {
       if (obsTextarea.value.trim()) obsTextarea.value += "\n";
       obsTextarea.value += "Couple de serrage : " + value;
+      updateObsPreview(stepNum);
     }
   }
 
@@ -394,27 +446,33 @@
     }
   }
 
-  function showSafetyWarning() {
-    const el = document.createElement('div');
-    el.className = 'toast-msg toast-danger';
-    el.innerHTML = `
-      <div><i class="fas fa-exclamation-triangle fa-3x"></i></div>
-      <div style="margin:12px 0; line-height:1.5; font-size:1.3rem;">
-        ⚠️ ATTENTION – TRAVAIL SOUS TENSION<br>
-        <strong>VÉRIFIEZ CONSIGNES DE SÉCURITÉ AVANT TOUTE INTERVENTION</strong>
-      </div>
-      <button class="toast-btn" onclick="this.parentElement.remove()">J'AI VÉRIFIÉ – OK</button>
-    `;
-    document.getElementById('toast').appendChild(el);
+  function updateObsPreview(n) {
+    const textarea = document.getElementById(`obs${n}`);
+    const preview = document.getElementById(`preview${n}`);
+    if (textarea && preview) {
+      preview.style.display = textarea.value.trim() ? 'block' : 'none';
+      if (textarea.value.trim()) preview.innerHTML = `<strong>Observation :</strong><br>${textarea.value}`;
+    }
   }
 
+  function toast(msg, type = 'success') {
+    const el = document.createElement('div');
+    el.className = `toast-msg toast-${type}`;
+    el.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i> ${msg}`;
+    document.getElementById('toast').appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+
+  // ====================== ADMIN ======================
   function toggleAdminMode() {
     const pw = prompt("Mot de passe Admin :", "");
     if (pw === ADMIN_PASSWORD) {
       isAdminMode = true;
       document.getElementById('adminControls').style.display = 'block';
       document.getElementById('btnExitAdmin').style.display = 'inline-block';
+      document.getElementById('adminPlanButtons').style.display = 'block';
       document.getElementById('installationDetails').readOnly = false;
+      document.getElementById('editDetailsBtn').style.display = 'inline';
     }
   }
 
@@ -422,23 +480,53 @@
     isAdminMode = false;
     document.getElementById('adminControls').style.display = 'none';
     document.getElementById('btnExitAdmin').style.display = 'none';
+    document.getElementById('adminPlanButtons').style.display = 'none';
     document.getElementById('installationDetails').readOnly = true;
+    document.getElementById('editDetailsBtn').style.display = 'none';
   }
 
   function addNewClient() {
     if (!isAdminMode) return;
-    const name = document.getElementById('newClient').value.trim();
-    if (!name || clients.some(c => c.name === name)) return toast("Nom invalide ou déjà existant");
-    clients.push({ name, details: "", lastMaint: "", oldDates: [] });
-    saveData();
+    const name = document.getElementById('newClientName').value.trim();
+    if (!name) return;
+    if (clients.some(c => c.name === name)) return;
+    clients.push({ 
+      name, 
+      details: "", 
+      lastMaint: "", 
+      oldDates: [],
+      wiringPlan: null,
+      sitePlan: null 
+    });
     renderClientList();
-    document.getElementById('newClient').value = "";
-    toast("Client ajouté avec succès");
+    document.getElementById('newClientName').value = "";
+    toast("Client ajouté", "success");
   }
 
-  function generateReport() {
-    if (currentClientIndex === -1) return toast("Sélectionnez un client");
+  function enableEditDetails() {
+    if (!isAdminMode) return;
+    document.getElementById('installationDetails').readOnly = false;
+  }
 
+  function uploadPlan(type) {
+    if (!isAdminMode) {
+      alert("Seul le mode Admin permet de modifier les plans.");
+      return;
+    }
+    const file = document.getElementById(type + 'PlanInput').files[0];
+    if (!file || currentClientIndex < 0) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      clients[currentClientIndex][type + 'Plan'] = e.target.result;
+      loadClientData();
+      toast("Plan mis à jour", "success");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ====================== RAPPORT PDF ======================
+  function generateReport() {
+    if (currentClientIndex === -1) return toast("Sélectionnez un client", "danger");
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const client = clients[currentClientIndex];
@@ -460,223 +548,73 @@
     doc.setFontSize(16);
     doc.setTextColor(0);
     doc.text("INFORMATIONS GÉNÉRALES", 20, y);
-    y += 12;
+    y += 10;
     doc.setFontSize(11);
     doc.text(`Client : ${client.name}`, 25, y); y += 8;
     doc.text(`Technicien : ${technicianName || "—"}`, 25, y); y += 8;
-    doc.text(`Date : ${dateStr}`, 25, y); y += 20;
+    doc.text(`Date : ${document.getElementById('startDate').value || dateStr}`, 25, y); y += 15;
 
-    const reportMapping = [
-      { original: 2, display: 1, title: "Caméra thermique onduleur AC+DC" },
-      { original: 4, display: 2, title: "Vérification visuel et nettoyage local onduleur" },
-      { original: 7, display: 3, title: "Vérification PDL" },
-      { original: 8, display: 4, title: "Serrage PDL" },
-      { original: 9, display: 5, title: "Vérification couple de serrage" },
-      { original: 10, display: 6, title: "Local onduleur" },
-      { original: 11, display: 7, title: "Ventilateur onduleur" },
-      { original: 13, display: 8, title: "Vérification redémarrage" }
-    ];
-
-    reportMapping.forEach(item => {
+    for (let step = 1; step <= 13; step++) {
       if (y > 240) { doc.addPage(); y = 30; }
-
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
-      doc.text(`${item.display}. ${item.title}`, 20, y);
+      doc.text(stepsList[step-1], 20, y);
       y += 10;
 
-      const items = getChecklistItems(item.original - 1);
-      if (items.length > 0) {
-        const body = items.map((desc, j) => [
-          desc,
-          document.getElementById(`chk${item.original}-conforme-${j}`)?.checked ? '×' : '',
-          document.getElementById(`chk${item.original}-defaut-${j}`)?.checked ? '×' : '',
-          document.getElementById(`chk${item.original}-noncontrole-${j}`)?.checked ? '×' : ''
-        ]);
+      const items = getChecklistItems(step-1);
+      const body = items.map((desc, j) => [
+        desc,
+        document.getElementById(`chk${step}-conforme-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${step}-defaut-${j}`)?.checked ? '×' : '',
+        document.getElementById(`chk${step}-noncontrole-${j}`)?.checked ? '×' : ''
+      ]);
 
-        doc.autoTable({
-          startY: y,
-          head: [['Description', 'Conforme', 'Défaut constaté', 'Non contrôlé']],
-          body: body,
-          theme: 'grid',
-          headStyles: { fillColor: [0, 85, 170], textColor: 255, fontSize: 10 },
-          styles: { fontSize: 9.5, cellPadding: 4 },
-          columnStyles: { 0: { halign: 'left', cellWidth: 105 } }
-        });
-        y = doc.lastAutoTable.finalY + 12;
-      }
+      doc.autoTable({
+        startY: y,
+        head: [['Description', 'Conforme', 'Défaut constaté', 'Non contrôlé']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 85, 170], textColor: 255, fontSize: 10, halign: 'center' },
+        styles: { fontSize: 9.5, cellPadding: 4, halign: 'center', lineWidth: 0.5 },
+        columnStyles: { 0: { halign: 'left', cellWidth: 105 } }
+      });
+      y = doc.lastAutoTable.finalY + 12;
 
-      const obs = document.getElementById(`obs${item.original}`)?.value.trim() || "";
+      const obs = document.getElementById(`obs${step}`)?.value.trim() || "";
       if (obs) {
         doc.setFontSize(10);
         doc.setFont("helvetica", "italic");
         doc.text("Observation : " + obs, 25, y);
-        y += 15;
+        y += 12;
       }
 
-      if (stepPhotos[item.original] && stepPhotos[item.original].length > 0) {
+      if (stepPhotos[step] && stepPhotos[step].length > 0) {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.text("Photos de l'étape :", 25, y);
-        y += 12;
-        for (let img of stepPhotos[item.original]) {
+        y += 10;
+        for (let imgData of stepPhotos[step]) {
           if (y > 240) { doc.addPage(); y = 30; }
           try {
-            doc.addImage(img, 'JPEG', 25, y, 160, 95);
-            y += 102;
+            doc.addImage(imgData, 'JPEG', 25, y, 160, 90);
+            y += 98;
           } catch(e) {}
         }
+        y += 10;
       }
-    });
-
-    if (y > 240) { doc.addPage(); y = 30; }
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("9. Remise en tension PDL + relevé de compteur", 20, y);
-    y += 12;
-    const prod = document.getElementById('releveProd_12')?.value || "—";
-    const nonConso = document.getElementById('releveNonConso_12')?.value || "—";
-    doc.setFontSize(11);
-    doc.text(`Relevé Production : ${prod} kWh`, 25, y); y += 8;
-    doc.text(`Relevé Non-consommation : ${nonConso} kWh`, 25, y);
+    }
 
     doc.save(`Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.pdf`);
 
-    history.unshift({ id: Date.now(), clientName: client.name, technician: technicianName || "Inconnu", date: dateStr });
-    saveData();
+    history.unshift({
+      id: Date.now(),
+      clientName: client.name,
+      technician: technicianName || "Inconnu",
+      date: dateStr
+    });
+    localStorage.setItem('rl_maintenance_reports', JSON.stringify(history));
     refreshHistory();
-    toast("Rapport PDF généré avec succès !");
-  }
-
-  // ====================== EXCEL CORRIGÉ ======================
-  function generateExcel() {
-    if (currentClientIndex === -1) return toast("Sélectionnez un client");
-
-    const client = clients[currentClientIndex];
-    const dateStr = new Date().toLocaleDateString('fr-FR');
-    const wb = XLSX.utils.book_new();
-    let wsData = [
-      ["R.L ENERGIE - Rapport de Maintenance"],
-      ["Client", client.name],
-      ["Technicien", technicianName || "—"],
-      ["Date", dateStr],
-      [""],
-      ["N°", "Étape", "Observation", "Relevés"]
-    ];
-
-    const reportMapping = [
-      { original: 2, display: 1, title: "Caméra thermique onduleur AC+DC" },
-      { original: 4, display: 2, title: "Vérification visuel et nettoyage local onduleur" },
-      { original: 7, display: 3, title: "Vérification PDL" },
-      { original: 8, display: 4, title: "Serrage PDL" },
-      { original: 9, display: 5, title: "Vérification couple de serrage" },
-      { original: 10, display: 6, title: "Local onduleur" },
-      { original: 11, display: 7, title: "Ventilateur onduleur" },
-      { original: 13, display: 8, title: "Vérification redémarrage" }
-    ];
-
-    reportMapping.forEach(item => {
-      const obs = document.getElementById(`obs${item.original}`)?.value.trim() || "RAS";
-      wsData.push([item.display, item.title, obs, ""]);
-    });
-
-    // Relevé compteur
-    const prod = document.getElementById('releveProd_12')?.value || "—";
-    const nonConso = document.getElementById('releveNonConso_12')?.value || "—";
-    wsData.push([9, "Remise en tension PDL + relevé de compteur", "", `Production: ${prod} kWh | Non-consommation: ${nonConso} kWh`]);
-
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb, ws, "Rapport Maintenance");
-    XLSX.writeFile(wb, `Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.xlsx`);
-
-    toast("Fichier Excel généré avec succès !");
-  }
-
-  // ====================== WORD CORRIGÉ ======================
-  function generateWord() {
-    if (currentClientIndex === -1) return toast("Sélectionnez un client");
-
-    const client = clients[currentClientIndex];
-    const dateStr = new Date().toLocaleDateString('fr-FR');
-
-    let content = `
-      <h1 style="text-align:center;color:#004080;">R.L ENERGIE - Rapport de Maintenance</h1>
-      <p><strong>Client :</strong> ${client.name}</p>
-      <p><strong>Technicien :</strong> ${technicianName || "—"}</p>
-      <p><strong>Date :</strong> ${dateStr}</p>
-      <hr>
-      <h2>Observations par étape</h2>
-    `;
-
-    const reportMapping = [
-      { original: 2, display: 1, title: "Caméra thermique onduleur AC+DC" },
-      { original: 4, display: 2, title: "Vérification visuel et nettoyage local onduleur" },
-      { original: 7, display: 3, title: "Vérification PDL" },
-      { original: 8, display: 4, title: "Serrage PDL" },
-      { original: 9, display: 5, title: "Vérification couple de serrage" },
-      { original: 10, display: 6, title: "Local onduleur" },
-      { original: 11, display: 7, title: "Ventilateur onduleur" },
-      { original: 13, display: 8, title: "Vérification redémarrage" }
-    ];
-
-    reportMapping.forEach(item => {
-      const obs = document.getElementById(`obs${item.original}`)?.value.trim() || "RAS";
-      content += `<h3>${item.display}. ${item.title}</h3><p>${obs}</p><br>`;
-    });
-
-    const prod = document.getElementById('releveProd_12')?.value || "—";
-    const nonConso = document.getElementById('releveNonConso_12')?.value || "—";
-    content += `<h3>9. Remise en tension PDL + relevé de compteur</h3>
-                <p>Relevé Production : ${prod} kWh<br>
-                   Relevé Non-consommation : ${nonConso} kWh</p>`;
-
-    const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Rapport_${client.name.replace(/ /g,'_')}_${dateStr.replace(/\//g,'-')}.doc`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    toast("Fichier Word généré avec succès !");
-  }
-
-  function recommencerTout() {
-    if (confirm("Recommencer une nouvelle maintenance ? Toute la progression sera perdue.")) {
-      location.reload();
-    }
-  }
-
-  function exportJSON() {
-    const data = { clients, history };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'rl_maintenance_backup.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast("Backup JSON exporté");
-  }
-
-  function importJSON(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const data = JSON.parse(e.target.result);
-        if (data.clients) clients = data.clients;
-        if (data.history) history = data.history;
-        saveData();
-        renderClientList();
-        refreshHistory();
-        toast("Données importées avec succès");
-      } catch(err) {
-        toast("Erreur lors de l'importation");
-      }
-    };
-    reader.readAsText(file);
+    toast("Rapport PDF généré et enregistré dans l'historique !", "success");
   }
 
   function refreshHistory() {
@@ -689,7 +627,7 @@
     history.forEach(report => {
       const div = document.createElement('div');
       div.className = 'history-item';
-      div.innerHTML = `<strong>${report.clientName}</strong><br><span>${report.date} — ${report.technician}</span>`;
+      div.innerHTML = `<strong>${report.clientName}</strong><br><span class="date">${report.date} — ${report.technician}</span>`;
       list.appendChild(div);
     });
   }
@@ -703,14 +641,6 @@
 
   function clearAll() {
     if (confirm("Tout effacer ?")) location.reload();
-  }
-
-  function toast(msg) {
-    const el = document.createElement('div');
-    el.className = 'toast-msg';
-    el.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`;
-    document.getElementById('toast').appendChild(el);
-    setTimeout(() => el.remove(), 4000);
   }
 
   window.onload = function() {
