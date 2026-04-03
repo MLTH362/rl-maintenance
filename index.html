@@ -336,7 +336,7 @@
   }
 
   function nextStep(n) {
-    // Vérification obligatoire : toutes les lignes doivent être cochées
+    // Vérification que toutes les lignes sont cochées
     const items = getChecklistItems(n-1).length;
     let allChecked = true;
     for (let j = 0; j < items; j++) {
@@ -349,7 +349,7 @@
       }
     }
     if (!allChecked) {
-      toast("Vous devez cocher une option pour chaque ligne avant de continuer.");
+      toast("Vous devez cocher une option (Conforme, Défaut ou Non contrôlé) pour chaque ligne avant de continuer.");
       return;
     }
 
@@ -360,12 +360,13 @@
 
   function prevStep() {
     if (currentStep <= 1) {
-      // Retour à la toute première page (informations)
+      // Retour à la page d'informations (tout début)
       document.getElementById('stepsContainer').innerHTML = '';
       document.getElementById('infoBlock').style.display = 'block';
       currentStep = 0;
       return;
     }
+    // Retour à l'étape précédente
     document.getElementById(`step${currentStep}`).classList.remove('active');
     currentStep--;
     document.getElementById(`step${currentStep}`).classList.add('active');
@@ -438,8 +439,8 @@
       document.getElementById('adminControls').style.display = 'block';
       document.getElementById('btnExitAdmin').style.display = 'inline-block';
       document.getElementById('installationDetails').readOnly = false;
-      document.getElementById('oldDatesInput').readOnly = false;   // modifiable
-      document.getElementById('lastMaint').readOnly = false;       // modifiable
+      document.getElementById('oldDatesInput').readOnly = false;
+      document.getElementById('lastMaint').readOnly = false;
     }
   }
 
