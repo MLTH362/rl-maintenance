@@ -1,11 +1,12 @@
-/* =============================
-   PALETTE R.L ENERGIE
-   ============================= */
+/* =========================================================
+   R.L ENERGIE — STYLE PRO
+   Palette : gris anthracite + orange dégradé
+   ========================================================= */
 
 :root {
-  --dark: #2b2b2b;
+  --dark: #2c2c2c;
   --gray: #555;
-  --light: #f5f5f5;
+  --light: #f8f9fc;
   --white: #ffffff;
 
   --orange1: #ffb042;
@@ -13,16 +14,14 @@
 
   --green: #28a745;
   --red: #dc3545;
-  --blue: #0d6efd;
+  --blue: #1e7e34;
   --darkblue: #003366;
 
   --radius: 12px;
-  --shadow: 0 4px 15px rgba(0,0,0,0.12);
+  --shadow: 0 6px 18px rgba(0,0,0,0.10);
 }
 
-/* =============================
-   GLOBAL
-   ============================= */
+/* GLOBAL ----------------------------------------- */
 
 * {
   margin: 0;
@@ -32,61 +31,52 @@
 }
 
 body {
-  background: #f8f9fc;
+  background: var(--light);
   color: var(--dark);
   padding-bottom: 80px;
   min-height: 100vh;
 }
 
-/* =============================
-   HEADER AVEC LOGO
-   ============================= */
+/* HEADER + LOGO ----------------------------------------- */
 
 .header {
-  background: var(--white);
-  padding: 1.4rem 0 0.8rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  background: white;
+  padding: 20px 0 10px;
+  text-align: center;
   box-shadow: var(--shadow);
 }
 
-/* Logo en Base64 intégré */
 .logo-container {
-  width: 220px;
-  height: 100px;
+  width: 200px;
+  height: 90px;
+  margin: auto;
   background-size: contain;
-  background-position: center;
   background-repeat: no-repeat;
-  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcAAAAEiCAYAAAClOCaOAAAAAXNSR0IArs4c6QA...');
-  /* NOTE : Base64 tronqué pour ce message.
-            Dans ton fichier final je mettrai la version complète. */
+  background-position: center;
+
+  /* Logo Base64 (version raccourcie) — j’intégrerai la version complète lors de l’envoi final */
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA...');
 }
 
-/* =============================
-   TITRES DE SECTION
-   ============================= */
+/* TITRES SECTIONS ----------------------------------------- */
 
 .section-title {
   background: linear-gradient(90deg, var(--orange1), var(--orange2));
   color: white;
   padding: 1.2rem;
-  text-align: center;
-  font-size: 1.35rem;
+  font-size: 1.28rem;
   font-weight: 700;
+  text-align: center;
   border-radius: var(--radius) var(--radius) 0 0;
 }
 
-/* =============================
-   CARD
-   ============================= */
+/* CARDS ----------------------------------------- */
 
 .card {
   background: white;
+  margin: 2rem 0;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  margin: 2rem 0;
-  overflow: hidden;
   border: 1px solid #ddd;
 }
 
@@ -94,15 +84,33 @@ body {
   padding: 1.6rem 1.8rem;
 }
 
-/* =============================
-   STRUCTURES
-   ============================= */
+/* FORM ----------------------------------------- */
 
 .main-content {
   max-width: 900px;
   margin: auto;
   padding: 1rem;
 }
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 0.95rem;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--orange1);
+  box-shadow: 0 0 0 3px rgba(255,128,0,0.25);
+}
+
+/* LAYOUT ----------------------------------------- */
 
 .grid-2 {
   display: grid;
@@ -115,32 +123,7 @@ body {
   gap: 10px;
 }
 
-/* =============================
-   INPUTS
-   ============================= */
-
-input,
-select,
-textarea {
-  width: 100%;
-  padding: 0.85rem;
-  border: 2px solid #ccc;
-  border-radius: 8px;
-  margin-top: 0.4rem;
-  margin-bottom: 1rem;
-  font-size: 0.95rem;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: var(--orange1);
-  box-shadow: 0 0 0 3px rgba(255,128,0,0.25);
-}
-
-/* =============================
-   BOUTONS
-   ============================= */
+/* BOUTONS ----------------------------------------- */
 
 .btn {
   border: none;
@@ -161,15 +144,15 @@ select:focus {
 .btn-row {
   display: flex;
   gap: 1rem;
-  margin-top: 1.4rem;
   flex-wrap: wrap;
+  margin-top: 1rem;
 }
 
 .btn-row .btn {
   flex: 1;
 }
 
-/* Couleurs boutons */
+/* Couleurs */
 
 .btn-green { background: var(--green); }
 .btn-green:hover { background: #1e7e34; }
@@ -177,22 +160,16 @@ select:focus {
 .btn-red { background: var(--red); }
 .btn-red:hover { background: #b52d39; }
 
-.btn-blue { background: #1e7e34; } 
+.btn-blue { background: var(--blue); }
 .btn-darkblue { background: var(--darkblue); }
 
-.btn-gray {
-  background: #6c757d;
-}
-.btn-gray:hover {
-  background: #5a6268;
-}
+.btn-gray { background: #6c757d; }
+.btn-gray:hover { background: #555; }
 
-/* =============================
-   LISTE HISTORIQUE
-   ============================= */
+/* HISTORIQUE ----------------------------------------- */
 
 .history-list {
-  max-height: 400px;
+  max-height: 420px;
   overflow-y: auto;
   border: 1px solid #ddd;
   border-radius: var(--radius);
@@ -205,19 +182,17 @@ select:focus {
 }
 
 .history-item:hover {
-  background: #fdf4e0;
+  background: #fff4e0;
 }
 
-/* =============================
-   TOAST
-   ============================= */
+/* TOAST ----------------------------------------- */
 
 #toast {
   position: fixed;
-  bottom: 2rem;
+  bottom: 1.8rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 9999;
+  z-index: 1000;
 }
 
 .toast-msg {
@@ -231,9 +206,7 @@ select:focus {
   font-weight: 600;
 }
 
-/* =============================
-   ÉTAPES
-   ============================= */
+/* ÉTAPES ----------------------------------------- */
 
 .step {
   display: none;
@@ -243,11 +216,43 @@ select:focus {
   display: block;
 }
 
-/* =============================
-   PHOTOS
-   ============================= */
+/* CHECKLIST TABLE ----------------------------------------- */
+
+.checklist-grid {
+  width: 100%;
+  margin: 1rem 0;
+  display: grid;
+  grid-template-columns: 3fr 1fr 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.checklist-header {
+  background: var(--darkblue);
+  color: white;
+  text-align: center;
+  padding: 0.6rem;
+  font-weight: 700;
+  border-radius: 6px;
+}
+
+.checklist-item {
+  padding: 0.5rem 0.4rem;
+  border-bottom: 1px solid #eee;
+  font-size: 0.95rem;
+}
+
+input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  accent-color: var(--green);
+}
+
+/* PHOTOS ----------------------------------------- */
 
 .photo-grid {
+  margin-top: 1rem;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px,1fr));
   gap: 1rem;
@@ -270,25 +275,33 @@ select:focus {
   position: absolute;
   top: 8px;
   right: 8px;
+  background: var(--red);
+  color: white;
   width: 32px;
   height: 32px;
   border: none;
   border-radius: 50%;
-  background: var(--red);
-  color: white;
   font-size: 1.2rem;
   cursor: pointer;
 }
 
-/* =============================
-   ADMIN PANEL
-   ============================= */
+/* ADMIN PANEL ----------------------------------------- */
 
 .admin-panel {
   display: none;
   margin-bottom: 1.4rem;
-  background: #fdf4e0;
   padding: 1rem;
-  border-radius: 10px;
+  background: #fff4e0;
   border-left: 5px solid var(--orange2);
+  border-radius: 10px;
+}
+
+/* EXPORTS ----------------------------------------- */
+
+.export-row {
+  display: flex;
+  gap: 1rem;
+  margin: 1.6rem 0;
+  flex-wrap: wrap;
+  justify-content: center;
 }
