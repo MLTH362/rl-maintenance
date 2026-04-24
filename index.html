@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>R.L ENERGIE — Maintenance</title>
 
-  <!-- Styles -->
+  <!-- Style principal -->
   <link rel="stylesheet" href="style.css">
 
   <!-- Librairies externes -->
@@ -17,39 +17,42 @@
 
 <body>
 
-  <!-- HEADER -->
+  <!-- HEADER LOGO -->
   <header class="header">
     <div class="logo-container"></div>
   </header>
 
-  <main class="main-content">
 
-    <!-- Bloc Informations -->
-    <section id="infoBlock" class="card block active">
+  <!-- CONTENU PRINCIPAL -->
+  <div class="main-content">
+
+    <!-- ==========================
+         BLOC INFORMATIONS
+         ========================== -->
+    <div id="infoBlock" class="card block">
       <div class="section-title">INFORMATIONS SITE & TECHNICIEN</div>
-
       <div class="card-body">
 
         <!-- Admin -->
         <div id="adminControls" class="admin-panel">
           <label>Ajouter un nouveau client</label>
           <div class="flex-row">
-            <input type="text" id="newClient" placeholder="Ex: Client D - 300 kWc" />
+            <input type="text" id="newClient" placeholder="Nom client">
             <button class="btn btn-green" onclick="addNewClient()">Ajouter</button>
           </div>
         </div>
 
         <label>Nom du technicien (obligatoire)</label>
-        <input type="text" id="technicianName" placeholder="Ex: Jean Dupont"/>
+        <input type="text" id="technicianName" placeholder="Ex : Jean Dupont">
 
         <label>Client / Installation</label>
         <select id="clientSelect" onchange="loadClientData()">
           <option value="">Sélectionnez un client...</option>
         </select>
 
-        <div id="clientDetails" class="client-details">
+        <div id="clientDetails" class="client-details" style="display:none;">
           <label>Détails de l'installation</label>
-          <textarea id="installationDetails" readonly rows="3"></textarea>
+          <textarea id="installationDetails" rows="3" readonly></textarea>
 
           <label>Anciennes dates de maintenance</label>
           <textarea id="oldDatesInput" rows="3"></textarea>
@@ -57,18 +60,18 @@
           <div class="grid-2">
             <div>
               <label>Date dernière maintenance</label>
-              <input type="text" id="lastMaint" />
+              <input type="text" id="lastMaint">
             </div>
             <div>
               <label>Date début intervention</label>
-              <input type="text" id="startDate" readonly />
+              <input type="text" id="startDate" readonly>
             </div>
           </div>
         </div>
 
         <!-- Boutons -->
         <div class="btn-row">
-          <button id="startBtn" class="btn btn-green big" onclick="startMaintenance()">
+          <button class="btn btn-green big" onclick="startMaintenance()">
             <i class="fas fa-play"></i> COMMENCER
           </button>
 
@@ -77,27 +80,41 @@
           </button>
 
           <button class="btn btn-red big" onclick="clearAll()">
-            <i class="fas fa-trash"></i> Effacer tout
+            <i class="fas fa-trash-alt"></i> Effacer tout
+          </button>
+
+          <button id="btnAdmin" class="btn btn-darkblue big" onclick="toggleAdminMode()">
+            Mode Admin
           </button>
         </div>
 
       </div>
-    </section>
+    </div>
 
+
+    <!-- ==========================
+         ÉTAPES DYNAMIQUES
+         ========================== -->
     <div id="stepsContainer"></div>
 
-    <!-- Historique -->
-    <section class="card">
+
+    <!-- ==========================
+         HISTORIQUE
+         ========================== -->
+    <div class="card">
       <div class="section-title">Historique des rapports enregistrés</div>
       <div class="card-body">
         <input type="text" id="searchHistory" placeholder="Rechercher..." oninput="filterHistory()">
         <div id="historyList" class="history-list"></div>
       </div>
-    </section>
+    </div>
 
-    <!-- Exports -->
+
+    <!-- ==========================
+         EXPORTS
+         ========================== -->
     <div class="export-row">
-      <button class="btn btn-green big" onclick="generateReport()">
+      <button class="btn btn-green big" onclick="generatePDF()">
         <i class="fas fa-file-pdf"></i> PDF
       </button>
 
@@ -114,7 +131,10 @@
       </button>
     </div>
 
-    <!-- Backup -->
+
+    <!-- ==========================
+         BACKUP JSON
+         ========================== -->
     <div class="export-row">
       <button class="btn btn-gray" onclick="exportJSON()">
         <i class="fas fa-download"></i> Export JSON
@@ -127,11 +147,15 @@
       <input type="file" id="importFile" accept=".json" hidden onchange="importJSON(event)">
     </div>
 
-  </main>
+  </div>
 
+
+  <!-- Notifications -->
   <div id="toast"></div>
 
-  <!-- Script principal -->
+
+  <!-- SCRIPT PRINCIPAL -->
   <script src="app.js"></script>
+
 </body>
 </html>
