@@ -1,0 +1,13 @@
+R.L ENERGIE - Suivi de maintenance (100 % hors ligne)
+
+CONTENU : index.html, style.css, app.js, sw.js, logo.png, logo-data.js, dossier libs/ (PDF, Excel, Word) et dossier docs/ (étiquettes, couples de serrage) : aucun accès internet requis.
+
+MISE EN LIGNE (GitHub Pages) :
+1. Déposer TOUS ces fichiers/dossiers à la racine du dépôt (garder le dossier libs/).
+2. Settings > Pages > Deploy from a branch > main / root.
+3. Ouvrir l'adresse une première fois AVEC internet (le service worker met tout en cache), puis l'app fonctionne sans Wi-Fi.
+
+APK (web2apk) : de préférence envoyer le ZIP/dossier complet plutôt que l'URL, pour que tout soit embarqué dans l'APK.
+
+ADMIN : bouton "Admin", mot de passe par défaut : admin123 -> à changer dans Gestion > Changer le mot de passe.
+Faire une sauvegarde JSON régulière (Gestion > Sauvegarde) : les données sont stockées sur la tablette.
