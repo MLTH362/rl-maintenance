@@ -1,4 +1,0 @@
-const V='rl-v8',F=['./','index.html','style.css','app.js','logo-data.js','libs/jspdf.umd.min.js','libs/jspdf.plugin.autotable.min.js','libs/exceljs.min.js','libs/docx.umd.js','docs/etiquettes.jpg','docs/ic60n.jpg','docs/nsx.jpg','docs/ins.jpg','docs/epanouisseur.jpg','logo.png'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(V).then(c=>c.addAll(F)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(V).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request)))});
