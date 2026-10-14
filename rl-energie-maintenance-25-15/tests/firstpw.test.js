@@ -1,0 +1,20 @@
+/* Accès admin sans mot de passe (activé au départ, désactivable dans Droits & accès). */
+const {build}=require('./harness.js');
+(async()=>{let ok=0,ko=0;const t=(n,c)=>{c?ok++:ko++;console.log((c?'✅ ':'❌ ')+n)};
+ let h=build({firstrun:1,store:{rl_pw:JSON.stringify('ancienhash')}});await h.sleep(300);
+ t('au démarrage : aucun écran de mot de passe',!/pwf1|pwi/.test(h.ui.modal));
+ h.A.admin();t('bouton Admin : entre directement, même avec un ancien mot de passe enregistré',h.T.ev('admin')===true&&!/pwi/.test(h.ui.modal));
+ h.T.ev("view='adm'");h.T.ev("admTab='r'");h.T.ev('render()');t('onglet Droits & accès : bouton « Exiger un mot de passe » + avertissement',/data-a="openoff"/.test(h.ui.app)&&/Sans mot de passe/.test(h.ui.app)&&/class="warn"/.test(h.ui.app));
+ h.A.openoff();t('désactiver : demande de choisir un mot de passe',/id="pwf1"/.test(h.ui.modal)&&h.T.ev('adminOpen()')===true);
+ h.ui.inputs.pwf1='abc';h.ui.inputs.pwf2='abc';h.toasts.length=0;await h.A.pwfirst();t('trop court refusé, accès toujours libre',h.toasts.some(x=>/Trop court/.test(x))&&h.T.ev('adminOpen()')===true);
+ h.ui.inputs.pwf1='Mon-mdp-1';h.ui.inputs.pwf2='autre';h.toasts.length=0;await h.A.pwfirst();t('confirmation différente refusée',h.toasts.some(x=>/différents/.test(x))&&h.T.ev('adminOpen()')===true);
+ h.ui.inputs.pwf2='Mon-mdp-1';await h.A.pwfirst();t('mot de passe créé (PBKDF2, pas en clair) : accès désormais protégé',h.T.ev('adminOpen()')===false&&JSON.parse(h.store.rl_pw).v===2&&!h.store.rl_pw.includes('Mon-mdp-1'));
+ h.A.admin();h.A.admin();t('Admin demande maintenant le mot de passe (avec « Mot de passe oublié ? »)',/pwi/.test(h.ui.modal)&&/data-a="forgot"/.test(h.ui.modal));
+ h.ui.inputs.pwi='ancienhash';await h.A.login();t('l\'ancien mot de passe ne marche plus',h.T.ev('admin')===false);
+ h.ui.inputs.pwi='Mon-mdp-1';await h.A.login();t('le nouveau mot de passe fonctionne',h.T.ev('admin')===true);
+ h.T.ev("view='adm'");h.T.ev("admTab='r'");h.T.ev('render()');t('onglet Droits : « Autoriser l\'accès sans mot de passe » proposé',/data-a="openon"/.test(h.ui.app)&&!/class="warn"/.test(h.ui.app));
+ h.A.openon();h.T.ev('admin=false');h.A.admin();t('réactivé : Admin entre de nouveau sans mot de passe',h.T.ev('admin')===true&&h.T.ev('adminOpen()')===true);
+ h.A.openoff();t('re-désactiver ensuite : plus besoin de recréer, le mot de passe existe déjà',h.T.ev('adminOpen()')===false&&!/pwf1/.test(h.ui.modal));
+ const re=build({store:{...h.store}});await re.sleep(300);re.A.admin();t('rechargement : le réglage est conservé (mot de passe demandé)',/pwi/.test(re.ui.modal)&&re.T.ev('admin')===false);
+ const g=build({firstrun:1});await g.sleep(300);g.T.ev('admin=false');await g.A.pwfirst();t('hors mode admin : impossible de créer / changer par l\'écran',g.T.ev('adminOpen()')===true&&!g.store.rl_pw);
+ console.log(`\n${ok} OK / ${ko} KO`);process.exit(ko?1:0)})();
